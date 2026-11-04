@@ -534,92 +534,814 @@ function disableAllModules() {
 // ==============================================================================
 
 const COUNTRIES_LIST = [
-  { alpha: 'RU', name: { ru: 'Россия', en: 'Russia' }, dial: '+7' },
-  { alpha: 'KZ', name: { ru: 'Казахстан', en: 'Kazakhstan' }, dial: '+7' },
-  { alpha: 'BY', name: { ru: 'Беларусь', en: 'Belarus' }, dial: '+375' },
-  { alpha: 'UA', name: { ru: 'Украина', en: 'Ukraine' }, dial: '+380' },
-  { alpha: 'UZ', name: { ru: 'Узбекистан', en: 'Uzbekistan' }, dial: '+998' },
-  { alpha: 'KG', name: { ru: 'Кыргызстан', en: 'Kyrgyzstan' }, dial: '+996' },
-  { alpha: 'TJ', name: { ru: 'Таджикистан', en: 'Tajikistan' }, dial: '+992' },
-  { alpha: 'AZ', name: { ru: 'Азербайджан', en: 'Azerbaijan' }, dial: '+994' },
-  { alpha: 'AM', name: { ru: 'Армения', en: 'Armenia' }, dial: '+374' },
-  { alpha: 'GE', name: { ru: 'Грузия', en: 'Georgia' }, dial: '+995' },
-  { alpha: 'MD', name: { ru: 'Молдова', en: 'Moldova' }, dial: '+373' },
-  { alpha: 'TM', name: { ru: 'Туркменистан', en: 'Turkmenistan' }, dial: '+993' },
-  { alpha: 'CZ', name: { ru: 'Чехия', en: 'Czech Republic' }, dial: '+420' },
-  { alpha: 'BD', name: { ru: 'Бангладеш', en: 'Bangladesh' }, dial: '+880' },
-  { alpha: 'US', name: { ru: 'США / Канада', en: 'USA / Canada' }, dial: '+1' },
-  { alpha: 'DE', name: { ru: 'Германия', en: 'Germany' }, dial: '+49' },
-  { alpha: 'GB', name: { ru: 'Великобритания', en: 'United Kingdom' }, dial: '+44' },
-  { alpha: 'FR', name: { ru: 'Франция', en: 'France' }, dial: '+33' },
-  { alpha: 'IT', name: { ru: 'Италия', en: 'Italy' }, dial: '+39' },
-  { alpha: 'ES', name: { ru: 'Испания', en: 'Spain' }, dial: '+34' },
-  { alpha: 'PL', name: { ru: 'Польша', en: 'Poland' }, dial: '+48' },
-  { alpha: 'TR', name: { ru: 'Турция', en: 'Turkey' }, dial: '+90' },
-  { alpha: 'AE', name: { ru: 'ОАЭ', en: 'UAE' }, dial: '+971' },
-  { alpha: 'IL', name: { ru: 'Израиль', en: 'Israel' }, dial: '+972' },
-  { alpha: 'CY', name: { ru: 'Кипр', en: 'Cyprus' }, dial: '+357' },
-  { alpha: 'NL', name: { ru: 'Нидерланды', en: 'Netherlands' }, dial: '+31' },
-  { alpha: 'BE', name: { ru: 'Бельгия', en: 'Belgium' }, dial: '+32' },
-  { alpha: 'CH', name: { ru: 'Швейцария', en: 'Switzerland' }, dial: '+41' },
-  { alpha: 'AT', name: { ru: 'Австрия', en: 'Austria' }, dial: '+43' },
-  { alpha: 'SE', name: { ru: 'Швеция', en: 'Sweden' }, dial: '+46' },
-  { alpha: 'NO', name: { ru: 'Норвегия', en: 'Norway' }, dial: '+47' },
-  { alpha: 'FI', name: { ru: 'Финляндия', en: 'Finland' }, dial: '+358' },
-  { alpha: 'DK', name: { ru: 'Дания', en: 'Denmark' }, dial: '+45' },
-  { alpha: 'EE', name: { ru: 'Эстония', en: 'Estonia' }, dial: '+372' },
-  { alpha: 'LV', name: { ru: 'Латвия', en: 'Latvia' }, dial: '+371' },
-  { alpha: 'LT', name: { ru: 'Литва', en: 'Lithuania' }, dial: '+370' },
-  { alpha: 'SK', name: { ru: 'Словакия', en: 'Slovakia' }, dial: '+421' },
-  { alpha: 'HU', name: { ru: 'Венгрия', en: 'Hungary' }, dial: '+36' },
-  { alpha: 'RO', name: { ru: 'Румыния', en: 'Romania' }, dial: '+40' },
-  { alpha: 'BG', name: { ru: 'Болгария', en: 'Bulgaria' }, dial: '+359' },
-  { alpha: 'RS', name: { ru: 'Сербия', en: 'Serbia' }, dial: '+381' },
-  { alpha: 'ME', name: { ru: 'Черногория', en: 'Montenegro' }, dial: '+382' },
-  { alpha: 'HR', name: { ru: 'Хорватия', en: 'Croatia' }, dial: '+385' },
-  { alpha: 'SI', name: { ru: 'Словения', en: 'Slovenia' }, dial: '+386' },
-  { alpha: 'BA', name: { ru: 'Босния и Герцеговина', en: 'Bosnia and Herzegovina' }, dial: '+387' },
-  { alpha: 'MK', name: { ru: 'Северная Македония', en: 'North Macedonia' }, dial: '+389' },
-  { alpha: 'AL', name: { ru: 'Албания', en: 'Albania' }, dial: '+355' },
-  { alpha: 'GR', name: { ru: 'Греция', en: 'Greece' }, dial: '+30' },
-  { alpha: 'PT', name: { ru: 'Португалия', en: 'Portugal' }, dial: '+351' },
-  { alpha: 'IE', name: { ru: 'Ирландия', en: 'Ireland' }, dial: '+353' },
-  { alpha: 'IS', name: { ru: 'Исландия', en: 'Iceland' }, dial: '+354' },
-  { alpha: 'CN', name: { ru: 'Китай', en: 'China' }, dial: '+86' },
-  { alpha: 'IN', name: { ru: 'Индия', en: 'India' }, dial: '+91' },
-  { alpha: 'JP', name: { ru: 'Япония', en: 'Japan' }, dial: '+81' },
-  { alpha: 'KR', name: { ru: 'Южная Корея', en: 'South Korea' }, dial: '+82' },
-  { alpha: 'VN', name: { ru: 'Вьетнам', en: 'Vietnam' }, dial: '+84' },
-  { alpha: 'TH', name: { ru: 'Таиланд', en: 'Thailand' }, dial: '+66' },
-  { alpha: 'ID', name: { ru: 'Индонезия', en: 'Indonesia' }, dial: '+62' },
-  { alpha: 'MY', name: { ru: 'Малайзия', en: 'Malaysia' }, dial: '+60' },
-  { alpha: 'SG', name: { ru: 'Сингапур', en: 'Singapore' }, dial: '+65' },
-  { alpha: 'PH', name: { ru: 'Филиппины', en: 'Philippines' }, dial: '+63' },
-  { alpha: 'PK', name: { ru: 'Пакистан', en: 'Pakistan' }, dial: '+92' },
-  { alpha: 'IR', name: { ru: 'Иран', en: 'Iran' }, dial: '+98' },
-  { alpha: 'IQ', name: { ru: 'Ирак', en: 'Iraq' }, dial: '+964' },
-  { alpha: 'SA', name: { ru: 'Саудовская Аравия', en: 'Saudi Arabia' }, dial: '+966' },
-  { alpha: 'EG', name: { ru: 'Египет', en: 'Egypt' }, dial: '+20' },
-  { alpha: 'ZA', name: { ru: 'ЮАР', en: 'South Africa' }, dial: '+27' },
-  { alpha: 'NG', name: { ru: 'Нигерия', en: 'Nigeria' }, dial: '+234' },
-  { alpha: 'BR', name: { ru: 'Бразилия', en: 'Brazil' }, dial: '+55' },
-  { alpha: 'AR', name: { ru: 'Аргентина', en: 'Argentina' }, dial: '+54' },
-  { alpha: 'MX', name: { ru: 'Мексика', en: 'Mexico' }, dial: '+52' },
-  { alpha: 'CO', name: { ru: 'Колумбия', en: 'Colombia' }, dial: '+57' },
-  { alpha: 'CL', name: { ru: 'Чили', en: 'Chile' }, dial: '+56' },
-  { alpha: 'AU', name: { ru: 'Австралия', en: 'Australia' }, dial: '+61' },
-  { alpha: 'NZ', name: { ru: 'Новая Зеландия', en: 'New Zealand' }, dial: '+64' },
-  { alpha: 'HK', name: { ru: 'Гонконг', en: 'Hong Kong' }, dial: '+852' },
-  { alpha: 'TW', name: { ru: 'Тайвань', en: 'Taiwan' }, dial: '+886' },
-  { alpha: 'MA', name: { ru: 'Марокко', en: 'Morocco' }, dial: '+212' },
-  { alpha: 'DZ', name: { ru: 'Алжир', en: 'Algeria' }, dial: '+213' },
-  { alpha: 'TN', name: { ru: 'Тунис', en: 'Tunisia' }, dial: '+216' },
-  { alpha: 'QA', name: { ru: 'Катар', en: 'Qatar' }, dial: '+974' },
-  { alpha: 'KW', name: { ru: 'Кувейт', en: 'Kuwait' }, dial: '+965' },
-  { alpha: 'OM', name: { ru: 'Оман', en: 'Oman' }, dial: '+968' },
-  { alpha: 'BH', name: { ru: 'Бахрейн', en: 'Bahrain' }, dial: '+973' },
-  { alpha: 'JO', name: { ru: 'Иордания', en: 'Jordan' }, dial: '+962' },
-  { alpha: 'LB', name: { ru: 'Ливан', en: 'Lebanon' }, dial: '+961' }
+  {
+    "alpha": "RU",
+    "name": {
+      "ru": "Россия",
+      "en": "Russia"
+    },
+    "dial": "+7"
+  },
+  {
+    "alpha": "UA",
+    "name": {
+      "ru": "Украина",
+      "en": "Ukraine"
+    },
+    "dial": "+380"
+  },
+  {
+    "alpha": "BY",
+    "name": {
+      "ru": "Беларусь",
+      "en": "Belarus"
+    },
+    "dial": "+375"
+  },
+  {
+    "alpha": "KZ",
+    "name": {
+      "ru": "Казахстан",
+      "en": "Kazakhstan"
+    },
+    "dial": "+7"
+  },
+  {
+    "alpha": "UZ",
+    "name": {
+      "ru": "Узбекистан",
+      "en": "Uzbekistan"
+    },
+    "dial": "+998"
+  },
+  {
+    "alpha": "CZ",
+    "name": {
+      "ru": "Чехия",
+      "en": "Czech Republic"
+    },
+    "dial": "+420"
+  },
+  {
+    "alpha": "DE",
+    "name": {
+      "ru": "Германия",
+      "en": "Germany"
+    },
+    "dial": "+49"
+  },
+  {
+    "alpha": "US",
+    "name": {
+      "ru": "США",
+      "en": "United States"
+    },
+    "dial": "+1"
+  },
+  {
+    "alpha": "CA",
+    "name": {
+      "ru": "Канада",
+      "en": "Canada"
+    },
+    "dial": "+1"
+  },
+  {
+    "alpha": "GB",
+    "name": {
+      "ru": "Великобритания",
+      "en": "United Kingdom"
+    },
+    "dial": "+44"
+  },
+  {
+    "alpha": "FR",
+    "name": {
+      "ru": "Франция",
+      "en": "France"
+    },
+    "dial": "+33"
+  },
+  {
+    "alpha": "IT",
+    "name": {
+      "ru": "Италия",
+      "en": "Italy"
+    },
+    "dial": "+39"
+  },
+  {
+    "alpha": "ES",
+    "name": {
+      "ru": "Испания",
+      "en": "Spain"
+    },
+    "dial": "+34"
+  },
+  {
+    "alpha": "PL",
+    "name": {
+      "ru": "Польша",
+      "en": "Poland"
+    },
+    "dial": "+48"
+  },
+  {
+    "alpha": "NL",
+    "name": {
+      "ru": "Нидерланды",
+      "en": "Netherlands"
+    },
+    "dial": "+31"
+  },
+  {
+    "alpha": "TR",
+    "name": {
+      "ru": "Турция",
+      "en": "Turkey"
+    },
+    "dial": "+90"
+  },
+  {
+    "alpha": "GE",
+    "name": {
+      "ru": "Грузия",
+      "en": "Georgia"
+    },
+    "dial": "+995"
+  },
+  {
+    "alpha": "AM",
+    "name": {
+      "ru": "Армения",
+      "en": "Armenia"
+    },
+    "dial": "+374"
+  },
+  {
+    "alpha": "AZ",
+    "name": {
+      "ru": "Азербайджан",
+      "en": "Azerbaijan"
+    },
+    "dial": "+994"
+  },
+  {
+    "alpha": "KG",
+    "name": {
+      "ru": "Кыргызстан",
+      "en": "Kyrgyzstan"
+    },
+    "dial": "+996"
+  },
+  {
+    "alpha": "TJ",
+    "name": {
+      "ru": "Таджикистан",
+      "en": "Tajikistan"
+    },
+    "dial": "+992"
+  },
+  {
+    "alpha": "MD",
+    "name": {
+      "ru": "Молдова",
+      "en": "Moldova"
+    },
+    "dial": "+373"
+  },
+  {
+    "alpha": "IL",
+    "name": {
+      "ru": "Израиль",
+      "en": "Israel"
+    },
+    "dial": "+972"
+  },
+  {
+    "alpha": "AE",
+    "name": {
+      "ru": "ОАЭ",
+      "en": "UAE"
+    },
+    "dial": "+971"
+  },
+  {
+    "alpha": "SA",
+    "name": {
+      "ru": "Саудовская Аравия",
+      "en": "Saudi Arabia"
+    },
+    "dial": "+966"
+  },
+  {
+    "alpha": "BR",
+    "name": {
+      "ru": "Бразилия",
+      "en": "Brazil"
+    },
+    "dial": "+55"
+  },
+  {
+    "alpha": "IN",
+    "name": {
+      "ru": "Индия",
+      "en": "India"
+    },
+    "dial": "+91"
+  },
+  {
+    "alpha": "CN",
+    "name": {
+      "ru": "Китай",
+      "en": "China"
+    },
+    "dial": "+86"
+  },
+  {
+    "alpha": "JP",
+    "name": {
+      "ru": "Япония",
+      "en": "Japan"
+    },
+    "dial": "+81"
+  },
+  {
+    "alpha": "KR",
+    "name": {
+      "ru": "Южная Корея",
+      "en": "South Korea"
+    },
+    "dial": "+82"
+  },
+  {
+    "alpha": "ID",
+    "name": {
+      "ru": "Индонезия",
+      "en": "Indonesia"
+    },
+    "dial": "+62"
+  },
+  {
+    "alpha": "VN",
+    "name": {
+      "ru": "Вьетнам",
+      "en": "Vietnam"
+    },
+    "dial": "+84"
+  },
+  {
+    "alpha": "TH",
+    "name": {
+      "ru": "Таиланд",
+      "en": "Thailand"
+    },
+    "dial": "+66"
+  },
+  {
+    "alpha": "BD",
+    "name": {
+      "ru": "Бангладеш",
+      "en": "Bangladesh"
+    },
+    "dial": "+880"
+  },
+  {
+    "alpha": "PK",
+    "name": {
+      "ru": "Пакистан",
+      "en": "Pakistan"
+    },
+    "dial": "+92"
+  },
+  {
+    "alpha": "EG",
+    "name": {
+      "ru": "Египет",
+      "en": "Egypt"
+    },
+    "dial": "+20"
+  },
+  {
+    "alpha": "NG",
+    "name": {
+      "ru": "Нигерия",
+      "en": "Nigeria"
+    },
+    "dial": "+234"
+  },
+  {
+    "alpha": "ZA",
+    "name": {
+      "ru": "ЮАР",
+      "en": "South Africa"
+    },
+    "dial": "+27"
+  },
+  {
+    "alpha": "AR",
+    "name": {
+      "ru": "Аргентина",
+      "en": "Argentina"
+    },
+    "dial": "+54"
+  },
+  {
+    "alpha": "MX",
+    "name": {
+      "ru": "Мексика",
+      "en": "Mexico"
+    },
+    "dial": "+52"
+  },
+  {
+    "alpha": "CO",
+    "name": {
+      "ru": "Колумбия",
+      "en": "Colombia"
+    },
+    "dial": "+57"
+  },
+  {
+    "alpha": "AT",
+    "name": {
+      "ru": "Австрия",
+      "en": "Austria"
+    },
+    "dial": "+43"
+  },
+  {
+    "alpha": "CH",
+    "name": {
+      "ru": "Швейцария",
+      "en": "Switzerland"
+    },
+    "dial": "+41"
+  },
+  {
+    "alpha": "SE",
+    "name": {
+      "ru": "Швеция",
+      "en": "Sweden"
+    },
+    "dial": "+46"
+  },
+  {
+    "alpha": "NO",
+    "name": {
+      "ru": "Норвегия",
+      "en": "Norway"
+    },
+    "dial": "+47"
+  },
+  {
+    "alpha": "FI",
+    "name": {
+      "ru": "Финляндия",
+      "en": "Finland"
+    },
+    "dial": "+358"
+  },
+  {
+    "alpha": "DK",
+    "name": {
+      "ru": "Дания",
+      "en": "Denmark"
+    },
+    "dial": "+45"
+  },
+  {
+    "alpha": "BE",
+    "name": {
+      "ru": "Бельгия",
+      "en": "Belgium"
+    },
+    "dial": "+32"
+  },
+  {
+    "alpha": "PT",
+    "name": {
+      "ru": "Португалия",
+      "en": "Portugal"
+    },
+    "dial": "+351"
+  },
+  {
+    "alpha": "GR",
+    "name": {
+      "ru": "Греция",
+      "en": "Greece"
+    },
+    "dial": "+30"
+  },
+  {
+    "alpha": "RO",
+    "name": {
+      "ru": "Румыния",
+      "en": "Romania"
+    },
+    "dial": "+40"
+  },
+  {
+    "alpha": "HU",
+    "name": {
+      "ru": "Венгрия",
+      "en": "Hungary"
+    },
+    "dial": "+36"
+  },
+  {
+    "alpha": "SK",
+    "name": {
+      "ru": "Словакия",
+      "en": "Slovakia"
+    },
+    "dial": "+421"
+  },
+  {
+    "alpha": "BG",
+    "name": {
+      "ru": "Болгария",
+      "en": "Bulgaria"
+    },
+    "dial": "+359"
+  },
+  {
+    "alpha": "RS",
+    "name": {
+      "ru": "Сербия",
+      "en": "Serbia"
+    },
+    "dial": "+381"
+  },
+  {
+    "alpha": "HR",
+    "name": {
+      "ru": "Хорватия",
+      "en": "Croatia"
+    },
+    "dial": "+385"
+  },
+  {
+    "alpha": "SI",
+    "name": {
+      "ru": "Словения",
+      "en": "Slovenia"
+    },
+    "dial": "+386"
+  },
+  {
+    "alpha": "EE",
+    "name": {
+      "ru": "Эстония",
+      "en": "Estonia"
+    },
+    "dial": "+372"
+  },
+  {
+    "alpha": "LV",
+    "name": {
+      "ru": "Латвия",
+      "en": "Latvia"
+    },
+    "dial": "+371"
+  },
+  {
+    "alpha": "LT",
+    "name": {
+      "ru": "Литва",
+      "en": "Lithuania"
+    },
+    "dial": "+370"
+  },
+  {
+    "alpha": "IE",
+    "name": {
+      "ru": "Ирландия",
+      "en": "Ireland"
+    },
+    "dial": "+353"
+  },
+  {
+    "alpha": "CY",
+    "name": {
+      "ru": "Кипр",
+      "en": "Cyprus"
+    },
+    "dial": "+357"
+  },
+  {
+    "alpha": "MT",
+    "name": {
+      "ru": "Мальта",
+      "en": "Malta"
+    },
+    "dial": "+356"
+  },
+  {
+    "alpha": "IS",
+    "name": {
+      "ru": "Исландия",
+      "en": "Iceland"
+    },
+    "dial": "+354"
+  },
+  {
+    "alpha": "LU",
+    "name": {
+      "ru": "Люксембург",
+      "en": "Luxembourg"
+    },
+    "dial": "+352"
+  },
+  {
+    "alpha": "AL",
+    "name": {
+      "ru": "Албания",
+      "en": "Albania"
+    },
+    "dial": "+355"
+  },
+  {
+    "alpha": "BA",
+    "name": {
+      "ru": "Босния и Герцеговина",
+      "en": "Bosnia"
+    },
+    "dial": "+387"
+  },
+  {
+    "alpha": "ME",
+    "name": {
+      "ru": "Черногория",
+      "en": "Montenegro"
+    },
+    "dial": "+382"
+  },
+  {
+    "alpha": "MK",
+    "name": {
+      "ru": "Северная Македония",
+      "en": "North Macedonia"
+    },
+    "dial": "+389"
+  },
+  {
+    "alpha": "AU",
+    "name": {
+      "ru": "Австралия",
+      "en": "Australia"
+    },
+    "dial": "+61"
+  },
+  {
+    "alpha": "NZ",
+    "name": {
+      "ru": "Новая Зеландия",
+      "en": "New Zealand"
+    },
+    "dial": "+64"
+  },
+  {
+    "alpha": "SG",
+    "name": {
+      "ru": "Сингапур",
+      "en": "Singapore"
+    },
+    "dial": "+65"
+  },
+  {
+    "alpha": "MY",
+    "name": {
+      "ru": "Малайзия",
+      "en": "Malaysia"
+    },
+    "dial": "+60"
+  },
+  {
+    "alpha": "PH",
+    "name": {
+      "ru": "Филиппины",
+      "en": "Philippines"
+    },
+    "dial": "+63"
+  },
+  {
+    "alpha": "HK",
+    "name": {
+      "ru": "Гонконг",
+      "en": "Hong Kong"
+    },
+    "dial": "+852"
+  },
+  {
+    "alpha": "TW",
+    "name": {
+      "ru": "Тайвань",
+      "en": "Taiwan"
+    },
+    "dial": "+886"
+  },
+  {
+    "alpha": "CL",
+    "name": {
+      "ru": "Чили",
+      "en": "Chile"
+    },
+    "dial": "+56"
+  },
+  {
+    "alpha": "PE",
+    "name": {
+      "ru": "Перу",
+      "en": "Peru"
+    },
+    "dial": "+51"
+  },
+  {
+    "alpha": "VE",
+    "name": {
+      "ru": "Венесуэла",
+      "en": "Venezuela"
+    },
+    "dial": "+58"
+  },
+  {
+    "alpha": "EC",
+    "name": {
+      "ru": "Эквадор",
+      "en": "Ecuador"
+    },
+    "dial": "+593"
+  },
+  {
+    "alpha": "MA",
+    "name": {
+      "ru": "Марокко",
+      "en": "Morocco"
+    },
+    "dial": "+212"
+  },
+  {
+    "alpha": "TN",
+    "name": {
+      "ru": "Тунис",
+      "en": "Tunisia"
+    },
+    "dial": "+216"
+  },
+  {
+    "alpha": "DZ",
+    "name": {
+      "ru": "Алжир",
+      "en": "Algeria"
+    },
+    "dial": "+213"
+  },
+  {
+    "alpha": "KE",
+    "name": {
+      "ru": "Кения",
+      "en": "Kenya"
+    },
+    "dial": "+254"
+  },
+  {
+    "alpha": "GH",
+    "name": {
+      "ru": "Гана",
+      "en": "Ghana"
+    },
+    "dial": "+233"
+  },
+  {
+    "alpha": "ET",
+    "name": {
+      "ru": "Эфиопия",
+      "en": "Ethiopia"
+    },
+    "dial": "+251"
+  },
+  {
+    "alpha": "AF",
+    "name": {
+      "ru": "Афганистан",
+      "en": "Afghanistan"
+    },
+    "dial": "+93"
+  },
+  {
+    "alpha": "IQ",
+    "name": {
+      "ru": "Ирак",
+      "en": "Iraq"
+    },
+    "dial": "+964"
+  },
+  {
+    "alpha": "IR",
+    "name": {
+      "ru": "Иран",
+      "en": "Iran"
+    },
+    "dial": "+98"
+  },
+  {
+    "alpha": "JO",
+    "name": {
+      "ru": "Иордания",
+      "en": "Jordan"
+    },
+    "dial": "+962"
+  },
+  {
+    "alpha": "LB",
+    "name": {
+      "ru": "Ливан",
+      "en": "Lebanon"
+    },
+    "dial": "+961"
+  },
+  {
+    "alpha": "KW",
+    "name": {
+      "ru": "Кувейт",
+      "en": "Kuwait"
+    },
+    "dial": "+965"
+  },
+  {
+    "alpha": "QA",
+    "name": {
+      "ru": "Катар",
+      "en": "Qatar"
+    },
+    "dial": "+974"
+  },
+  {
+    "alpha": "OM",
+    "name": {
+      "ru": "Оман",
+      "en": "Oman"
+    },
+    "dial": "+968"
+  },
+  {
+    "alpha": "BH",
+    "name": {
+      "ru": "Бахрейн",
+      "en": "Bahrain"
+    },
+    "dial": "+973"
+  },
+  {
+    "alpha": "LK",
+    "name": {
+      "ru": "Шри-Ланка",
+      "en": "Sri Lanka"
+    },
+    "dial": "+94"
+  },
+  {
+    "alpha": "NP",
+    "name": {
+      "ru": "Непал",
+      "en": "Nepal"
+    },
+    "dial": "+977"
+  },
+  {
+    "alpha": "MM",
+    "name": {
+      "ru": "Мьянма",
+      "en": "Myanmar"
+    },
+    "dial": "+95"
+  },
+  {
+    "alpha": "KH",
+    "name": {
+      "ru": "Камбоджа",
+      "en": "Cambodia"
+    },
+    "dial": "+855"
+  },
+  {
+    "alpha": "MN",
+    "name": {
+      "ru": "Монголия",
+      "en": "Mongolia"
+    },
+    "dial": "+976"
+  },
+  {
+    "alpha": "TM",
+    "name": {
+      "ru": "Туркменистан",
+      "en": "Turkmenistan"
+    },
+    "dial": "+993"
+  }
 ];
 
 const AUTH_I18N = {

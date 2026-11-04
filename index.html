@@ -6,7 +6,7 @@
   <title>AyuLite C2 Premium</title>
   <!-- Telegram Web App SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link rel="stylesheet" href="style.css?v=2.8">
+  <link rel="stylesheet" href="style.css?v=2.9">
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -118,8 +118,17 @@
       <!-- TAB 2: EXCLUSIVE MODULES SHOWCASE -->
       <section id="tab-features" class="tab-content">
         <div class="section-intro">
-          <h3>Каталог 45 модулей AyuLite</h3>
-          <p>Индивидуальная активация протокольных инструментов по тарифам Pro, Premium и Ultimate.</p>
+          <h3 id="modules-title">Каталог 45 модулей AyuLite</h3>
+          <p id="modules-subtitle">Индивидуальная активация протокольных инструментов по тарифам Pro, Premium и Ultimate.</p>
+        </div>
+
+        <!-- Переключатель фильтрации модулей по подписке -->
+        <div class="tier-filter-bar">
+          <button class="filter-pill active" data-filter="my" onclick="setModuleFilter('my')">⚡️ Мой тариф (<span id="my-tier-badge">PRO</span>)</button>
+          <button class="filter-pill" data-filter="pro" onclick="setModuleFilter('pro')">🟢 PRO (15)</button>
+          <button class="filter-pill" data-filter="premium" onclick="setModuleFilter('premium')">🔵 PREMIUM (16)</button>
+          <button class="filter-pill" data-filter="ultimate" onclick="setModuleFilter('ultimate')">🔮 ULTIMATE (14)</button>
+          <button class="filter-pill" data-filter="all" onclick="setModuleFilter('all')">Все (45)</button>
         </div>
 
         <div class="modules-list">
@@ -127,7 +136,7 @@
           <div class="module-category">
             <div class="module-category-title">🛡️ Защита и Теневые протоколы (12)</div>
 
-            <div class="module-card">
+            <div class="module-card" data-tier="ultimate" data-rank="3">
               <div class="module-icon">🪞</div>
               <div class="module-info">
                 <div class="module-header">
@@ -142,7 +151,7 @@
               </label>
             </div>
 
-            <div class="module-card">
+            <div class="module-card" data-tier="ultimate" data-rank="3">
               <div class="module-icon">🛡️</div>
               <div class="module-info">
                 <div class="module-header">
@@ -157,7 +166,7 @@
               </label>
             </div>
 
-            <div class="module-card">
+            <div class="module-card" data-tier="ultimate" data-rank="3">
               <div class="module-icon">🕵️</div>
               <div class="module-info">
                 <div class="module-header">
@@ -172,7 +181,7 @@
               </label>
             </div>
 
-            <div class="module-card">
+            <div class="module-card" data-tier="ultimate" data-rank="3">
               <div class="module-icon">👁️</div>
               <div class="module-info">
                 <div class="module-header">
@@ -187,7 +196,7 @@
               </label>
             </div>
 
-            <div class="module-card">
+            <div class="module-card" data-tier="ultimate" data-rank="3">
               <div class="module-icon">👻</div>
               <div class="module-info">
                 <div class="module-header">
@@ -202,7 +211,7 @@
               </label>
             </div>
 
-            <div class="module-card">
+            <div class="module-card" data-tier="ultimate" data-rank="3">
               <div class="module-icon">🧨</div>
               <div class="module-info">
                 <div class="module-header">
@@ -217,7 +226,7 @@
               </label>
             </div>
 
-            <div class="module-card">
+            <div class="module-card" data-tier="ultimate" data-rank="3">
               <div class="module-icon">🔐</div>
               <div class="module-info">
                 <div class="module-header">
@@ -232,7 +241,7 @@
               </label>
             </div>
 
-            <div class="module-card">
+            <div class="module-card" data-tier="premium" data-rank="2">
               <div class="module-icon">🔥</div>
               <div class="module-info">
                 <div class="module-header">
@@ -247,7 +256,7 @@
               </label>
             </div>
 
-            <div class="module-card">
+            <div class="module-card" data-tier="premium" data-rank="2">
               <div class="module-icon">🕶️</div>
               <div class="module-info">
                 <div class="module-header">
@@ -262,7 +271,7 @@
               </label>
             </div>
 
-            <div class="module-card">
+            <div class="module-card" data-tier="pro" data-rank="1">
               <div class="module-icon">🗑️</div>
               <div class="module-info">
                 <div class="module-header">
@@ -277,7 +286,7 @@
               </label>
             </div>
 
-            <div class="module-card">
+            <div class="module-card" data-tier="pro" data-rank="1">
               <div class="module-icon">✏️</div>
               <div class="module-info">
                 <div class="module-header">
@@ -292,7 +301,7 @@
               </label>
             </div>
 
-            <div class="module-card">
+            <div class="module-card" data-tier="pro" data-rank="1">
               <div class="module-icon">👁️‍🗨️</div>
               <div class="module-info">
                 <div class="module-header">
@@ -312,7 +321,7 @@
           <div class="module-category">
             <div class="module-category-title">🎙️ Медиа-комбайн и AI (7)</div>
 
-            <div class="module-card">
+            <div class="module-card" data-tier="ultimate" data-rank="3">
               <div class="module-icon">🧠</div>
               <div class="module-info">
                 <div class="module-header">
@@ -327,7 +336,7 @@
               </label>
             </div>
 
-            <div class="module-card">
+            <div class="module-card" data-tier="ultimate" data-rank="3">
               <div class="module-icon">🗣️</div>
               <div class="module-info">
                 <div class="module-header">
@@ -342,7 +351,7 @@
               </label>
             </div>
 
-            <div class="module-card">
+            <div class="module-card" data-tier="premium" data-rank="2">
               <div class="module-icon">⭕️</div>
               <div class="module-info">
                 <div class="module-header">
@@ -357,7 +366,7 @@
               </label>
             </div>
 
-            <div class="module-card">
+            <div class="module-card" data-tier="premium" data-rank="2">
               <div class="module-icon">🔄</div>
               <div class="module-info">
                 <div class="module-header">
@@ -372,7 +381,7 @@
               </label>
             </div>
 
-            <div class="module-card">
+            <div class="module-card" data-tier="premium" data-rank="2">
               <div class="module-icon">🎙️</div>
               <div class="module-info">
                 <div class="module-header">
@@ -387,7 +396,7 @@
               </label>
             </div>
 
-            <div class="module-card">
+            <div class="module-card" data-tier="premium" data-rank="2">
               <div class="module-icon">💾</div>
               <div class="module-info">
                 <div class="module-header">
@@ -402,7 +411,7 @@
               </label>
             </div>
 
-            <div class="module-card">
+            <div class="module-card" data-tier="premium" data-rank="2">
               <div class="module-icon">📥</div>
               <div class="module-info">
                 <div class="module-header">
@@ -422,7 +431,7 @@
           <div class="module-category">
             <div class="module-category-title">⚙️ Модерация и Чат-менеджмент (9)</div>
 
-            <div class="module-card">
+            <div class="module-card" data-tier="premium" data-rank="2">
               <div class="module-icon">📢</div>
               <div class="module-info">
                 <div class="module-header">
@@ -437,7 +446,7 @@
               </label>
             </div>
 
-            <div class="module-card">
+            <div class="module-card" data-tier="premium" data-rank="2">
               <div class="module-icon">📌</div>
               <div class="module-info">
                 <div class="module-header">
@@ -452,7 +461,7 @@
               </label>
             </div>
 
-            <div class="module-card">
+            <div class="module-card" data-tier="premium" data-rank="2">
               <div class="module-icon">📍</div>
               <div class="module-info">
                 <div class="module-header">
@@ -467,7 +476,7 @@
               </label>
             </div>
 
-            <div class="module-card">
+            <div class="module-card" data-tier="premium" data-rank="2">
               <div class="module-icon">👢</div>
               <div class="module-info">
                 <div class="module-header">
@@ -482,7 +491,7 @@
               </label>
             </div>
 
-            <div class="module-card">
+            <div class="module-card" data-tier="premium" data-rank="2">
               <div class="module-icon">⛔️</div>
               <div class="module-info">
                 <div class="module-header">
@@ -497,7 +506,7 @@
               </label>
             </div>
 
-            <div class="module-card">
+            <div class="module-card" data-tier="pro" data-rank="1">
               <div class="module-icon">⚡️</div>
               <div class="module-info">
                 <div class="module-header">
@@ -512,7 +521,7 @@
               </label>
             </div>
 
-            <div class="module-card">
+            <div class="module-card" data-tier="pro" data-rank="1">
               <div class="module-icon">🧹</div>
               <div class="module-info">
                 <div class="module-header">
@@ -527,7 +536,7 @@
               </label>
             </div>
 
-            <div class="module-card">
+            <div class="module-card" data-tier="ultimate" data-rank="3">
               <div class="module-icon">🔇</div>
               <div class="module-info">
                 <div class="module-header">
@@ -542,7 +551,7 @@
               </label>
             </div>
 
-            <div class="module-card">
+            <div class="module-card" data-tier="ultimate" data-rank="3">
               <div class="module-icon">🔊</div>
               <div class="module-info">
                 <div class="module-header">
@@ -562,7 +571,7 @@
           <div class="module-category">
             <div class="module-category-title">📊 OSINT, Информеры и Реакции (17)</div>
 
-            <div class="module-card">
+            <div class="module-card" data-tier="ultimate" data-rank="3">
               <div class="module-icon">🗄️</div>
               <div class="module-info">
                 <div class="module-header">
@@ -577,7 +586,7 @@
               </label>
             </div>
 
-            <div class="module-card">
+            <div class="module-card" data-tier="ultimate" data-rank="3">
               <div class="module-icon">⌨️</div>
               <div class="module-info">
                 <div class="module-header">
@@ -592,7 +601,7 @@
               </label>
             </div>
 
-            <div class="module-card">
+            <div class="module-card" data-tier="ultimate" data-rank="3">
               <div class="module-icon">💥</div>
               <div class="module-info">
                 <div class="module-header">
@@ -607,7 +616,7 @@
               </label>
             </div>
 
-            <div class="module-card">
+            <div class="module-card" data-tier="premium" data-rank="2">
               <div class="module-icon">👤</div>
               <div class="module-info">
                 <div class="module-header">
@@ -622,7 +631,7 @@
               </label>
             </div>
 
-            <div class="module-card">
+            <div class="module-card" data-tier="premium" data-rank="2">
               <div class="module-icon">🏰</div>
               <div class="module-info">
                 <div class="module-header">
@@ -637,7 +646,7 @@
               </label>
             </div>
 
-            <div class="module-card">
+            <div class="module-card" data-tier="premium" data-rank="2">
               <div class="module-icon">📦</div>
               <div class="module-info">
                 <div class="module-header">
@@ -652,7 +661,7 @@
               </label>
             </div>
 
-            <div class="module-card">
+            <div class="module-card" data-tier="premium" data-rank="2">
               <div class="module-icon">⚡️</div>
               <div class="module-info">
                 <div class="module-header">
@@ -667,7 +676,7 @@
               </label>
             </div>
 
-            <div class="module-card">
+            <div class="module-card" data-tier="pro" data-rank="1">
               <div class="module-icon">⏱️</div>
               <div class="module-info">
                 <div class="module-header">
@@ -682,7 +691,7 @@
               </label>
             </div>
 
-            <div class="module-card">
+            <div class="module-card" data-tier="pro" data-rank="1">
               <div class="module-icon">📈</div>
               <div class="module-info">
                 <div class="module-header">
@@ -697,7 +706,7 @@
               </label>
             </div>
 
-            <div class="module-card">
+            <div class="module-card" data-tier="pro" data-rank="1">
               <div class="module-icon">📡</div>
               <div class="module-info">
                 <div class="module-header">
@@ -712,7 +721,7 @@
               </label>
             </div>
 
-            <div class="module-card">
+            <div class="module-card" data-tier="pro" data-rank="1">
               <div class="module-icon">🆔</div>
               <div class="module-info">
                 <div class="module-header">
@@ -727,7 +736,7 @@
               </label>
             </div>
 
-            <div class="module-card">
+            <div class="module-card" data-tier="pro" data-rank="1">
               <div class="module-icon">🧮</div>
               <div class="module-info">
                 <div class="module-header">
@@ -742,7 +751,7 @@
               </label>
             </div>
 
-            <div class="module-card">
+            <div class="module-card" data-tier="pro" data-rank="1">
               <div class="module-icon">🌐</div>
               <div class="module-info">
                 <div class="module-header">
@@ -757,7 +766,7 @@
               </label>
             </div>
 
-            <div class="module-card">
+            <div class="module-card" data-tier="pro" data-rank="1">
               <div class="module-icon">🌤️</div>
               <div class="module-info">
                 <div class="module-header">
@@ -772,7 +781,7 @@
               </label>
             </div>
 
-            <div class="module-card">
+            <div class="module-card" data-tier="pro" data-rank="1">
               <div class="module-icon">🔍</div>
               <div class="module-info">
                 <div class="module-header">
@@ -787,7 +796,7 @@
               </label>
             </div>
 
-            <div class="module-card">
+            <div class="module-card" data-tier="pro" data-rank="1">
               <div class="module-icon">🎭</div>
               <div class="module-info">
                 <div class="module-header">
@@ -802,7 +811,7 @@
               </label>
             </div>
 
-            <div class="module-card">
+            <div class="module-card" data-tier="pro" data-rank="1">
               <div class="module-icon">🌙</div>
               <div class="module-info">
                 <div class="module-header">
@@ -953,6 +962,6 @@
 
   </div>
 
-  <script src="app.js?v=2.8"></script>
+  <script src="app.js?v=2.9"></script>
 </body>
 </html>

@@ -119,8 +119,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Определение подписки и данных пользователя
   loadUserData();
 
-  // Восстановление состояния модулей
+  // Восстановление состояния модулей и применение фильтра тарифа
   restoreModulesState();
+  applyModuleFilter();
 
   // Инициализация вкладок
   setupTabs();
@@ -137,6 +138,99 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+// Текущий режим фильтрации каталога модулей ('my' = только своего тарифа)
+let currentModuleFilter = 'my';
+
+function setModuleFilter(filterType) {
+  currentModuleFilter = filterType;
+  triggerHaptic('selection');
+
+  // Обновляем активный пилл
+  document.querySelectorAll('.filter-pill').forEach(pill => {
+    pill.classList.toggle('active', pill.getAttribute('data-filter') === filterType);
+  });
+
+  applyModuleFilter();
+}
+
+function applyModuleFilter() {
+  const userRank = SUBSCRIPTION_TIERS[currentUserTierKey]?.rank || 0;
+  const cards = document.querySelectorAll('.module-card');
+  const titleEl = document.getElementById('modules-title');
+  const subEl = document.getElementById('modules-subtitle');
+  const myTierBadge = document.getElementById('my-tier-badge');
+  if (myTierBadge) {
+    myTierBadge.textContent = SUBSCRIPTION_TIERS[currentUserTierKey]?.name || 'PRO';
+  }
+
+  let visibleCount = 0;
+
+  cards.forEach(card => {
+    const cardRank = parseInt(card.getAttribute('data-rank'), 10) || 1;
+    const cardTier = card.getAttribute('data-tier') || 'pro';
+    const isLocked = userRank < cardRank;
+    const checkbox = card.querySelector('input[type="checkbox"]');
+
+    let shouldShow = false;
+
+    if (currentModuleFilter === 'my') {
+      // Режим «Мой тариф»: показываем СТРОГО функции, доступные текущей подписке
+      shouldShow = !isLocked;
+    } else if (currentModuleFilter === 'pro') {
+      shouldShow = (cardTier === 'pro');
+    } else if (currentModuleFilter === 'premium') {
+      shouldShow = (cardTier === 'premium');
+    } else if (currentModuleFilter === 'ultimate') {
+      shouldShow = (cardTier === 'ultimate');
+    } else if (currentModuleFilter === 'all') {
+      shouldShow = true;
+    }
+
+    if (shouldShow) {
+      card.style.display = 'flex';
+      visibleCount++;
+    } else {
+      card.style.display = 'none';
+    }
+
+    // Состояние блокировки для недоступных тарифов при общем обзоре
+    if (isLocked) {
+      card.classList.add('card-locked');
+      if (checkbox) {
+        checkbox.disabled = true;
+        checkbox.checked = false;
+      }
+    } else {
+      card.classList.remove('card-locked');
+      if (checkbox) {
+        checkbox.disabled = false;
+      }
+    }
+  });
+
+  // Автоматически скрываем пустые заголовки категорий
+  document.querySelectorAll('.module-category').forEach(cat => {
+    const visibleCards = cat.querySelectorAll('.module-card[style*="display: flex"]');
+    cat.style.display = visibleCards.length > 0 ? 'flex' : 'none';
+  });
+
+  // Обновляем заголовок и счетчик
+  if (titleEl && subEl) {
+    if (currentModuleFilter === 'my') {
+      const tierName = SUBSCRIPTION_TIERS[currentUserTierKey]?.name || 'PRO';
+      titleEl.textContent = `Модули вашего тарифа (${tierName})`;
+      subEl.textContent = `Доступно функций: ${visibleCount} из 45. Недоступные модули скрыты.`;
+    } else if (currentModuleFilter === 'all') {
+      titleEl.textContent = `Все 45 модулей системы`;
+      const unlockedCount = cards.length - document.querySelectorAll('.module-card.card-locked').length;
+      subEl.textContent = `Разблокировано: ${unlockedCount} из 45 модулей.`;
+    } else {
+      titleEl.textContent = `Модули категории ${currentModuleFilter.toUpperCase()}`;
+      subEl.textContent = `Отображено функций: ${visibleCount}`;
+    }
+  }
+}
+
 // Обновление бейджа и стилей интерфейса
 function applyTierToUI(tierKey) {
   const tierConfig = SUBSCRIPTION_TIERS[tierKey] || SUBSCRIPTION_TIERS.creator;
@@ -146,6 +240,7 @@ function applyTierToUI(tierKey) {
     badgeEl.classList.add(tierConfig.badgeClass);
     badgeEl.textContent = tierConfig.name;
   }
+  applyModuleFilter();
 }
 
 // Ручное переключение тарифа (для теста и моментальной смены)

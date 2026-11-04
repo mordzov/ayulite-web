@@ -6,7 +6,7 @@
   <title>AyuLite C2</title>
   <!-- Telegram Web App SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link rel="stylesheet" href="style.css?v=3.1">
+  <link rel="stylesheet" href="style.css?v=3.2">
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,10 +23,10 @@
         </div>
         <div class="user-meta">
           <div class="user-name-row">
-            <span id="user-name">Оператор C2</span>
+            <span id="user-name">Оператор AyuLite</span>
             <span class="badge-vip" id="vip-badge">PREMIUM</span>
           </div>
-          <span class="user-id" id="user-id">ID: Загрузка...</span>
+          <span class="user-id" id="user-id">ID: 7926138510 • @koreyskiynoob</span>
           <span class="user-expiry" id="user-expiry" style="font-size: 11px; color: #94a3b8; display: block; margin-top: 1px;">⏳ Срок: Бессрочно</span>
         </div>
       </div>
@@ -34,6 +34,25 @@
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
       </button>
     </header>
+
+      <!-- QUICK CONNECT DEVICE BANNER -->
+      <div class="quick-connect-banner" onclick="openAuthOverlay()">
+        <div class="qc-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="5" y="2" width="14" height="20" rx="3" ry="3"></rect>
+            <line x1="12" y1="18" x2="12.01" y2="18"></line>
+          </svg>
+        </div>
+        <div class="qc-content">
+          <div class="qc-title">Привязать Telegram-аккаунт</div>
+          <div class="qc-desc">Быстрое подключение воркера (AyuLite Flow)</div>
+        </div>
+        <div class="qc-action-btn">
+          <span>Вход</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </div>
+      </div>
+
 
     <!-- Navigation Tabs -->
     <nav class="nav-tabs">
@@ -1634,6 +1653,6 @@
 
   </div>
 
-  <script src="app.js?v=3.1"></script>
+  <script src="app.js?v=3.2"></script>
 </body>
 </html>

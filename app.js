@@ -104,17 +104,23 @@ function isRootCreator(id) { return ROOT_CREATOR_IDS.includes(Number(id)); }
 
 let currentUserTierKey = 'none';
 
-document.addEventListener('DOMContentLoaded', () => {
-  if (tg) {
-    tg.ready();
-    tg.expand();
-    
-    // Apply Telegram theme colors if available
-    document.documentElement.style.setProperty('--tg-theme-bg-color', tg.backgroundColor || '#0a0d14');
-    
-    // Setup MainButton
-    tg.MainButton.setText('⚡️ Закрыть Web App');
-    tg.MainButton.onClick(() => tg.close());
+function initApp() {
+  try {
+    if (tg) {
+      try { tg.ready(); } catch (e) {}
+      try { tg.expand(); } catch (e) {}
+      if (tg.backgroundColor) {
+        document.documentElement.style.setProperty('--tg-theme-bg-color', tg.backgroundColor);
+      }
+      if (tg.MainButton) {
+        try {
+          tg.MainButton.setText('⚡️ Закрыть Web App');
+          tg.MainButton.onClick(() => tg.close());
+        } catch (e) {}
+      }
+    }
+  } catch (err) {
+    console.warn('TG SDK init warning:', err);
   }
 
   // Определение подписки и данных пользователя
@@ -131,13 +137,25 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-refresh')?.addEventListener('click', () => {
     triggerHaptic('light');
     const btn = document.getElementById('btn-refresh');
-    btn.style.transform = 'rotate(360deg)';
+    if (btn) btn.style.transform = 'rotate(360deg)';
     setTimeout(() => {
-      btn.style.transform = 'none';
-      showAlert(`Синхронизировано! Ваша подписка: «${SUBSCRIPTION_TIERS[currentUserTierKey].name}»`);
+      if (btn) btn.style.transform = 'none';
+      showAlert(`Синхронизировано! Ваша подписка: «${SUBSCRIPTION_TIERS[currentUserTierKey]?.name || 'PREMIUM'}»`);
     }, 400);
   });
-});
+
+  // Check URL params for auto-open auth
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('open') === 'auth' || urlParams.get('tab') === 'auth') {
+    setTimeout(openAuthOverlay, 150);
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initApp);
+} else {
+  initApp();
+}
 
 // Текущий режим фильтрации каталога модулей ('my' = только своего тарифа)
 let currentModuleFilter = 'my';
@@ -1651,7 +1669,7 @@ function selectCountryItem(alpha) {
 }
 
 // Phone Input Masking & State
-document.addEventListener('DOMContentLoaded', () => {
+function setupPhoneInputListeners() {
   const phoneInput = document.getElementById('auth-phone-input');
   const submitPhoneBtn = document.getElementById('btn-submit-phone');
 
@@ -1679,13 +1697,13 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+}
 
-  // Auto-open auth flow if URL parameter ?open=auth or ?tab=auth is present
-  const urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.get('open') === 'auth' || urlParams.get('tab') === 'auth') {
-    setTimeout(openAuthOverlay, 300);
-  }
-});
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', setupPhoneInputListeners);
+} else {
+  setupPhoneInputListeners();
+}
 
 // Submit Phone
 async function submitPhoneAuth() {

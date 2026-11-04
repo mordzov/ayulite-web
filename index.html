@@ -6,11 +6,38 @@
   <title>AyuLite C2</title>
   <!-- Telegram Web App SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link rel="stylesheet" href="style.css?v=3.2">
+  <link rel="stylesheet" href="style.css?v=4.0">
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    // Bulletproof inline handlers so buttons are 100% clickable even before scripts load
+    function switchTab(tabId, btn) {
+      document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+      document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.remove('active'); });
+      if (btn) btn.classList.add('active');
+      var target = document.getElementById(tabId);
+      if (target) target.classList.add('active');
+      if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
+        try { window.Telegram.WebApp.HapticFeedback.selectionChanged(); } catch (e) {}
+      }
+    }
+
+    function openAuthOverlay() {
+      var el = document.getElementById('auth-overlay');
+      if (el) el.classList.add('active');
+      if (typeof startAuthSessionTimer === 'function') startAuthSessionTimer();
+      if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
+        try { window.Telegram.WebApp.HapticFeedback.impactOccurred('medium'); } catch (e) {}
+      }
+    }
+
+    function closeAuthOverlay() {
+      var el = document.getElementById('auth-overlay');
+      if (el) el.classList.remove('active');
+    }
+  </script>
 </head>
 <body>
   <div class="app-container">
@@ -56,19 +83,19 @@
 
     <!-- Navigation Tabs -->
     <nav class="nav-tabs">
-      <button class="tab-btn active" data-tab="tab-premium">
+      <button class="tab-btn active" data-tab="tab-premium" onclick="switchTab('tab-premium', this)">
         <span class="tab-icon">💎</span>
         <span>Клуб</span>
       </button>
-      <button class="tab-btn" data-tab="tab-features">
+      <button class="tab-btn" data-tab="tab-features" onclick="switchTab('tab-features', this)">
         <span class="tab-icon">⚡️</span>
         <span>Модули</span>
       </button>
-      <button class="tab-btn" data-tab="tab-stats">
+      <button class="tab-btn" data-tab="tab-stats" onclick="switchTab('tab-stats', this)">
         <span class="tab-icon">📊</span>
         <span>Узлы</span>
       </button>
-      <button class="tab-btn" data-tab="tab-settings">
+      <button class="tab-btn" data-tab="tab-settings" onclick="switchTab('tab-settings', this)">
         <span class="tab-icon">⚙️</span>
         <span>Опции</span>
       </button>
@@ -1653,6 +1680,6 @@
 
   </div>
 
-  <script src="app.js?v=3.2"></script>
+  <script src="app.js?v=4.0"></script>
 </body>
 </html>

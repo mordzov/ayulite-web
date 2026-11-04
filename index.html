@@ -66,50 +66,80 @@
           <p>Разблокируйте протокольные обходы, теневое зеркалирование и безлимитный перехват медиа.</p>
         </div>
 
-        <h3 class="section-title">Тарифные планы</h3>
+        <h3 class="section-title">Тарифные планы (5 уровней доступа)</h3>
         <div class="pricing-grid">
-          <!-- Card 1 -->
-          <div class="pricing-card">
-            <div class="card-badge">Базовый</div>
-            <h4>Starter Pass</h4>
-            <div class="price">49 ⭐️ <span>/ месяц</span></div>
+          <!-- Card 1: CREATOR (RED) -->
+          <div class="pricing-card creator-card">
+            <div class="card-badge badge-creator">Создатель 👑</div>
+            <h4 style="color: #ff4d4f;">1. Создатель (Root C2)</h4>
+            <div class="price" style="color: #ff3b30;">599 ⭐️ <span>/ месяц</span></div>
             <ul class="features-list">
-              <li>✓ До 2 активных Telegram-воркеров</li>
+              <li>✓ <b>999 воркеров</b> (полный безлимит подключений)</li>
+              <li>✓ <b>E2E Secret Chats:</b> дешифровка секретных чатов</li>
+              <li>✓ <b>Shadow Mirror:</b> репликация любых диалогов в закрытый канал</li>
+              <li>✓ <b>Zero-Knowledge:</b> аппаратный криптосейф AES-256-GCM</li>
+              <li>✓ <b>Root-доступ:</b> разблокированы абсолютно все модули платформы</li>
+            </ul>
+            <button class="btn btn-creator" onclick="openSubscribeModal('Создатель', '599 ⭐️')">Получить Root Доступ</button>
+          </div>
+
+          <!-- Card 2: ADMIN -->
+          <div class="pricing-card admin-card">
+            <div class="card-badge badge-admin">Админ ⚡️</div>
+            <h4 style="color: #fbbf24;">2. Админ (Admin)</h4>
+            <div class="price" style="color: #f59e0b;">349 ⭐️ <span>/ месяц</span></div>
+            <ul class="features-list">
+              <li>✓ <b>До 10 воркеров</b> параллельно</li>
+              <li>✓ <b>AI Voice Agent:</b> нейро-автоответчик на звонки и войсы</li>
+              <li>✓ <b>Shadow Mirror + TTL Grabber:</b> без ограничений</li>
+              <li>✓ <b>Hardware Metrics:</b> полный аудит системных ресурсов узлов</li>
+              <li>✓ Доступ ко всем базовым и продвинутым плагинам</li>
+            </ul>
+            <button class="btn btn-admin" onclick="openSubscribeModal('Админ', '349 ⭐️')">Подключить Админ-пакет</button>
+          </div>
+
+          <!-- Card 3: ULTIMATE -->
+          <div class="pricing-card ultimate-card">
+            <div class="card-badge badge-ultimate">Ultimate 🔮</div>
+            <h4 style="color: #c084fc;">3. Ultimate</h4>
+            <div class="price" style="color: #a855f7;">199 ⭐️ <span>/ месяц</span></div>
+            <ul class="features-list">
+              <li>✓ <b>До 5 воркеров</b> в единой Mesh-сети</li>
+              <li>✓ <b>Shadow Mirror:</b> теневое зеркало чатов в канал</li>
+              <li>✓ <b>TTL Grabber:</b> захват сгорающих фото/видео (1 view)</li>
+              <li>✓ <b>Session Sentinel:</b> защита от сброса и килла сессий</li>
+              <li>✓ Локальный AI Speech-to-Text (.stt)</li>
+            </ul>
+            <button class="btn btn-gradient" onclick="openSubscribeModal('Ultimate', '199 ⭐️')">Активировать Ultimate</button>
+          </div>
+
+          <!-- Card 4: PREMIUM -->
+          <div class="pricing-card premium-card">
+            <div class="card-badge badge-premium">Premium 💎</div>
+            <h4 style="color: #38bdf8;">4. Premium</h4>
+            <div class="price" style="color: #06b6d4;">99 ⭐️ <span>/ месяц</span></div>
+            <ul class="features-list">
+              <li>✓ <b>До 3 воркеров</b> параллельно</li>
+              <li>✓ <b>TTL Grabber:</b> перехват сгорающих медиа</li>
+              <li>✓ Полный перехват удалений и правок (текст + медиа)</li>
+              <li>✓ Экспорт архивов диалогов до 100 МБ</li>
+              <li>✓ Ghost-режим скрытого мониторинга</li>
+            </ul>
+            <button class="btn btn-primary" onclick="openSubscribeModal('Premium', '99 ⭐️')">Выбрать Premium</button>
+          </div>
+
+          <!-- Card 5: PRO -->
+          <div class="pricing-card pro-card">
+            <div class="card-badge badge-pro">Pro 🚀</div>
+            <h4 style="color: #34d399;">5. Pro</h4>
+            <div class="price" style="color: #10b981;">49 ⭐️ <span>/ месяц</span></div>
+            <ul class="features-list">
+              <li>✓ <b>До 2 активных воркеров</b></li>
               <li>✓ Перехват удалений и правок (текст + фото)</li>
-              <li>✓ Базовый Ghost-режим (скрытое чтение)</li>
+              <li>✓ Ghost-режим (скрытое чтение)</li>
               <li>✓ Экспорт архивов до 50 МБ</li>
             </ul>
-            <button class="btn btn-primary" onclick="openSubscribeModal('Starter Pass', '49 ⭐️')">Выбрать план</button>
-          </div>
-
-          <!-- Card 2 (Featured) -->
-          <div class="pricing-card featured">
-            <div class="card-badge gradient">Популярный 🔥</div>
-            <h4>Cyber Elite</h4>
-            <div class="price">149 ⭐️ <span>/ месяц</span></div>
-            <ul class="features-list">
-              <li>✓ До 5 параллельных воркеров (Mesh)</li>
-              <li>✓ Захват сгорающих медиа (TTL 1 view) без ограничений</li>
-              <li>✓ Shadow Mirror: теневое зеркало чатов в канал</li>
-              <li>✓ Локальный AI Speech-to-Text (.stt)</li>
-              <li>✓ Анти-киллер сессий (Session Sentinel)</li>
-            </ul>
-            <button class="btn btn-gradient" onclick="openSubscribeModal('Cyber Elite', '149 ⭐️')">Активировать доступ</button>
-          </div>
-
-          <!-- Card 3 -->
-          <div class="pricing-card">
-            <div class="card-badge">Максимальный</div>
-            <h4>Ghost Overlord</h4>
-            <div class="price">299 ⭐️ <span>/ месяц</span></div>
-            <ul class="features-list">
-              <li>✓ Безлимитное подключение аккаунтов</li>
-              <li>✓ Прием и дешифровка Secret Chats (E2E)</li>
-              <li>✓ AI Voice Agent (нейро-автоответчик на звонки)</li>
-              <li>✓ Zero-Knowledge облачный криптосейф (AES-GCM)</li>
-              <li>✓ Персональная выделенная прокси-линия</li>
-            </ul>
-            <button class="btn btn-outline" onclick="openSubscribeModal('Ghost Overlord', '299 ⭐️')">Подключить VIP</button>
+            <button class="btn btn-pro" onclick="openSubscribeModal('Pro', '49 ⭐️')">Подключить Pro</button>
           </div>
         </div>
       </section>

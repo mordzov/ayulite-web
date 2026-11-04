@@ -1392,12 +1392,95 @@ let authSecondsLeft = 60;
 
 // Resolve Backend Base URL (Works locally and when deployed)
 function getApiBaseUrl() {
-  const origin = window.location.origin;
-  if (origin.includes('github.io') || origin.includes('localhost') || origin.startsWith('file:')) {
-    // Если страница на GitHub Pages, пробуем локальный бэкенд или туннель
-    return 'http://localhost:8080';
+  const urlParams = new URLSearchParams(window.location.search);
+  const apiParam = urlParams.get('api');
+  if (apiParam && apiParam.startsWith('http')) {
+    localStorage.setItem('ayulite_api_url', apiParam);
+    return apiParam;
   }
-  return origin;
+  const cached = localStorage.getItem('ayulite_api_url');
+  if (cached && cached.startsWith('http')) {
+    return cached;
+  }
+  const origin = window.location.origin;
+  if (origin.startsWith('https://') && !origin.includes('localhost')) {
+    return origin;
+  }
+  return 'http://localhost:8080';
+}
+
+// 5-minute Cooldown & Cancellation Logic
+let authSessionTimer = null;
+let authTimeRemaining = 300; // 5 minutes
+
+function startAuthSessionTimer() {
+  clearInterval(authSessionTimer);
+  authTimeRemaining = 300;
+  updateCooldownDisplay();
+
+  authSessionTimer = setInterval(() => {
+    authTimeRemaining--;
+    updateCooldownDisplay();
+    if (authTimeRemaining <= 0) {
+      clearInterval(authSessionTimer);
+      handleSessionTimeout();
+    }
+  }, 1000);
+}
+
+function updateCooldownDisplay() {
+  const el = document.getElementById('cooldown-timer-val');
+  const pill = document.getElementById('auth-cooldown-pill');
+  if (!el) return;
+  const mins = Math.floor(authTimeRemaining / 60).toString().padStart(2, '0');
+  const secs = (authTimeRemaining % 60).toString().padStart(2, '0');
+  el.textContent = `${mins}:${secs}`;
+  if (pill) {
+    if (authTimeRemaining <= 60) {
+      pill.classList.add('warning');
+    } else {
+      pill.classList.remove('warning');
+    }
+  }
+}
+
+async function handleSessionTimeout() {
+  triggerHaptic('error');
+  await cancelAuthSession(true);
+  showAlert('⏳ Время на привязку (5 минут) истекло! По соображениям безопасности сессия аннулирована.');
+}
+
+async function cancelAuthSession(isTimeout = false) {
+  triggerHaptic('warning');
+  clearInterval(authSessionTimer);
+  clearInterval(authTimerInterval);
+
+  const targetUserId = effectiveUserId || 7926138510;
+  try {
+    await fetch(`${getApiBaseUrl()}/api/auth/cancel`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: targetUserId })
+    });
+  } catch (e) {
+    console.warn('Cancel API request:', e);
+  }
+
+  // Reset fields
+  const phoneInput = document.getElementById('auth-phone-input');
+  if (phoneInput) phoneInput.value = '';
+  for (let i = 0; i < 5; i++) {
+    const box = document.getElementById(`otp-${i}`);
+    if (box) box.value = '';
+  }
+  const passInput = document.getElementById('auth-password-input');
+  if (passInput) passInput.value = '';
+
+  closeAuthOverlay();
+
+  if (!isTimeout) {
+    showAlert('❌ Вход в сессию отменен. Ресурсы освобождены.');
+  }
 }
 
 // Open Auth Overlay
@@ -1408,6 +1491,7 @@ function openAuthOverlay() {
 
   overlay.classList.add('active');
   setAuthStep(1);
+  startAuthSessionTimer();
   renderCountryPickerItems();
 
   const phoneInput = document.getElementById('auth-phone-input');
@@ -1424,6 +1508,7 @@ function closeAuthOverlay() {
     overlay.classList.remove('active');
   }
   clearInterval(authTimerInterval);
+  clearInterval(authSessionTimer);
 }
 
 // Handle Back Button
@@ -1646,10 +1731,14 @@ async function submitPhoneAuth() {
       showAlert(data.error || 'Ошибка отправки кода подтверждения.');
     }
   } catch (err) {
-    // If backend is local/offline, simulate step advance for UI demonstration
-    console.warn('API error, falling back to local simulation:', err);
-    triggerHaptic('success');
-    setAuthStep(2);
+    console.error('API connection error:', err);
+    triggerHaptic('error');
+    showAlert('❌ Ошибка связи с сервером бота (' + (err.message || 'NetworkError') + '). Проверьте, что бот запущен и туннель активен!');
+  } finally {
+    if (submitBtn) {
+      submitBtn.style.opacity = '1';
+      submitBtn.disabled = false;
+    }
   } finally {
     if (submitBtn) {
       submitBtn.style.opacity = '1';

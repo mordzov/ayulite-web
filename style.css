@@ -1677,3 +1677,74 @@ input:checked + .slider:before {
 .search-module-input::placeholder {
   color: #64748b;
 }
+
+/* 5-minute Cooldown Indicator */
+.auth-cooldown-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  color: #38bdf8;
+  border-radius: 20px;
+  padding: 4px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  margin: 0 auto 18px;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+  user-select: none;
+}
+
+.auth-cooldown-pill strong {
+  color: #ffffff;
+}
+
+.auth-cooldown-pill.warning {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #f87171;
+  animation: pulseWarning 1s infinite alternate;
+}
+
+.auth-cooldown-pill.warning strong {
+  color: #fca5a5;
+}
+
+@keyframes pulseWarning {
+  from { transform: scale(1); opacity: 0.88; }
+  to { transform: scale(1.03); opacity: 1; }
+}
+
+/* Cancel Session Button */
+.auth-cancel-session-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 20px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.22);
+  color: #f87171;
+  border-radius: 12px;
+  padding: 9px 18px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+.auth-cancel-session-btn:hover {
+  background: rgba(239, 68, 68, 0.16);
+  border-color: rgba(239, 68, 68, 0.45);
+  color: #fca5a5;
+  transform: translateY(-1px);
+}
+
+.auth-cancel-session-btn:active {
+  transform: scale(0.96);
+}

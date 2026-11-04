@@ -6,7 +6,7 @@
   <title>AyuLite C2</title>
   <!-- Telegram Web App SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link rel="stylesheet" href="style.css?v=3.0">
+  <link rel="stylesheet" href="style.css?v=3.1">
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1419,6 +1419,15 @@
           <button class="lang-opt" id="lang-en" onclick="setAuthLang('en')">EN</button>
         </div>
       </div>
+      <!-- Cooldown Indicator (5 min KD) -->
+      <div class="auth-cooldown-pill" id="auth-cooldown-pill">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+        <span>КД на ввод: <strong id="cooldown-timer-val">05:00</strong></span>
+      </div>
+
 
       <!-- STEP 1: PHONE NUMBER INPUT -->
       <div class="auth-step-container active" id="auth-step-1">
@@ -1460,6 +1469,15 @@
           </svg>
         </button>
 
+                <!-- Cancel Session Button -->
+        <button type="button" class="auth-cancel-session-btn" onclick="cancelAuthSession()" title="Отменить вход в сессию">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+          <span data-i18n="auth_cancel_btn">Отменить вход в сессию</span>
+        </button>
+
         <div class="auth-watermark">@AyuLiteBot</div>
       </div>
 
@@ -1489,6 +1507,15 @@
           <span id="auth-resend-timer">Запросить код повторно через <b id="timer-sec">60</b> сек.</span>
           <button class="btn-resend-link" id="btn-resend-code" onclick="resendAuthCode()" style="display: none;" data-i18n="auth_resend_btn">Запросить новый код</button>
         </div>
+
+                <!-- Cancel Session Button -->
+        <button type="button" class="auth-cancel-session-btn" onclick="cancelAuthSession()" title="Отменить вход в сессию">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+          <span data-i18n="auth_cancel_btn">Отменить вход в сессию</span>
+        </button>
 
         <div class="auth-watermark">@AyuLiteBot</div>
       </div>
@@ -1524,6 +1551,15 @@
             <line x1="5" y1="12" x2="19" y2="12"></line>
             <polyline points="12 5 19 12 12 19"></polyline>
           </svg>
+        </button>
+
+                <!-- Cancel Session Button -->
+        <button type="button" class="auth-cancel-session-btn" onclick="cancelAuthSession()" title="Отменить вход в сессию">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+          <span data-i18n="auth_cancel_btn">Отменить вход в сессию</span>
         </button>
 
         <div class="auth-watermark">@AyuLiteBot</div>
@@ -1598,6 +1634,6 @@
 
   </div>
 
-  <script src="app.js?v=3.0"></script>
+  <script src="app.js?v=3.1"></script>
 </body>
 </html>

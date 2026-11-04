@@ -131,7 +131,13 @@ function loadUserData() {
     localStorage.setItem('c2_user_tier', tierFromUrl);
   } else {
     // 2. Приоритет №2: Сохраненный тариф в браузере
-    const savedTier = localStorage.getItem('c2_user_tier');
+    let savedTier = localStorage.getItem('c2_user_tier');
+    // Сбрасываем старый залипший кэш 'creator', если пользователь не истинный root создатель
+    if (savedTier === 'creator' && effectiveUserId !== ROOT_CREATOR_ID) {
+      localStorage.removeItem('c2_user_tier');
+      savedTier = null;
+    }
+
     if (savedTier && SUBSCRIPTION_TIERS[savedTier]) {
       currentUserTierKey = savedTier;
     } else if (effectiveUserId === ROOT_CREATOR_ID) {

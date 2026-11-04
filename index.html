@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>AyuLite C2 Premium</title>
+  <!-- Telegram Web App SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="style.css">
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header: User Profile & VIP status -->
+    <header class="app-header">
+      <div class="user-profile">
+        <div class="avatar-wrapper">
+          <img id="user-avatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=AyuLite" alt="Avatar">
+          <span class="status-indicator"></span>
+        </div>
+        <div class="user-meta">
+          <div class="user-name-row">
+            <span id="user-name">Оператор C2</span>
+            <span class="badge-vip" id="vip-badge">PREMIUM</span>
+          </div>
+          <span class="user-id" id="user-id">ID: Загрузка...</span>
+        </div>
+      </div>
+      <button class="icon-btn" id="btn-refresh" title="Обновить">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+      </button>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs">
+      <button class="tab-btn active" data-tab="tab-premium">
+        <span class="tab-icon">💎</span>
+        <span>Клуб</span>
+      </button>
+      <button class="tab-btn" data-tab="tab-features">
+        <span class="tab-icon">⚡️</span>
+        <span>Модули</span>
+      </button>
+      <button class="tab-btn" data-tab="tab-stats">
+        <span class="tab-icon">📊</span>
+        <span>Узлы</span>
+      </button>
+      <button class="tab-btn" data-tab="tab-settings">
+        <span class="tab-icon">⚙️</span>
+        <span>Опции</span>
+      </button>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="content-area">
+
+      <!-- TAB 1: PREMIUM CLUB (PLANS & BENEFITS) -->
+      <section id="tab-premium" class="tab-content active">
+        <div class="hero-banner">
+          <div class="hero-glow"></div>
+          <div class="hero-tag">AyuLite VIP Access</div>
+          <h2>Закрытый доступ к сверхфункциям</h2>
+          <p>Разблокируйте протокольные обходы, теневое зеркалирование и безлимитный перехват медиа.</p>
+        </div>
+
+        <h3 class="section-title">Тарифные планы</h3>
+        <div class="pricing-grid">
+          <!-- Card 1 -->
+          <div class="pricing-card">
+            <div class="card-badge">Базовый</div>
+            <h4>Starter Pass</h4>
+            <div class="price">49 ⭐️ <span>/ месяц</span></div>
+            <ul class="features-list">
+              <li>✓ До 2 активных Telegram-воркеров</li>
+              <li>✓ Перехват удалений и правок (текст + фото)</li>
+              <li>✓ Базовый Ghost-режим (скрытое чтение)</li>
+              <li>✓ Экспорт архивов до 50 МБ</li>
+            </ul>
+            <button class="btn btn-primary" onclick="openSubscribeModal('Starter Pass', '49 ⭐️')">Выбрать план</button>
+          </div>
+
+          <!-- Card 2 (Featured) -->
+          <div class="pricing-card featured">
+            <div class="card-badge gradient">Популярный 🔥</div>
+            <h4>Cyber Elite</h4>
+            <div class="price">149 ⭐️ <span>/ месяц</span></div>
+            <ul class="features-list">
+              <li>✓ До 5 параллельных воркеров (Mesh)</li>
+              <li>✓ Захват сгорающих медиа (TTL 1 view) без ограничений</li>
+              <li>✓ Shadow Mirror: теневое зеркало чатов в канал</li>
+              <li>✓ Локальный AI Speech-to-Text (.stt)</li>
+              <li>✓ Анти-киллер сессий (Session Sentinel)</li>
+            </ul>
+            <button class="btn btn-gradient" onclick="openSubscribeModal('Cyber Elite', '149 ⭐️')">Активировать доступ</button>
+          </div>
+
+          <!-- Card 3 -->
+          <div class="pricing-card">
+            <div class="card-badge">Максимальный</div>
+            <h4>Ghost Overlord</h4>
+            <div class="price">299 ⭐️ <span>/ месяц</span></div>
+            <ul class="features-list">
+              <li>✓ Безлимитное подключение аккаунтов</li>
+              <li>✓ Прием и дешифровка Secret Chats (E2E)</li>
+              <li>✓ AI Voice Agent (нейро-автоответчик на звонки)</li>
+              <li>✓ Zero-Knowledge облачный криптосейф (AES-GCM)</li>
+              <li>✓ Персональная выделенная прокси-линия</li>
+            </ul>
+            <button class="btn btn-outline" onclick="openSubscribeModal('Ghost Overlord', '299 ⭐️')">Подключить VIP</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: EXCLUSIVE MODULES SHOWCASE -->
+      <section id="tab-features" class="tab-content">
+        <div class="section-intro">
+          <h3>Каталог премиум-модулей</h3>
+          <p>Индивидуальная активация специализированных протокольных инструментов.</p>
+        </div>
+
+        <div class="modules-list">
+          <div class="module-card">
+            <div class="module-icon">🛡️</div>
+            <div class="module-info">
+              <div class="module-header">
+                <h4>Shadow Mirror</h4>
+                <span class="badge-lock">PRO</span>
+              </div>
+              <p>Мгновенная репликация закрытых диалогов в скрытый резервный канал даже при удалении «для обоих».</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" onchange="toggleModule(this, 'Shadow Mirror')">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="module-card">
+            <div class="module-icon">🎙️</div>
+            <div class="module-info">
+              <div class="module-header">
+                <h4>Voice Transformer (.vmask)</h4>
+                <span class="badge-lock">PRO</span>
+              </div>
+              <p>Аппаратная маскировка тембра голоса и синтез дикторской речи в Telegram Voice Note.</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" onchange="toggleModule(this, 'Voice Transformer')">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="module-card">
+            <div class="module-icon">🕶️</div>
+            <div class="module-info">
+              <div class="module-header">
+                <h4>Ghost Story Ripper</h4>
+                <span class="badge-lock">VIP</span>
+              </div>
+              <p>Фоновое скачивание сгорающих Stories отслеживаемых контактов без отображения в просмотрах.</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" onchange="toggleModule(this, 'Ghost Story Ripper')">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="module-card">
+            <div class="module-icon">📡</div>
+            <div class="module-info">
+              <div class="module-header">
+                <h4>DC & Cluster OSINT (.dc)</h4>
+                <span class="badge-lock">PRO</span>
+              </div>
+              <p>Определение точного дата-центра (Майами/Амстердам/Сингапур) и физической локации цели.</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" onchange="toggleModule(this, 'DC OSINT')">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="module-card">
+            <div class="module-icon">🔐</div>
+            <div class="module-info">
+              <div class="module-header">
+                <h4>Zero-Knowledge Vault</h4>
+                <span class="badge-lock">VIP</span>
+              </div>
+              <p>Хранение конфиденциальных файлов в Telegram в виде зашифрованного шума AES-256-GCM.</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" onchange="toggleModule(this, 'Zero-Knowledge Vault')">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="module-card">
+            <div class="module-icon">🧨</div>
+            <div class="module-info">
+              <div class="module-header">
+                <h4>Panic Switch (.nuke)</h4>
+                <span class="badge-lock">ELITE</span>
+              </div>
+              <p>Экстренное безвозвратное стирание всех баз, кэша медиа и отзыв сессий по триггер-коду.</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" onchange="toggleModule(this, 'Panic Switch')">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: NODES & METRICS -->
+      <section id="tab-stats" class="tab-content">
+        <h3 class="section-title">Состояние узлов C2</h3>
+        
+        <div class="stats-grid">
+          <div class="stat-box">
+            <span class="stat-num" id="stat-workers">2</span>
+            <span class="stat-label">Активных воркера</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-num" id="stat-intercepted">3 910</span>
+            <span class="stat-label">Локов в кэше</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-num">99.9%</span>
+            <span class="stat-label">Uptime MTProto</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-num">AES-256</span>
+            <span class="stat-label">Шифрование</span>
+          </div>
+        </div>
+
+        <div class="active-devices-card">
+          <h4>Подключенные сессии</h4>
+          <div class="device-row">
+            <div class="dev-status online"></div>
+            <div class="dev-details">
+              <strong>.koreyec</strong>
+              <span>+7 951 172-24-33 • ID: 7926138510</span>
+            </div>
+            <span class="dev-tag">Личный</span>
+          </div>
+          <div class="device-row">
+            <div class="dev-status online"></div>
+            <div class="dev-details">
+              <strong>3 года +880</strong>
+              <span>+880 1312-186739 • ID: 7280233686</span>
+            </div>
+            <span class="dev-tag">Воркер</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: SETTINGS -->
+      <section id="tab-settings" class="tab-content">
+        <h3 class="section-title">Системные параметры</h3>
+
+        <div class="settings-group">
+          <div class="setting-item">
+            <div>
+              <strong>Тактильный отклик (Haptics)</strong>
+              <p>Вибрация интерфейса при нажатии на тумблеры и кнопки</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-haptics" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="setting-item">
+            <div>
+              <strong>Сжатие логов (GZIP)</strong>
+              <p>Экономия сетевого трафика при передаче пакетов в Telegram</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="setting-item">
+            <div>
+              <strong>Облачная синхронизация</strong>
+              <p>Автоматический бэкап настроек модулей в зашифрованное хранилище</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="app-version-card">
+          <span>AyuLite C2 Web Engine v2.4</span>
+          <span>Core Build: MTProto 1.36.0 • Dark Cyber</span>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Modal for Subscription -->
+    <div class="modal-overlay" id="modal-subscribe">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h4 id="modal-plan-title">Активация плана</h4>
+          <button class="modal-close" onclick="closeSubscribeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="modal-price-display">
+            <span id="modal-plan-price">149 ⭐️</span>
+          </div>
+          <p>Выберите удобный способ оплаты подписки для мгновенной активации привилегий:</p>
+          <div class="payment-methods">
+            <button class="pay-btn" onclick="processPayment('stars')">
+              <span>⭐️</span> Telegram Stars
+            </button>
+            <button class="pay-btn" onclick="processPayment('ton')">
+              <span>💎</span> TON Cryptocurrency
+            </button>
+            <button class="pay-btn" onclick="processPayment('crypto')">
+              <span>💳</span> Банковская карта / СБП
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

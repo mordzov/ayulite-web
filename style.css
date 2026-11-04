@@ -1611,3 +1611,35 @@ input:checked + .slider:before {
   color: #38bdf8;
   font-weight: 600;
 }
+
+
+/* Minimalist Country Badge - replaces duplicate emoji flags on desktop */
+.country-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: #38bdf8;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  padding: 4px 10px;
+  border-radius: 8px;
+}
+
+.country-badge-sm {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #f1f5f9;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  font-size: 11px;
+  min-width: 34px;
+  padding: 3px 6px;
+  border-radius: 6px;
+}

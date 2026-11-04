@@ -293,6 +293,21 @@
         <h3 class="section-title">Системные параметры</h3>
 
         <div class="settings-group">
+          <!-- Quick Tier Switcher for Testing & Status Verification -->
+          <div class="setting-item" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+            <div>
+              <strong>Активный профиль подписки на сайте</strong>
+              <p>Мгновенное переключение уровня для проверки бейджей и доступа к модулям:</p>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 6px; width: 100%; margin-top: 4px;">
+              <button class="btn btn-creator" style="width: auto; padding: 6px 12px; font-size: 11px;" onclick="switchTierManual('creator')">👑 Создатель</button>
+              <button class="btn btn-admin" style="width: auto; padding: 6px 12px; font-size: 11px;" onclick="switchTierManual('admin')">⚡️ Админ</button>
+              <button class="btn btn-gradient" style="width: auto; padding: 6px 12px; font-size: 11px;" onclick="switchTierManual('ultimate')">🔮 Ultimate</button>
+              <button class="btn btn-primary" style="width: auto; padding: 6px 12px; font-size: 11px;" onclick="switchTierManual('premium')">💎 Premium</button>
+              <button class="btn btn-pro" style="width: auto; padding: 6px 12px; font-size: 11px;" onclick="switchTierManual('pro')">🚀 Pro</button>
+            </div>
+          </div>
+
           <div class="setting-item">
             <div>
               <strong>Тактильный отклик (Haptics)</strong>

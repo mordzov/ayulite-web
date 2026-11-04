@@ -51,8 +51,8 @@ const MODULE_REQUIREMENTS = {
   'Panic Switch': { rank: 3, planName: 'Ultimate' }
 };
 
-// Список ID Создателей платформы (авто-root)
-const ROOT_CREATOR_IDS = [7926138510, 7994264636, 6249211286, 7280233686];
+// Истинный системный Создатель (Root)
+const ROOT_CREATOR_ID = 7926138510;
 
 let currentUserTierKey = 'none';
 
@@ -90,40 +90,62 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+// Обновление бейджа и стилей интерфейса
+function applyTierToUI(tierKey) {
+  const tierConfig = SUBSCRIPTION_TIERS[tierKey] || SUBSCRIPTION_TIERS.creator;
+  const badgeEl = document.getElementById('vip-badge');
+  if (badgeEl) {
+    badgeEl.className = 'badge-vip';
+    badgeEl.classList.add(tierConfig.badgeClass);
+    badgeEl.textContent = tierConfig.name;
+  }
+}
+
+// Ручное переключение тарифа (для теста и моментальной смены)
+function switchTierManual(tierKey) {
+  if (!SUBSCRIPTION_TIERS[tierKey]) return;
+  triggerHaptic('impact');
+  currentUserTierKey = tierKey;
+  localStorage.setItem('c2_user_tier', tierKey);
+  applyTierToUI(tierKey);
+  restoreModulesState();
+  showAlert(`Уровень подписки переключен на «${SUBSCRIPTION_TIERS[tierKey].name}»! Все права обновлены.`);
+}
+
 // Load User info and determine subscription tier
 function loadUserData() {
   const user = tg?.initDataUnsafe?.user;
   const nameEl = document.getElementById('user-name');
   const idEl = document.getElementById('user-id');
   const avatarEl = document.getElementById('user-avatar');
-  const badgeEl = document.getElementById('vip-badge');
 
   const urlParams = new URLSearchParams(window.location.search);
   const tierFromUrl = urlParams.get('tier')?.toLowerCase();
   const userIdFromUrl = parseInt(urlParams.get('user_id'), 10);
 
-  const effectiveUserId = user?.id || userIdFromUrl || 7926138510;
+  const effectiveUserId = user?.id || userIdFromUrl || ROOT_CREATOR_ID;
 
-  // Определение роли:
-  if (ROOT_CREATOR_IDS.includes(effectiveUserId) || tierFromUrl === 'creator') {
-    currentUserTierKey = 'creator';
-  } else if (tierFromUrl && SUBSCRIPTION_TIERS[tierFromUrl]) {
+  // 1. Приоритет №1: Явно переданный в URL параметр ?tier=... (от бота)
+  if (tierFromUrl && SUBSCRIPTION_TIERS[tierFromUrl]) {
     currentUserTierKey = tierFromUrl;
+    localStorage.setItem('c2_user_tier', tierFromUrl);
   } else {
-    // Сохраненная локально или по умолчанию Pro
-    currentUserTierKey = localStorage.getItem('c2_user_tier') || 'creator';
+    // 2. Приоритет №2: Сохраненный тариф в браузере
+    const savedTier = localStorage.getItem('c2_user_tier');
+    if (savedTier && SUBSCRIPTION_TIERS[savedTier]) {
+      currentUserTierKey = savedTier;
+    } else if (effectiveUserId === ROOT_CREATOR_ID) {
+      // 3. Приоритет №3: Только истинный root создатель
+      currentUserTierKey = 'creator';
+      localStorage.setItem('c2_user_tier', 'creator');
+    } else {
+      currentUserTierKey = 'none';
+      localStorage.setItem('c2_user_tier', 'none');
+    }
   }
 
-  localStorage.setItem('c2_user_tier', currentUserTierKey);
-  const tierConfig = SUBSCRIPTION_TIERS[currentUserTierKey] || SUBSCRIPTION_TIERS.creator;
-
-  // Обновляем визуальный бейдж под ником
-  if (badgeEl) {
-    // Очищаем старые классы
-    badgeEl.className = 'badge-vip';
-    badgeEl.classList.add(tierConfig.badgeClass);
-    badgeEl.textContent = tierConfig.name;
-  }
+  // Применяем бейдж (красный для Создателя, золотой для Админа и т.д.)
+  applyTierToUI(currentUserTierKey);
 
   if (user) {
     const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username || 'Оператор C2';
@@ -135,8 +157,8 @@ function loadUserData() {
       avatarEl.src = `https://api.dicebear.com/7.x/bottts/svg?seed=${user.id}`;
     }
   } else {
-    nameEl.textContent = 'Создатель C2 (Root)';
-    idEl.textContent = `ID: ${effectiveUserId} • root`;
+    nameEl.textContent = effectiveUserId === ROOT_CREATOR_ID ? 'Создатель C2 (Root)' : 'Оператор C2';
+    idEl.textContent = `ID: ${effectiveUserId} • active`;
   }
 }
 
@@ -144,7 +166,6 @@ function loadUserData() {
 function restoreModulesState() {
   const switches = document.querySelectorAll('.modules-list input[type="checkbox"]');
   switches.forEach(sw => {
-    // Получаем имя модуля из карточки
     const card = sw.closest('.module-card');
     const titleEl = card?.querySelector('h4');
     if (!titleEl) return;
@@ -158,6 +179,8 @@ function restoreModulesState() {
     // Если у пользователя есть доступ и модуль был сохранен включенным
     if (savedState === 'true' && (!req || userRank >= req.rank)) {
       sw.checked = true;
+    } else if (req && userRank < req.rank) {
+      sw.checked = false;
     }
   });
 }
@@ -231,27 +254,39 @@ function processPayment(method) {
   triggerHaptic('success');
   closeSubscribeModal();
   
-  const methodNames = {
-    'stars': 'Telegram Stars ⭐️',
-    'ton': 'TON Cryptocurrency 💎',
-    'crypto': 'Банковская карта 💳'
+  // Сопоставляем тариф для мгновенной активации на сайте
+  const planMap = {
+    'Создатель': 'creator',
+    'Админ': 'admin',
+    'Ultimate': 'ultimate',
+    'Premium': 'premium',
+    'Pro': 'pro'
   };
 
-  const name = methodNames[method] || method;
-  showAlert(`Заявка на тариф «${currentSelectedPlan}» принята!\nСпособ: ${name}\n\nСчет на оплату будет выставлен в личные сообщения бота.`);
+  const selectedKey = planMap[currentSelectedPlan];
+  if (selectedKey) {
+    currentUserTierKey = selectedKey;
+    localStorage.setItem('c2_user_tier', selectedKey);
+    applyTierToUI(selectedKey);
+    restoreModulesState();
+    showAlert(`🎉 Подписка «${currentSelectedPlan}» успешно активирована на сайте!\nБейдж и доступ к модулям обновлены.`);
+    return;
+  }
+
+  showAlert(`Заявка на подключение принята! Счет выставлен в боте.`);
 }
 
-// Фикс бага: реальная проверка подписки и полноценное управление модулями
+// Проверка подписки и управление модулями
 function toggleModule(checkbox, rawModuleName) {
   const moduleName = rawModuleName.split('(')[0].trim();
   const req = MODULE_REQUIREMENTS[moduleName];
   const userRank = SUBSCRIPTION_TIERS[currentUserTierKey]?.rank || 0;
 
-  // Если ранг пользователя достаточен — модуль РАБОТАЕТ БЕЗ ПРЕПЯТСТВИЙ!
+  // Если ранг пользователя достаточен — модуль РАБОТАЕТ!
   if (!req || userRank >= req.rank) {
     triggerHaptic('success');
     localStorage.setItem(`c2_mod_${moduleName}`, checkbox.checked);
-    const action = checkbox.checked ? 'включен и функционирует' : 'приостановлен';
+    const action = checkbox.checked ? 'активирован и работает' : 'отключен';
     showAlert(`✅ Модуль «${moduleName}» успешно ${action}!`);
     return;
   }

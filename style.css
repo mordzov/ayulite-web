@@ -524,6 +524,32 @@ body::before {
   gap: 12px;
 }
 
+.module-category {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.module-category-title {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #38bdf8;
+  margin: 14px 0 4px 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.module-category-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(56, 189, 248, 0.35), transparent);
+}
+
 .module-card {
   display: flex;
   align-items: center;

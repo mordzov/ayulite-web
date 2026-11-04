@@ -41,14 +41,61 @@ const SUBSCRIPTION_TIERS = {
   }
 };
 
-// Требуемый минимальный ранг для каждого модуля
+// Требуемый минимальный ранг для каждого из 45 модулей (1=Pro, 2=Premium, 3=Ultimate)
 const MODULE_REQUIREMENTS = {
+  // Защита и Теневые протоколы (12)
   'Shadow Mirror': { rank: 3, planName: 'Ultimate' },
-  'Voice Transformer': { rank: 2, planName: 'Premium' },
+  'Session Sentinel': { rank: 3, planName: 'Ultimate' },
+  'Secret Chats Spy': { rank: 3, planName: 'Ultimate' },
+  'Bio Watcher': { rank: 3, planName: 'Ultimate' },
+  'Ghost Online': { rank: 3, planName: 'Ultimate' },
+  'Panic Switch': { rank: 3, planName: 'Ultimate' },
+  'Zero-Knowledge Vault': { rank: 3, planName: 'Ultimate' },
+  'TTL Grabber': { rank: 2, planName: 'Premium' },
   'Ghost Story Ripper': { rank: 2, planName: 'Premium' },
+  'Anti-Delete': { rank: 1, planName: 'Pro' },
+  'Anti-Edit': { rank: 1, planName: 'Pro' },
+  'Ghost Read': { rank: 1, planName: 'Pro' },
+
+  // Медиа-комбайн и AI (7)
+  'Speech-to-Text': { rank: 3, planName: 'Ultimate' },
+  'Text-to-Speech': { rank: 3, planName: 'Ultimate' },
+  'Video to Circle': { rank: 2, planName: 'Premium' },
+  'Round Video': { rank: 2, planName: 'Premium' },
+  'Voice Converter': { rank: 2, planName: 'Premium' },
+  'Media Saver': { rank: 2, planName: 'Premium' },
+  'Restricted DL': { rank: 2, planName: 'Premium' },
+
+  // Модерация и Чат-менеджмент (9)
+  'Mass Tagging': { rank: 2, planName: 'Premium' },
+  'Fast Pin': { rank: 2, planName: 'Premium' },
+  'Fast Unpin': { rank: 2, planName: 'Premium' },
+  'Fast Kick': { rank: 2, planName: 'Premium' },
+  'Fast Ban': { rank: 2, planName: 'Premium' },
+  'Quick Delete': { rank: 1, planName: 'Pro' },
+  'Bulk Purge': { rank: 1, planName: 'Pro' },
+  'Local Mute': { rank: 3, planName: 'Ultimate' },
+  'Local Unmute': { rank: 3, planName: 'Ultimate' },
+
+  // OSINT, Информеры и Реакции (17)
+  'Deep Archive': { rank: 3, planName: 'Ultimate' },
+  'Human Typewriter': { rank: 3, planName: 'Ultimate' },
+  'Controlled Raid': { rank: 3, planName: 'Ultimate' },
+  'User OSINT': { rank: 2, planName: 'Premium' },
+  'Chat Audit': { rank: 2, planName: 'Premium' },
+  'Chat Dump': { rank: 2, planName: 'Premium' },
+  'Auto-Reaction': { rank: 2, planName: 'Premium' },
+  'Ping & Latency': { rank: 1, planName: 'Pro' },
+  'Node Uptime': { rank: 1, planName: 'Pro' },
+  'DC & Cluster OSINT': { rank: 1, planName: 'Pro' },
   'DC OSINT': { rank: 1, planName: 'Pro' },
-  'Zero-Knowledge Vault': { rank: 4, planName: 'Админ' },
-  'Panic Switch': { rank: 3, planName: 'Ultimate' }
+  'Message ID': { rank: 1, planName: 'Pro' },
+  'Quick Math Calc': { rank: 1, planName: 'Pro' },
+  'Instant Translator': { rank: 1, planName: 'Pro' },
+  'Live Weather': { rank: 1, planName: 'Pro' },
+  'Image OCR': { rank: 1, planName: 'Pro' },
+  'Activity Faker': { rank: 1, planName: 'Pro' },
+  'AFK Responder': { rank: 1, planName: 'Pro' }
 };
 
 // Истинный системный Создатель (Root)
@@ -133,7 +180,7 @@ function loadUserData() {
   const userIdFromUrl = parseInt(urlParams.get('user_id'), 10);
   const expiryFromUrl = urlParams.get('expiry');
 
-  const effectiveUserId = user?.id || userIdFromUrl || ROOT_CREATOR_ID;
+  const effectiveUserId = user?.id || userIdFromUrl || 0;
 
   // 1. Приоритет №1: Явно переданный в URL параметр ?tier=... (от бота)
   if (tierFromUrl && SUBSCRIPTION_TIERS[tierFromUrl]) {

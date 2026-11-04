@@ -6,7 +6,7 @@
   <title>AyuLite C2 Premium</title>
   <!-- Telegram Web App SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link rel="stylesheet" href="style.css?v=2.5">
+  <link rel="stylesheet" href="style.css?v=2.6">
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -27,6 +27,7 @@
             <span class="badge-vip" id="vip-badge">PREMIUM</span>
           </div>
           <span class="user-id" id="user-id">ID: Загрузка...</span>
+          <span class="user-expiry" id="user-expiry" style="font-size: 11px; color: #94a3b8; display: block; margin-top: 1px;">⏳ Срок: Бессрочно</span>
         </div>
       </div>
       <button class="icon-btn" id="btn-refresh" title="Обновить">
@@ -66,42 +67,12 @@
           <p>Разблокируйте протокольные обходы, теневое зеркалирование и безлимитный перехват медиа.</p>
         </div>
 
-        <h3 class="section-title">Тарифные планы (5 уровней доступа)</h3>
+        <h3 class="section-title">Тарифные планы (Доступные подписки)</h3>
         <div class="pricing-grid">
-          <!-- Card 1: CREATOR (RED) -->
-          <div class="pricing-card creator-card">
-            <div class="card-badge badge-creator">Создатель 👑</div>
-            <h4 style="color: #ff4d4f;">1. Создатель (Root C2)</h4>
-            <div class="price" style="color: #ff3b30;">599 ⭐️ <span>/ месяц</span></div>
-            <ul class="features-list">
-              <li>✓ <b>999 воркеров</b> (полный безлимит подключений)</li>
-              <li>✓ <b>E2E Secret Chats:</b> дешифровка секретных чатов</li>
-              <li>✓ <b>Shadow Mirror:</b> репликация любых диалогов в закрытый канал</li>
-              <li>✓ <b>Zero-Knowledge:</b> аппаратный криптосейф AES-256-GCM</li>
-              <li>✓ <b>Root-доступ:</b> разблокированы абсолютно все модули платформы</li>
-            </ul>
-            <button class="btn btn-creator" onclick="openSubscribeModal('Создатель', '599 ⭐️')">Получить Root Доступ</button>
-          </div>
-
-          <!-- Card 2: ADMIN -->
-          <div class="pricing-card admin-card">
-            <div class="card-badge badge-admin">Админ ⚡️</div>
-            <h4 style="color: #fbbf24;">2. Админ (Admin)</h4>
-            <div class="price" style="color: #f59e0b;">349 ⭐️ <span>/ месяц</span></div>
-            <ul class="features-list">
-              <li>✓ <b>До 10 воркеров</b> параллельно</li>
-              <li>✓ <b>AI Voice Agent:</b> нейро-автоответчик на звонки и войсы</li>
-              <li>✓ <b>Shadow Mirror + TTL Grabber:</b> без ограничений</li>
-              <li>✓ <b>Hardware Metrics:</b> полный аудит системных ресурсов узлов</li>
-              <li>✓ Доступ ко всем базовым и продвинутым плагинам</li>
-            </ul>
-            <button class="btn btn-admin" onclick="openSubscribeModal('Админ', '349 ⭐️')">Подключить Админ-пакет</button>
-          </div>
-
-          <!-- Card 3: ULTIMATE -->
+          <!-- Card 1: ULTIMATE -->
           <div class="pricing-card ultimate-card">
             <div class="card-badge badge-ultimate">Ultimate 🔮</div>
-            <h4 style="color: #c084fc;">3. Ultimate</h4>
+            <h4 style="color: #c084fc;">1. Ultimate</h4>
             <div class="price" style="color: #a855f7;">199 ⭐️ <span>/ месяц</span></div>
             <ul class="features-list">
               <li>✓ <b>До 5 воркеров</b> в единой Mesh-сети</li>
@@ -113,10 +84,10 @@
             <button class="btn btn-gradient" onclick="openSubscribeModal('Ultimate', '199 ⭐️')">Активировать Ultimate</button>
           </div>
 
-          <!-- Card 4: PREMIUM -->
+          <!-- Card 2: PREMIUM -->
           <div class="pricing-card premium-card">
             <div class="card-badge badge-premium">Premium 💎</div>
-            <h4 style="color: #38bdf8;">4. Premium</h4>
+            <h4 style="color: #38bdf8;">2. Premium</h4>
             <div class="price" style="color: #06b6d4;">99 ⭐️ <span>/ месяц</span></div>
             <ul class="features-list">
               <li>✓ <b>До 3 воркеров</b> параллельно</li>
@@ -128,10 +99,10 @@
             <button class="btn btn-primary" onclick="openSubscribeModal('Premium', '99 ⭐️')">Выбрать Premium</button>
           </div>
 
-          <!-- Card 5: PRO -->
+          <!-- Card 3: PRO -->
           <div class="pricing-card pro-card">
             <div class="card-badge badge-pro">Pro 🚀</div>
-            <h4 style="color: #34d399;">5. Pro</h4>
+            <h4 style="color: #34d399;">3. Pro</h4>
             <div class="price" style="color: #10b981;">49 ⭐️ <span>/ месяц</span></div>
             <ul class="features-list">
               <li>✓ <b>До 2 активных воркеров</b></li>
@@ -300,8 +271,6 @@
               <p>Мгновенное переключение уровня для проверки бейджей и доступа к модулям:</p>
             </div>
             <div style="display: flex; flex-wrap: wrap; gap: 6px; width: 100%; margin-top: 4px;">
-              <button class="btn btn-creator" style="width: auto; padding: 6px 12px; font-size: 11px;" onclick="switchTierManual('creator')">👑 Создатель</button>
-              <button class="btn btn-admin" style="width: auto; padding: 6px 12px; font-size: 11px;" onclick="switchTierManual('admin')">⚡️ Админ</button>
               <button class="btn btn-gradient" style="width: auto; padding: 6px 12px; font-size: 11px;" onclick="switchTierManual('ultimate')">🔮 Ultimate</button>
               <button class="btn btn-primary" style="width: auto; padding: 6px 12px; font-size: 11px;" onclick="switchTierManual('premium')">💎 Premium</button>
               <button class="btn btn-pro" style="width: auto; padding: 6px 12px; font-size: 11px;" onclick="switchTierManual('pro')">🚀 Pro</button>
@@ -379,6 +348,6 @@
 
   </div>
 
-  <script src="app.js?v=2.5"></script>
+  <script src="app.js?v=2.6"></script>
 </body>
 </html>

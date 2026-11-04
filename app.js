@@ -109,6 +109,14 @@ function switchTierManual(tierKey) {
   localStorage.setItem('c2_user_tier', tierKey);
   applyTierToUI(tierKey);
   restoreModulesState();
+
+  const expiryEl = document.getElementById('user-expiry');
+  if (expiryEl) {
+    const expText = tierKey === 'creator' ? 'Навсегда' : '30 дней';
+    expiryEl.textContent = `⏳ Срок: ${expText}`;
+    localStorage.setItem('c2_user_expiry', expText);
+  }
+
   showAlert(`Уровень подписки переключен на «${SUBSCRIPTION_TIERS[tierKey].name}»! Все права обновлены.`);
 }
 
@@ -118,10 +126,12 @@ function loadUserData() {
   const nameEl = document.getElementById('user-name');
   const idEl = document.getElementById('user-id');
   const avatarEl = document.getElementById('user-avatar');
+  const expiryEl = document.getElementById('user-expiry');
 
   const urlParams = new URLSearchParams(window.location.search);
   const tierFromUrl = urlParams.get('tier')?.toLowerCase();
   const userIdFromUrl = parseInt(urlParams.get('user_id'), 10);
+  const expiryFromUrl = urlParams.get('expiry');
 
   const effectiveUserId = user?.id || userIdFromUrl || ROOT_CREATOR_ID;
 
@@ -152,6 +162,21 @@ function loadUserData() {
 
   // Применяем бейдж (красный для Создателя, золотой для Админа и т.д.)
   applyTierToUI(currentUserTierKey);
+
+  // Отображаем срок действия подписки
+  if (expiryEl) {
+    if (expiryFromUrl) {
+      expiryEl.textContent = `⏳ Срок: ${expiryFromUrl}`;
+      localStorage.setItem('c2_user_expiry', expiryFromUrl);
+    } else {
+      const savedExpiry = localStorage.getItem('c2_user_expiry');
+      if (savedExpiry) {
+        expiryEl.textContent = `⏳ Срок: ${savedExpiry}`;
+      } else {
+        expiryEl.textContent = currentUserTierKey === 'creator' ? '⏳ Срок: Навсегда' : (currentUserTierKey === 'none' ? '⏳ Срок: Без подписки' : '⏳ Срок: Активна');
+      }
+    }
+  }
 
   if (user) {
     const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username || 'Оператор C2';
@@ -244,6 +269,10 @@ function triggerHaptic(type = 'light') {
 let currentSelectedPlan = '';
 
 function openSubscribeModal(planTitle, price) {
+  if (planTitle === 'Создатель' || planTitle === 'Админ') {
+    showAlert('🔒 Тарифы «Создатель» и «Админ» являются закрытыми и выдаются только главным администратором.');
+    return;
+  }
   triggerHaptic('medium');
   currentSelectedPlan = planTitle;
   document.getElementById('modal-plan-title').textContent = `Подключение: ${planTitle}`;
@@ -260,10 +289,8 @@ function processPayment(method) {
   triggerHaptic('success');
   closeSubscribeModal();
   
-  // Сопоставляем тариф для мгновенной активации на сайте
+  // Сопоставляем тариф для активации на сайте (только коммерческие)
   const planMap = {
-    'Создатель': 'creator',
-    'Админ': 'admin',
     'Ultimate': 'ultimate',
     'Premium': 'premium',
     'Pro': 'pro'

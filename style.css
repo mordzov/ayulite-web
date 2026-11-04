@@ -1643,3 +1643,33 @@ input:checked + .slider:before {
   padding: 3px 6px;
   border-radius: 6px;
 }
+
+/* Search Module Bar */
+.search-module-wrapper {
+  margin: 8px 0 14px 0;
+  width: 100%;
+}
+
+.search-module-input {
+  width: 100%;
+  padding: 13px 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  font-family: inherit;
+  font-size: 13.5px;
+  color: #ffffff;
+  outline: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.search-module-input:focus {
+  border-color: #38bdf8;
+  background: rgba(56, 189, 248, 0.05);
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.25);
+}
+
+.search-module-input::placeholder {
+  color: #64748b;
+}

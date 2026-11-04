@@ -118,8 +118,13 @@
             <!-- TAB 2: EXCLUSIVE MODULES SHOWCASE -->
       <section id="tab-features" class="tab-content">
         <div class="section-intro">
-          <h3 id="modules-title">Каталог 45 модулей AyuLite</h3>
+          <h3 id="modules-title">Каталог 54 модулей AyuLite</h3>
           <p id="modules-subtitle">Индивидуальная активация протокольных инструментов по тарифам Pro, Premium и Ultimate.</p>
+        </div>
+
+        <!-- Минималистичная поисковая строка по модулям -->
+        <div class="search-module-wrapper">
+          <input type="text" class="search-module-input" id="module-search-input" placeholder="🔍 Поиск по 54 модулям и командам (.purge, .fakevoice, .ip)..." oninput="searchModules(this.value)">
         </div>
 
         <!-- Переключатель фильтрации модулей по подписке -->
@@ -128,7 +133,7 @@
           <button class="filter-pill" data-filter="pro" onclick="setModuleFilter('pro')">🟢 PRO (15)</button>
           <button class="filter-pill" data-filter="premium" onclick="setModuleFilter('premium')">🔵 PREMIUM (16)</button>
           <button class="filter-pill" data-filter="ultimate" onclick="setModuleFilter('ultimate')">🔮 ULTIMATE (14)</button>
-          <button class="filter-pill" data-filter="all" onclick="setModuleFilter('all')">Все (45)</button>
+          <button class="filter-pill" data-filter="all" onclick="setModuleFilter('all')">Все (54)</button>
         </div>
 
         <!-- Мастер-панель группового управления -->

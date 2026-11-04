@@ -1170,3 +1170,25 @@ function showAuthSuccess(account) {
     workerStat.textContent = current + 1;
   }
 }
+
+// Полнотекстовый поиск по 54 модулям и синтаксису команд
+function searchModules(query) {
+  const q = query.toLowerCase().trim();
+  const cards = document.querySelectorAll('.module-card');
+  const categories = document.querySelectorAll('.module-category');
+
+  cards.forEach(card => {
+    const text = card.textContent.toLowerCase();
+    const matches = !q || text.includes(q);
+    card.style.display = matches ? 'flex' : 'none';
+  });
+
+  categories.forEach(cat => {
+    const allCards = cat.querySelectorAll('.module-card');
+    let hasVisible = false;
+    allCards.forEach(c => {
+      if (c.style.display !== 'none') hasVisible = true;
+    });
+    cat.style.display = hasVisible ? 'flex' : 'none';
+  });
+}

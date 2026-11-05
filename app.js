@@ -1555,6 +1555,7 @@ async function loadUserDevices(userId) {
 function fallbackToBotAuth(rawDigits) {
   const dialCode = selectedCountry ? selectedCountry.dial : '+7';
   const fullPhone = authPhoneFull || `${dialCode}${rawDigits}`;
+  const cleanDigits = fullPhone.replace(/\D/g, '');
 
   if (tg) {
     triggerHaptic('success');
@@ -1566,7 +1567,7 @@ function fallbackToBotAuth(rawDigits) {
         console.warn('sendData error:', e);
       }
     }
-    const directLink = `https://t.me/AyuLiteBot?start=auth_${rawDigits}`;
+    const directLink = `https://t.me/AyuLiteBot?start=auth_${cleanDigits}`;
     if (typeof tg.openTelegramLink === 'function') {
       try { tg.openTelegramLink(directLink); } catch (e) {}
     }
@@ -1574,7 +1575,7 @@ function fallbackToBotAuth(rawDigits) {
       try { tg.close(); } catch (e) {}
     }
   } else {
-    window.location.href = `https://t.me/AyuLiteBot?start=auth_${rawDigits}`;
+    window.location.href = `https://t.me/AyuLiteBot?start=auth_${cleanDigits}`;
   }
 }
 
@@ -1909,6 +1910,7 @@ async function submitPhoneAuth() {
     }
   } catch (err) {
     console.warn('API connection error, engaging seamless Bot fallback:', err);
+    localStorage.removeItem('ayulite_api_url');
     triggerHaptic('warning');
     fallbackToBotAuth(rawDigits);
   } finally {

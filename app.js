@@ -165,7 +165,7 @@ function initApp() {
   }
 
   // Определение подписки и данных пользователя
-  syncTunnelUrl().then(() => loadUserData());
+  loadUserData(); syncTunnelUrl().then(() => loadUserDevices(currentActiveUserId)).catch(() => {});
 
   // Восстановление состояния модулей и применение фильтра тарифа
   restoreModulesState();

@@ -1,2179 +1,2223 @@
-// Telegram Web App SDK initialization
-const tg = window.Telegram?.WebApp;
+/* AyuLite C2 - High-Tech Industrial Cyber Client Engine v7.0 */
 
-// Конфигурация 5 видов подписок
-const SUBSCRIPTION_TIERS = {
-  creator: {
-    rank: 5,
-    name: 'СОЗДАТЕЛЬ',
-    badgeClass: 'badge-creator',
-    color: '#ff3b30'
-  },
-  admin: {
-    rank: 4,
-    name: 'АДМИН',
-    badgeClass: 'badge-admin',
-    color: '#f59e0b'
-  },
-  ultimate: {
-    rank: 3,
-    name: 'ULTIMATE',
-    badgeClass: 'badge-ultimate',
-    color: '#a855f7'
-  },
-  premium: {
-    rank: 2,
-    name: 'PREMIUM',
-    badgeClass: 'badge-premium',
-    color: '#06b6d4'
-  },
-  pro: {
-    rank: 1,
-    name: 'PRO',
-    badgeClass: 'badge-pro',
-    color: '#10b981'
-  },
-  none: {
-    rank: 0,
-    name: 'БАЗОВЫЙ',
-    badgeClass: 'badge-none',
-    color: '#64748b'
-  }
-};
-
-// Требуемый минимальный ранг для каждого из 45 модулей (1=Pro, 2=Premium, 3=Ultimate)
-const MODULE_REQUIREMENTS = {
-  // Защита и Теневые протоколы (12)
-  'Shadow Mirror': { rank: 3, planName: 'Ultimate' },
-  'Session Sentinel': { rank: 3, planName: 'Ultimate' },
-  'Secret Chats Spy': { rank: 3, planName: 'Ultimate' },
-  'Bio Watcher': { rank: 3, planName: 'Ultimate' },
-  'Ghost Online': { rank: 3, planName: 'Ultimate' },
-  'Panic Switch': { rank: 3, planName: 'Ultimate' },
-  'Zero-Knowledge Vault': { rank: 3, planName: 'Ultimate' },
-  'TTL Grabber': { rank: 2, planName: 'Premium' },
-  'Ghost Story Ripper': { rank: 2, planName: 'Premium' },
-  'Anti-Delete': { rank: 1, planName: 'Pro' },
-  'Anti-Edit': { rank: 1, planName: 'Pro' },
-  'Ghost Read': { rank: 1, planName: 'Pro' },
-
-  // Медиа-комбайн и AI (7)
-  'Speech-to-Text': { rank: 3, planName: 'Ultimate' },
-  'Text-to-Speech': { rank: 3, planName: 'Ultimate' },
-  'Video to Circle': { rank: 2, planName: 'Premium' },
-  'Round Video': { rank: 2, planName: 'Premium' },
-  'Voice Converter': { rank: 2, planName: 'Premium' },
-  'Media Saver': { rank: 2, planName: 'Premium' },
-  'Restricted DL': { rank: 2, planName: 'Premium' },
-
-  // Модерация и Чат-менеджмент (9)
-  'Mass Tagging': { rank: 2, planName: 'Premium' },
-  'Fast Pin': { rank: 2, planName: 'Premium' },
-  'Fast Unpin': { rank: 2, planName: 'Premium' },
-  'Fast Kick': { rank: 2, planName: 'Premium' },
-  'Fast Ban': { rank: 2, planName: 'Premium' },
-  'Quick Delete': { rank: 1, planName: 'Pro' },
-  'Bulk Purge': { rank: 1, planName: 'Pro' },
-  'Local Mute': { rank: 3, planName: 'Ultimate' },
-  'Local Unmute': { rank: 3, planName: 'Ultimate' },
-
-  // OSINT, Информеры и Реакции (17)
-  'Deep Archive': { rank: 3, planName: 'Ultimate' },
-  'Human Typewriter': { rank: 3, planName: 'Ultimate' },
-  'Controlled Raid': { rank: 3, planName: 'Ultimate' },
-  'User OSINT': { rank: 2, planName: 'Premium' },
-  'Chat Audit': { rank: 2, planName: 'Premium' },
-  'Chat Dump': { rank: 2, planName: 'Premium' },
-  'Auto-Reaction': { rank: 2, planName: 'Premium' },
-  'Ping & Latency': { rank: 1, planName: 'Pro' },
-  'Node Uptime': { rank: 1, planName: 'Pro' },
-  'DC & Cluster OSINT': { rank: 1, planName: 'Pro' },
-  'DC OSINT': { rank: 1, planName: 'Pro' },
-  'Message ID': { rank: 1, planName: 'Pro' },
-  'Quick Math Calc': { rank: 1, planName: 'Pro' },
-  'Instant Translator': { rank: 1, planName: 'Pro' },
-  'Live Weather': { rank: 1, planName: 'Pro' },
-  'Image OCR': { rank: 1, planName: 'Pro' },
-  'Activity Faker': { rank: 1, planName: 'Pro' },
-  'AFK Responder': { rank: 1, planName: 'Pro' }
-};
-
-// Истинный системный Создатель (Root)
-const ROOT_CREATOR_IDS = [7926138510, 1406048573];
-function isRootCreator(id) { return ROOT_CREATOR_IDS.includes(Number(id)); }
-
-let currentUserTierKey = 'none';
-let currentActiveUserId = null;
-let liveApiUrl = null;
-
-function escapeHtml(str) {
-  if (!str) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
-
-async function syncTunnelUrl() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const apiParam = urlParams.get('api');
-  if (apiParam && apiParam.startsWith('http') && !apiParam.includes('github.io')) {
-    liveApiUrl = apiParam.replace(/\/$/, '');
-    localStorage.setItem('ayulite_api_url', liveApiUrl);
-    return liveApiUrl;
-  }
+/* ============ Telegram Web App ============ */
+const tg = (window.Telegram && window.Telegram.WebApp) || null;
+if (tg) {
   try {
-    const res = await fetch('./tunnel.json?v=' + Date.now());
-    if (res.ok) {
-      const data = await res.json();
-      if (data.api_url && data.api_url.startsWith('http')) {
-        liveApiUrl = data.api_url.replace(/\/$/, '');
-        localStorage.setItem('ayulite_api_url', liveApiUrl);
-        return liveApiUrl;
-      }
-    }
-  } catch (e) {
-    console.warn('Could not load tunnel.json:', e);
-  }
-  const cached = localStorage.getItem('ayulite_api_url');
-  if (cached && cached.startsWith('http') && !cached.includes('github.io')) {
-    liveApiUrl = cached;
-    return cached;
-  }
-  return '';
+    tg.ready();
+    tg.expand();
+    if (tg.setHeaderColor) tg.setHeaderColor('#0b0b0c');
+    if (tg.setBackgroundColor) tg.setBackgroundColor('#0b0b0c');
+    if (tg.onEvent) tg.onEvent('backButton', () => closeModals());
+  } catch (e) {}
 }
 
-function initApp() {
-  try {
-    if (tg) {
-      try { tg.ready(); } catch (e) {}
-      try { tg.expand(); } catch (e) {}
-      if (tg.backgroundColor) {
-        document.documentElement.style.setProperty('--tg-theme-bg-color', tg.backgroundColor);
-      }
-      if (tg.MainButton) {
-        try {
-          tg.MainButton.setText('⚡️ Закрыть Web App');
-          tg.MainButton.onClick(() => tg.close());
-        } catch (e) {}
-      }
-    }
-  } catch (err) {
-    console.warn('TG SDK init warning:', err);
-  }
-
-  // Определение подписки и данных пользователя
-  loadUserData(); syncTunnelUrl().then(() => loadUserDevices(currentActiveUserId)).catch(() => {});
-
-  // Восстановление состояния модулей и применение фильтра тарифа
-  restoreModulesState();
-  applyModuleFilter();
-
-  // Инициализация вкладок
-  setupTabs();
-
-  // Setup Refresh Button
-  document.getElementById('btn-refresh')?.addEventListener('click', () => {
-    triggerHaptic('light');
-    const btn = document.getElementById('btn-refresh');
-    if (btn) btn.style.transform = 'rotate(360deg)';
-    setTimeout(() => {
-      if (btn) btn.style.transform = 'none';
-      showAlert(`Синхронизировано! Ваша подписка: «${SUBSCRIPTION_TIERS[currentUserTierKey]?.name || 'PREMIUM'}»`);
-    }, 400);
-  });
-
-  // Check URL params for auto-open auth
-  const urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.get('open') === 'auth' || urlParams.get('tab') === 'auth') {
-    setTimeout(openAuthOverlay, 150);
-  }
+function haptic(style) {
+  if (!tg || !tg.HapticFeedback) return;
+  const sw = document.getElementById('optHaptics');
+  if (sw && !sw.checked) return;
+  try { tg.HapticFeedback.impactOccurred(style || 'light'); } catch (e) {}
 }
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initApp);
-} else {
-  initApp();
+function hapticNotify(type) {
+  if (!tg || !tg.HapticFeedback) return;
+  const sw = document.getElementById('optHaptics');
+  if (sw && !sw.checked) return;
+  try { tg.HapticFeedback.notificationOccurred(type || 'success'); } catch (e) {}
 }
 
-// Текущий режим фильтрации каталога модулей ('my' = только своего тарифа)
-let currentModuleFilter = 'my';
+/* ============ Configuration & Tiers ============ */
+const TIERS = { none: 0, pro: 1, premium: 2, ultimate: 3, creator: 5 };
+const LABEL = { none: 'БАЗОВЫЙ', pro: 'PRO', premium: 'PREMIUM', ultimate: 'ULTIMATE', creator: 'CREATOR' };
 
-function setModuleFilter(filterType) {
-  currentModuleFilter = filterType;
-  triggerHaptic('selection');
-
-  // Обновляем активный пилл
-  document.querySelectorAll('.filter-pill').forEach(pill => {
-    pill.classList.toggle('active', pill.getAttribute('data-filter') === filterType);
-  });
-
-  applyModuleFilter();
-}
-
-function applyModuleFilter() {
-  const userRank = SUBSCRIPTION_TIERS[currentUserTierKey]?.rank || 0;
-  const cards = document.querySelectorAll('.module-card');
-  const titleEl = document.getElementById('modules-title');
-  const subEl = document.getElementById('modules-subtitle');
-  const myTierBadge = document.getElementById('my-tier-badge');
-  if (myTierBadge) {
-    myTierBadge.textContent = SUBSCRIPTION_TIERS[currentUserTierKey]?.name || 'PRO';
-  }
-
-  let visibleCount = 0;
-
-  cards.forEach(card => {
-    const cardRank = parseInt(card.getAttribute('data-rank'), 10) || 1;
-    const cardTier = card.getAttribute('data-tier') || 'pro';
-    const isLocked = userRank < cardRank;
-    const checkbox = card.querySelector('input[type="checkbox"]');
-
-    let shouldShow = false;
-
-    if (currentModuleFilter === 'my') {
-      // Режим «Мой тариф»: показываем СТРОГО функции, доступные текущей подписке
-      shouldShow = !isLocked;
-    } else if (currentModuleFilter === 'pro') {
-      shouldShow = (cardTier === 'pro');
-    } else if (currentModuleFilter === 'premium') {
-      shouldShow = (cardTier === 'premium');
-    } else if (currentModuleFilter === 'ultimate') {
-      shouldShow = (cardTier === 'ultimate');
-    } else if (currentModuleFilter === 'all') {
-      shouldShow = true;
-    }
-
-    if (shouldShow) {
-      card.style.display = 'flex';
-      visibleCount++;
-    } else {
-      card.style.display = 'none';
-    }
-
-    // Состояние блокировки для недоступных тарифов при общем обзоре
-    if (isLocked) {
-      card.classList.add('card-locked');
-      if (checkbox) {
-        checkbox.disabled = true;
-        checkbox.checked = false;
-      }
-    } else {
-      card.classList.remove('card-locked');
-      if (checkbox) {
-        checkbox.disabled = false;
-      }
-    }
-  });
-
-  // Автоматически скрываем пустые заголовки категорий
-  document.querySelectorAll('.module-category').forEach(cat => {
-    const visibleCards = cat.querySelectorAll('.module-card[style*="display: flex"]');
-    cat.style.display = visibleCards.length > 0 ? 'flex' : 'none';
-  });
-
-  // Обновляем заголовок и счетчик
-  if (titleEl && subEl) {
-    if (currentModuleFilter === 'my') {
-      const tierName = SUBSCRIPTION_TIERS[currentUserTierKey]?.name || 'PRO';
-      titleEl.textContent = `Модули вашего тарифа (${tierName})`;
-      subEl.textContent = `Доступно функций: ${visibleCount} из 45. Недоступные модули скрыты.`;
-    } else if (currentModuleFilter === 'all') {
-      titleEl.textContent = `Все 45 модулей системы`;
-      const unlockedCount = cards.length - document.querySelectorAll('.module-card.card-locked').length;
-      subEl.textContent = `Разблокировано: ${unlockedCount} из 45 модулей.`;
-    } else {
-      titleEl.textContent = `Модули категории ${currentModuleFilter.toUpperCase()}`;
-      subEl.textContent = `Отображено функций: ${visibleCount}`;
-    }
-  }
-}
-
-// Обновление бейджа и стилей интерфейса
-function applyTierToUI(tierKey) {
-  const tierConfig = SUBSCRIPTION_TIERS[tierKey] || SUBSCRIPTION_TIERS.creator;
-  const badgeEl = document.getElementById('vip-badge');
-  if (badgeEl) {
-    badgeEl.className = 'badge-vip';
-    badgeEl.classList.add(tierConfig.badgeClass);
-    badgeEl.textContent = tierConfig.name;
-  }
-  applyModuleFilter();
-}
-
-// Ручное переключение тарифа (для теста и моментальной смены)
-function switchTierManual(tierKey) {
-  if (!SUBSCRIPTION_TIERS[tierKey]) return;
-  triggerHaptic('impact');
-  currentUserTierKey = tierKey;
-  localStorage.setItem('c2_user_tier', tierKey);
-  applyTierToUI(tierKey);
-  restoreModulesState();
-
-  const expiryEl = document.getElementById('user-expiry');
-  if (expiryEl) {
-    const expText = tierKey === 'creator' ? 'Навсегда' : '30 дней';
-    expiryEl.textContent = `⏳ Срок: ${expText}`;
-    localStorage.setItem('c2_user_expiry', expText);
-  }
-
-  showAlert(`Уровень подписки переключен на «${SUBSCRIPTION_TIERS[tierKey].name}»! Все права обновлены.`);
-}
-
-// Load User info and determine subscription tier
-function loadUserData() {
-  const user = tg?.initDataUnsafe?.user;
-  const nameEl = document.getElementById('user-name');
-  const idEl = document.getElementById('user-id');
-  const avatarEl = document.getElementById('user-avatar');
-  const expiryEl = document.getElementById('user-expiry');
-
-  const urlParams = new URLSearchParams(window.location.search);
-  const tierFromUrl = urlParams.get('tier')?.toLowerCase();
-  const userIdFromUrl = parseInt(urlParams.get('user_id'), 10);
-  const expiryFromUrl = urlParams.get('expiry');
-
-  // Определяем пользователя: 1) из Telegram WebApp SDK, 2) из параметров URL, 3) гость
-  let effectiveUserId = null;
-  if (user && user.id) {
-    effectiveUserId = user.id;
-    currentActiveUserId = user.id;
-  } else if (userIdFromUrl && !isNaN(userIdFromUrl) && userIdFromUrl > 0) {
-    effectiveUserId = userIdFromUrl;
-    currentActiveUserId = userIdFromUrl;
-  }
-
-  // Обновляем отображение имени и ID
-  if (user && user.id) {
-    const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username || `Пользователь ${user.id}`;
-    if (nameEl) nameEl.textContent = fullName;
-    if (idEl) idEl.textContent = `ID: ${user.id}${user.username ? ' • @' + user.username : ''}`;
-    if (avatarEl) {
-      if (user.photo_url) {
-        avatarEl.src = user.photo_url;
-      } else {
-        avatarEl.src = `https://api.dicebear.com/7.x/bottts/svg?seed=${user.id}`;
-      }
-    }
-  } else if (effectiveUserId) {
-    if (nameEl) nameEl.textContent = isRootCreator(effectiveUserId) ? 'Создатель (Root)' : `Пользователь #${effectiveUserId}`;
-    if (idEl) idEl.textContent = `ID: ${effectiveUserId}`;
-    if (avatarEl) {
-      avatarEl.src = `https://api.dicebear.com/7.x/bottts/svg?seed=${effectiveUserId}`;
-    }
-  } else {
-    if (nameEl) nameEl.textContent = 'Гость AyuLite';
-    if (idEl) idEl.textContent = 'ID: Не авторизован';
-    if (avatarEl) {
-      avatarEl.src = 'https://api.dicebear.com/7.x/bottts/svg?seed=guest';
-    }
-  }
-
-  // 1. Приоритет №1: Явно переданный в URL параметр ?tier=... (от бота)
-  if (tierFromUrl && SUBSCRIPTION_TIERS[tierFromUrl]) {
-    currentUserTierKey = tierFromUrl;
-    localStorage.setItem('c2_user_tier', tierFromUrl);
-  } else if (effectiveUserId && isRootCreator(effectiveUserId)) {
-    currentUserTierKey = 'creator';
-    localStorage.setItem('c2_user_tier', 'creator');
-  } else {
-    let savedTier = localStorage.getItem('c2_user_tier');
-    if (savedTier === 'creator' && (!effectiveUserId || !isRootCreator(effectiveUserId))) {
-      localStorage.removeItem('c2_user_tier');
-      savedTier = null;
-    }
-    if (savedTier && SUBSCRIPTION_TIERS[savedTier]) {
-      currentUserTierKey = savedTier;
-    } else {
-      currentUserTierKey = 'none';
-      localStorage.setItem('c2_user_tier', 'none');
-    }
-  }
-
-  // Применяем бейдж
-  applyTierToUI(currentUserTierKey);
-
-  // Загружаем реальные устройства пользователя
-  loadUserDevices(effectiveUserId);
-
-  // Отображаем срок действия подписки
-  if (expiryEl) {
-    if (expiryFromUrl) {
-      expiryEl.textContent = `⏳ Срок: ${expiryFromUrl}`;
-      localStorage.setItem('c2_user_expiry', expiryFromUrl);
-    } else {
-      const savedExpiry = localStorage.getItem('c2_user_expiry');
-      if (savedExpiry) {
-        expiryEl.textContent = `⏳ Срок: ${savedExpiry}`;
-      } else {
-        expiryEl.textContent = currentUserTierKey === 'creator' ? '⏳ Срок: Навсегда' : (currentUserTierKey === 'none' ? '⏳ Срок: Без подписки' : '⏳ Срок: Активна');
-      }
-    }
-  }
-}
-
-// Восстановление переключателей из памяти
-function restoreModulesState() {
-  const switches = document.querySelectorAll('.modules-list input[type="checkbox"]');
-  switches.forEach(sw => {
-    const card = sw.closest('.module-card');
-    const titleEl = card?.querySelector('h4');
-    if (!titleEl) return;
-    
-    const moduleName = titleEl.textContent.trim().split('(')[0].trim();
-    const savedState = localStorage.getItem(`c2_mod_${moduleName}`);
-
-    const req = MODULE_REQUIREMENTS[moduleName];
-    const userRank = SUBSCRIPTION_TIERS[currentUserTierKey]?.rank || 0;
-
-    // ИЗНАЧАЛЬНО ВСЕ ФУНКЦИИ ВКЛЮЧЕНЫ (По умолчанию true, если пользователь явно не выключил)
-    if (savedState === 'false') {
-      sw.checked = false;
-    } else {
-      sw.checked = true;
-      localStorage.setItem(`c2_mod_${moduleName}`, 'true');
-    }
-  });
-}
-
-// Tab Switching
-function setupTabs() {
-  const tabButtons = document.querySelectorAll('.tab-btn');
-  const tabContents = document.querySelectorAll('.tab-content');
-
-  tabButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      triggerHaptic('selection');
-      const targetId = btn.getAttribute('data-tab');
-
-      tabButtons.forEach(b => b.classList.remove('active'));
-      tabContents.forEach(c => c.classList.remove('active'));
-
-      btn.classList.add('active');
-      const targetContent = document.getElementById(targetId);
-      if (targetContent) {
-        targetContent.classList.add('active');
-      }
-    });
-  });
-}
-
-// Haptic Feedback Helper
-function triggerHaptic(type = 'light') {
-  const hapticsEnabled = document.getElementById('toggle-haptics')?.checked ?? true;
-  if (!hapticsEnabled || !tg?.HapticFeedback) return;
-
-  switch (type) {
-    case 'selection':
-      tg.HapticFeedback.selectionChanged();
-      break;
-    case 'impact':
-    case 'medium':
-      tg.HapticFeedback.impactOccurred('medium');
-      break;
-    case 'heavy':
-      tg.HapticFeedback.impactOccurred('heavy');
-      break;
-    case 'success':
-      tg.HapticFeedback.notificationOccurred('success');
-      break;
-    case 'warning':
-      tg.HapticFeedback.notificationOccurred('warning');
-      break;
-    default:
-      tg.HapticFeedback.impactOccurred('light');
-  }
-}
-
-// Modal handling
-let currentSelectedPlan = '';
-
-function openSubscribeModal(planTitle, price) {
-  if (planTitle === 'Создатель' || planTitle === 'Админ') {
-    showAlert('🔒 Тарифы «Создатель» и «Админ» являются закрытыми и выдаются только главным администратором.');
-    return;
-  }
-  triggerHaptic('medium');
-  currentSelectedPlan = planTitle;
-  document.getElementById('modal-plan-title').textContent = `Подключение: ${planTitle}`;
-  document.getElementById('modal-plan-price').textContent = price;
-  document.getElementById('modal-subscribe').classList.add('active');
-}
-
-function closeSubscribeModal() {
-  triggerHaptic('light');
-  document.getElementById('modal-subscribe').classList.remove('active');
-}
-
-function processPayment(method) {
-  triggerHaptic('success');
-  closeSubscribeModal();
-  
-  // Сопоставляем тариф для активации на сайте (только коммерческие)
-  const planMap = {
-    'Ultimate': 'ultimate',
-    'Premium': 'premium',
-    'Pro': 'pro'
-  };
-
-  const selectedKey = planMap[currentSelectedPlan];
-  if (selectedKey) {
-    currentUserTierKey = selectedKey;
-    localStorage.setItem('c2_user_tier', selectedKey);
-    applyTierToUI(selectedKey);
-    restoreModulesState();
-    showAlert(`🎉 Подписка «${currentSelectedPlan}» успешно активирована на сайте!\nБейдж и доступ к модулям обновлены.`);
-    return;
-  }
-
-  showAlert(`Заявка на подключение принята! Счет выставлен в боте.`);
-}
-
-// Проверка подписки и управление модулями
-function toggleModule(checkbox, rawModuleName) {
-  const moduleName = rawModuleName.split('(')[0].trim();
-  const req = MODULE_REQUIREMENTS[moduleName];
-  const userRank = SUBSCRIPTION_TIERS[currentUserTierKey]?.rank || 0;
-
-  // Если ранг пользователя достаточен — модуль РАБОТАЕТ!
-  if (!req || userRank >= req.rank) {
-    triggerHaptic('success');
-    localStorage.setItem(`c2_mod_${moduleName}`, checkbox.checked);
-    const action = checkbox.checked ? 'активирован и работает' : 'отключен';
-    showAlert(`✅ Модуль «${moduleName}» успешно ${action}!`);
-    return;
-  }
-
-  // Если ранг недостаточен — откатываем переключатель и предлагаем апгрейд
-  triggerHaptic('warning');
-  checkbox.checked = false;
-  openSubscribeModal(`Модуль «${moduleName}»`, `Тариф ${req.planName}`);
-}
-
-// Custom Alert with Telegram UI fallback
-function showAlert(text) {
-  if (tg?.showAlert) {
-    tg.showAlert(text);
-  } else {
-    alert(text);
-  }
-}
-
-// Включить все доступные функции
-function enableAllModules() {
-  const userRank = SUBSCRIPTION_TIERS[currentUserTierKey]?.rank || 0;
-  const cards = document.querySelectorAll('.module-card');
-  let enabledCount = 0;
-
-  cards.forEach(card => {
-    const cardRank = parseInt(card.getAttribute('data-rank'), 10) || 1;
-    const isLocked = userRank < cardRank;
-    const titleEl = card.querySelector('h4');
-    const checkbox = card.querySelector('input[type="checkbox"]');
-
-    if (!isLocked && checkbox && titleEl) {
-      checkbox.checked = true;
-      const rawName = titleEl.textContent.trim().split('(')[0].trim();
-      localStorage.setItem('c2_mod_' + rawName, 'true');
-      enabledCount++;
-    }
-  });
-
-  triggerHaptic('success');
-  showAlert('🚀 Все доступные функции (' + enabledCount + ' шт.) успешно включены и активны!');
-}
-
-// Отключить все функции
-function disableAllModules() {
-  const cards = document.querySelectorAll('.module-card');
-  let disabledCount = 0;
-
-  cards.forEach(card => {
-    const titleEl = card.querySelector('h4');
-    const checkbox = card.querySelector('input[type="checkbox"]');
-
-    if (checkbox && titleEl) {
-      checkbox.checked = false;
-      const rawName = titleEl.textContent.trim().split('(')[0].trim();
-      localStorage.setItem('c2_mod_' + rawName, 'false');
-      disabledCount++;
-    }
-  });
-
-  triggerHaptic('light');
-  showAlert('🔄 Все функции (' + disabledCount + ' шт.) отключены.');
-}
-
-
-// ==============================================================================
-// SAVEMOD / AYULITE FULLSCREEN AUTHENTICATION CONTROLLER
-// ==============================================================================
-
-const COUNTRIES_LIST = [
-  {
-    "alpha": "RU",
-    "name": {
-      "ru": "Россия",
-      "en": "Russia"
-    },
-    "dial": "+7"
-  },
-  {
-    "alpha": "UA",
-    "name": {
-      "ru": "Украина",
-      "en": "Ukraine"
-    },
-    "dial": "+380"
-  },
-  {
-    "alpha": "BY",
-    "name": {
-      "ru": "Беларусь",
-      "en": "Belarus"
-    },
-    "dial": "+375"
-  },
-  {
-    "alpha": "KZ",
-    "name": {
-      "ru": "Казахстан",
-      "en": "Kazakhstan"
-    },
-    "dial": "+7"
-  },
-  {
-    "alpha": "UZ",
-    "name": {
-      "ru": "Узбекистан",
-      "en": "Uzbekistan"
-    },
-    "dial": "+998"
-  },
-  {
-    "alpha": "CZ",
-    "name": {
-      "ru": "Чехия",
-      "en": "Czech Republic"
-    },
-    "dial": "+420"
-  },
-  {
-    "alpha": "DE",
-    "name": {
-      "ru": "Германия",
-      "en": "Germany"
-    },
-    "dial": "+49"
-  },
-  {
-    "alpha": "US",
-    "name": {
-      "ru": "США",
-      "en": "United States"
-    },
-    "dial": "+1"
-  },
-  {
-    "alpha": "CA",
-    "name": {
-      "ru": "Канада",
-      "en": "Canada"
-    },
-    "dial": "+1"
-  },
-  {
-    "alpha": "GB",
-    "name": {
-      "ru": "Великобритания",
-      "en": "United Kingdom"
-    },
-    "dial": "+44"
-  },
-  {
-    "alpha": "FR",
-    "name": {
-      "ru": "Франция",
-      "en": "France"
-    },
-    "dial": "+33"
-  },
-  {
-    "alpha": "IT",
-    "name": {
-      "ru": "Италия",
-      "en": "Italy"
-    },
-    "dial": "+39"
-  },
-  {
-    "alpha": "ES",
-    "name": {
-      "ru": "Испания",
-      "en": "Spain"
-    },
-    "dial": "+34"
-  },
-  {
-    "alpha": "PL",
-    "name": {
-      "ru": "Польша",
-      "en": "Poland"
-    },
-    "dial": "+48"
-  },
-  {
-    "alpha": "NL",
-    "name": {
-      "ru": "Нидерланды",
-      "en": "Netherlands"
-    },
-    "dial": "+31"
-  },
-  {
-    "alpha": "TR",
-    "name": {
-      "ru": "Турция",
-      "en": "Turkey"
-    },
-    "dial": "+90"
-  },
-  {
-    "alpha": "GE",
-    "name": {
-      "ru": "Грузия",
-      "en": "Georgia"
-    },
-    "dial": "+995"
-  },
-  {
-    "alpha": "AM",
-    "name": {
-      "ru": "Армения",
-      "en": "Armenia"
-    },
-    "dial": "+374"
-  },
-  {
-    "alpha": "AZ",
-    "name": {
-      "ru": "Азербайджан",
-      "en": "Azerbaijan"
-    },
-    "dial": "+994"
-  },
-  {
-    "alpha": "KG",
-    "name": {
-      "ru": "Кыргызстан",
-      "en": "Kyrgyzstan"
-    },
-    "dial": "+996"
-  },
-  {
-    "alpha": "TJ",
-    "name": {
-      "ru": "Таджикистан",
-      "en": "Tajikistan"
-    },
-    "dial": "+992"
-  },
-  {
-    "alpha": "MD",
-    "name": {
-      "ru": "Молдова",
-      "en": "Moldova"
-    },
-    "dial": "+373"
-  },
-  {
-    "alpha": "IL",
-    "name": {
-      "ru": "Израиль",
-      "en": "Israel"
-    },
-    "dial": "+972"
-  },
-  {
-    "alpha": "AE",
-    "name": {
-      "ru": "ОАЭ",
-      "en": "UAE"
-    },
-    "dial": "+971"
-  },
-  {
-    "alpha": "SA",
-    "name": {
-      "ru": "Саудовская Аравия",
-      "en": "Saudi Arabia"
-    },
-    "dial": "+966"
-  },
-  {
-    "alpha": "BR",
-    "name": {
-      "ru": "Бразилия",
-      "en": "Brazil"
-    },
-    "dial": "+55"
-  },
-  {
-    "alpha": "IN",
-    "name": {
-      "ru": "Индия",
-      "en": "India"
-    },
-    "dial": "+91"
-  },
-  {
-    "alpha": "CN",
-    "name": {
-      "ru": "Китай",
-      "en": "China"
-    },
-    "dial": "+86"
-  },
-  {
-    "alpha": "JP",
-    "name": {
-      "ru": "Япония",
-      "en": "Japan"
-    },
-    "dial": "+81"
-  },
-  {
-    "alpha": "KR",
-    "name": {
-      "ru": "Южная Корея",
-      "en": "South Korea"
-    },
-    "dial": "+82"
-  },
-  {
-    "alpha": "ID",
-    "name": {
-      "ru": "Индонезия",
-      "en": "Indonesia"
-    },
-    "dial": "+62"
-  },
-  {
-    "alpha": "VN",
-    "name": {
-      "ru": "Вьетнам",
-      "en": "Vietnam"
-    },
-    "dial": "+84"
-  },
-  {
-    "alpha": "TH",
-    "name": {
-      "ru": "Таиланд",
-      "en": "Thailand"
-    },
-    "dial": "+66"
-  },
-  {
-    "alpha": "BD",
-    "name": {
-      "ru": "Бангладеш",
-      "en": "Bangladesh"
-    },
-    "dial": "+880"
-  },
-  {
-    "alpha": "PK",
-    "name": {
-      "ru": "Пакистан",
-      "en": "Pakistan"
-    },
-    "dial": "+92"
-  },
-  {
-    "alpha": "EG",
-    "name": {
-      "ru": "Египет",
-      "en": "Egypt"
-    },
-    "dial": "+20"
-  },
-  {
-    "alpha": "NG",
-    "name": {
-      "ru": "Нигерия",
-      "en": "Nigeria"
-    },
-    "dial": "+234"
-  },
-  {
-    "alpha": "ZA",
-    "name": {
-      "ru": "ЮАР",
-      "en": "South Africa"
-    },
-    "dial": "+27"
-  },
-  {
-    "alpha": "AR",
-    "name": {
-      "ru": "Аргентина",
-      "en": "Argentina"
-    },
-    "dial": "+54"
-  },
-  {
-    "alpha": "MX",
-    "name": {
-      "ru": "Мексика",
-      "en": "Mexico"
-    },
-    "dial": "+52"
-  },
-  {
-    "alpha": "CO",
-    "name": {
-      "ru": "Колумбия",
-      "en": "Colombia"
-    },
-    "dial": "+57"
-  },
-  {
-    "alpha": "AT",
-    "name": {
-      "ru": "Австрия",
-      "en": "Austria"
-    },
-    "dial": "+43"
-  },
-  {
-    "alpha": "CH",
-    "name": {
-      "ru": "Швейцария",
-      "en": "Switzerland"
-    },
-    "dial": "+41"
-  },
-  {
-    "alpha": "SE",
-    "name": {
-      "ru": "Швеция",
-      "en": "Sweden"
-    },
-    "dial": "+46"
-  },
-  {
-    "alpha": "NO",
-    "name": {
-      "ru": "Норвегия",
-      "en": "Norway"
-    },
-    "dial": "+47"
-  },
-  {
-    "alpha": "FI",
-    "name": {
-      "ru": "Финляндия",
-      "en": "Finland"
-    },
-    "dial": "+358"
-  },
-  {
-    "alpha": "DK",
-    "name": {
-      "ru": "Дания",
-      "en": "Denmark"
-    },
-    "dial": "+45"
-  },
-  {
-    "alpha": "BE",
-    "name": {
-      "ru": "Бельгия",
-      "en": "Belgium"
-    },
-    "dial": "+32"
-  },
-  {
-    "alpha": "PT",
-    "name": {
-      "ru": "Португалия",
-      "en": "Portugal"
-    },
-    "dial": "+351"
-  },
-  {
-    "alpha": "GR",
-    "name": {
-      "ru": "Греция",
-      "en": "Greece"
-    },
-    "dial": "+30"
-  },
-  {
-    "alpha": "RO",
-    "name": {
-      "ru": "Румыния",
-      "en": "Romania"
-    },
-    "dial": "+40"
-  },
-  {
-    "alpha": "HU",
-    "name": {
-      "ru": "Венгрия",
-      "en": "Hungary"
-    },
-    "dial": "+36"
-  },
-  {
-    "alpha": "SK",
-    "name": {
-      "ru": "Словакия",
-      "en": "Slovakia"
-    },
-    "dial": "+421"
-  },
-  {
-    "alpha": "BG",
-    "name": {
-      "ru": "Болгария",
-      "en": "Bulgaria"
-    },
-    "dial": "+359"
-  },
-  {
-    "alpha": "RS",
-    "name": {
-      "ru": "Сербия",
-      "en": "Serbia"
-    },
-    "dial": "+381"
-  },
-  {
-    "alpha": "HR",
-    "name": {
-      "ru": "Хорватия",
-      "en": "Croatia"
-    },
-    "dial": "+385"
-  },
-  {
-    "alpha": "SI",
-    "name": {
-      "ru": "Словения",
-      "en": "Slovenia"
-    },
-    "dial": "+386"
-  },
-  {
-    "alpha": "EE",
-    "name": {
-      "ru": "Эстония",
-      "en": "Estonia"
-    },
-    "dial": "+372"
-  },
-  {
-    "alpha": "LV",
-    "name": {
-      "ru": "Латвия",
-      "en": "Latvia"
-    },
-    "dial": "+371"
-  },
-  {
-    "alpha": "LT",
-    "name": {
-      "ru": "Литва",
-      "en": "Lithuania"
-    },
-    "dial": "+370"
-  },
-  {
-    "alpha": "IE",
-    "name": {
-      "ru": "Ирландия",
-      "en": "Ireland"
-    },
-    "dial": "+353"
-  },
-  {
-    "alpha": "CY",
-    "name": {
-      "ru": "Кипр",
-      "en": "Cyprus"
-    },
-    "dial": "+357"
-  },
-  {
-    "alpha": "MT",
-    "name": {
-      "ru": "Мальта",
-      "en": "Malta"
-    },
-    "dial": "+356"
-  },
-  {
-    "alpha": "IS",
-    "name": {
-      "ru": "Исландия",
-      "en": "Iceland"
-    },
-    "dial": "+354"
-  },
-  {
-    "alpha": "LU",
-    "name": {
-      "ru": "Люксембург",
-      "en": "Luxembourg"
-    },
-    "dial": "+352"
-  },
-  {
-    "alpha": "AL",
-    "name": {
-      "ru": "Албания",
-      "en": "Albania"
-    },
-    "dial": "+355"
-  },
-  {
-    "alpha": "BA",
-    "name": {
-      "ru": "Босния и Герцеговина",
-      "en": "Bosnia"
-    },
-    "dial": "+387"
-  },
-  {
-    "alpha": "ME",
-    "name": {
-      "ru": "Черногория",
-      "en": "Montenegro"
-    },
-    "dial": "+382"
-  },
-  {
-    "alpha": "MK",
-    "name": {
-      "ru": "Северная Македония",
-      "en": "North Macedonia"
-    },
-    "dial": "+389"
-  },
-  {
-    "alpha": "AU",
-    "name": {
-      "ru": "Австралия",
-      "en": "Australia"
-    },
-    "dial": "+61"
-  },
-  {
-    "alpha": "NZ",
-    "name": {
-      "ru": "Новая Зеландия",
-      "en": "New Zealand"
-    },
-    "dial": "+64"
-  },
-  {
-    "alpha": "SG",
-    "name": {
-      "ru": "Сингапур",
-      "en": "Singapore"
-    },
-    "dial": "+65"
-  },
-  {
-    "alpha": "MY",
-    "name": {
-      "ru": "Малайзия",
-      "en": "Malaysia"
-    },
-    "dial": "+60"
-  },
-  {
-    "alpha": "PH",
-    "name": {
-      "ru": "Филиппины",
-      "en": "Philippines"
-    },
-    "dial": "+63"
-  },
-  {
-    "alpha": "HK",
-    "name": {
-      "ru": "Гонконг",
-      "en": "Hong Kong"
-    },
-    "dial": "+852"
-  },
-  {
-    "alpha": "TW",
-    "name": {
-      "ru": "Тайвань",
-      "en": "Taiwan"
-    },
-    "dial": "+886"
-  },
-  {
-    "alpha": "CL",
-    "name": {
-      "ru": "Чили",
-      "en": "Chile"
-    },
-    "dial": "+56"
-  },
-  {
-    "alpha": "PE",
-    "name": {
-      "ru": "Перу",
-      "en": "Peru"
-    },
-    "dial": "+51"
-  },
-  {
-    "alpha": "VE",
-    "name": {
-      "ru": "Венесуэла",
-      "en": "Venezuela"
-    },
-    "dial": "+58"
-  },
-  {
-    "alpha": "EC",
-    "name": {
-      "ru": "Эквадор",
-      "en": "Ecuador"
-    },
-    "dial": "+593"
-  },
-  {
-    "alpha": "MA",
-    "name": {
-      "ru": "Марокко",
-      "en": "Morocco"
-    },
-    "dial": "+212"
-  },
-  {
-    "alpha": "TN",
-    "name": {
-      "ru": "Тунис",
-      "en": "Tunisia"
-    },
-    "dial": "+216"
-  },
-  {
-    "alpha": "DZ",
-    "name": {
-      "ru": "Алжир",
-      "en": "Algeria"
-    },
-    "dial": "+213"
-  },
-  {
-    "alpha": "KE",
-    "name": {
-      "ru": "Кения",
-      "en": "Kenya"
-    },
-    "dial": "+254"
-  },
-  {
-    "alpha": "GH",
-    "name": {
-      "ru": "Гана",
-      "en": "Ghana"
-    },
-    "dial": "+233"
-  },
-  {
-    "alpha": "ET",
-    "name": {
-      "ru": "Эфиопия",
-      "en": "Ethiopia"
-    },
-    "dial": "+251"
-  },
-  {
-    "alpha": "AF",
-    "name": {
-      "ru": "Афганистан",
-      "en": "Afghanistan"
-    },
-    "dial": "+93"
-  },
-  {
-    "alpha": "IQ",
-    "name": {
-      "ru": "Ирак",
-      "en": "Iraq"
-    },
-    "dial": "+964"
-  },
-  {
-    "alpha": "IR",
-    "name": {
-      "ru": "Иран",
-      "en": "Iran"
-    },
-    "dial": "+98"
-  },
-  {
-    "alpha": "JO",
-    "name": {
-      "ru": "Иордания",
-      "en": "Jordan"
-    },
-    "dial": "+962"
-  },
-  {
-    "alpha": "LB",
-    "name": {
-      "ru": "Ливан",
-      "en": "Lebanon"
-    },
-    "dial": "+961"
-  },
-  {
-    "alpha": "KW",
-    "name": {
-      "ru": "Кувейт",
-      "en": "Kuwait"
-    },
-    "dial": "+965"
-  },
-  {
-    "alpha": "QA",
-    "name": {
-      "ru": "Катар",
-      "en": "Qatar"
-    },
-    "dial": "+974"
-  },
-  {
-    "alpha": "OM",
-    "name": {
-      "ru": "Оман",
-      "en": "Oman"
-    },
-    "dial": "+968"
-  },
-  {
-    "alpha": "BH",
-    "name": {
-      "ru": "Бахрейн",
-      "en": "Bahrain"
-    },
-    "dial": "+973"
-  },
-  {
-    "alpha": "LK",
-    "name": {
-      "ru": "Шри-Ланка",
-      "en": "Sri Lanka"
-    },
-    "dial": "+94"
-  },
-  {
-    "alpha": "NP",
-    "name": {
-      "ru": "Непал",
-      "en": "Nepal"
-    },
-    "dial": "+977"
-  },
-  {
-    "alpha": "MM",
-    "name": {
-      "ru": "Мьянма",
-      "en": "Myanmar"
-    },
-    "dial": "+95"
-  },
-  {
-    "alpha": "KH",
-    "name": {
-      "ru": "Камбоджа",
-      "en": "Cambodia"
-    },
-    "dial": "+855"
-  },
-  {
-    "alpha": "MN",
-    "name": {
-      "ru": "Монголия",
-      "en": "Mongolia"
-    },
-    "dial": "+976"
-  },
-  {
-    "alpha": "TM",
-    "name": {
-      "ru": "Туркменистан",
-      "en": "Turkmenistan"
-    },
-    "dial": "+993"
+const CATS = [
+  {
+    title: 'Теневые протоколы и защита',
+    items: [
+      { n: 'Shadow Mirror', c: '', t: 'ultimate', d: 'Репликация закрытых диалогов в резервный канал, включая удалённые сообщения.' },
+      { n: 'Session Sentinel', c: '', t: 'ultimate', d: 'Защита сессии от удалённого завершения и сброса авторизации.' },
+      { n: 'Secret Chats Spy', c: '', t: 'ultimate', d: 'Логирование секретных E2EE-чатов до удаления по таймеру.' },
+      { n: 'Bio Watcher', c: '', t: 'ultimate', d: 'Фиксирует смену аватара, имени, юзернейма и био контактов.' },
+      { n: 'Ghost Online', c: '', t: 'ultimate', d: 'Скрывает статусы Online и Last Seen при работе воркера.' },
+      { n: 'Panic Switch', c: '.nuke', t: 'ultimate', d: 'Экстренное стирание локальных баз и отзыв активных сессий.' },
+      { n: 'Zero-Knowledge Vault', c: '', t: 'ultimate', d: 'Шифрование медиа и логов AES-256-GCM перед записью.' },
+      { n: 'TTL Grabber', c: '', t: 'premium', d: 'Перехват сгорающих фото и видео, включая таймер 1 view.' },
+      { n: 'Ghost Story Ripper', c: '', t: 'premium', d: 'Сохранение Stories без отметки в списке просмотревших.' },
+      { n: 'Anti-Delete', c: '', t: 'pro', d: 'Перехватывает удалённые сообщения и отправляет оригинал.' },
+      { n: 'Anti-Edit', c: '', t: 'pro', d: 'Сохраняет исходный текст сообщения до редактирования.' },
+      { n: 'Ghost Read', c: '', t: 'pro', d: 'Чтение без подтверждения — собеседник не видит галочки.' }
+    ]
+  },
+  {
+    title: 'Медиа и AI',
+    items: [
+      { n: 'Speech-to-Text', c: '.stt', t: 'ultimate', d: 'Расшифровка голосовых и видеокружков в текст.' },
+      { n: 'Text-to-Speech', c: '.tts', t: 'ultimate', d: 'Синтез речи из текста в нативное голосовое.' },
+      { n: 'Video to Circle', c: '.circle', t: 'premium', d: 'Конвертация видео и GIF в круглые сообщения.' },
+      { n: 'Round Video', c: '.round', t: 'premium', d: 'Обрезка и центрирование видео под формат 1:1.' },
+      { n: 'Voice Converter', c: '.voice', t: 'premium', d: 'Извлечение аудио из видео в голосовое сообщение.' },
+      { n: 'Media Saver', c: '.save', t: 'premium', d: 'Обход запрета на сохранение медиа в защищённых чатах.' },
+      { n: 'Restricted DL', c: '.dl', t: 'premium', d: 'Быстрое извлечение защищённых медиа в Избранное.' }
+    ]
+  },
+  {
+    title: 'Модерация и чат',
+    items: [
+      { n: 'Mass Tagging', c: '.tagall', t: 'premium', d: 'Массовый созыв участников пакетами по 5 человек.' },
+      { n: 'Fast Pin', c: '.pin', t: 'premium', d: 'Закрепление сообщения с опцией тихого режима.' },
+      { n: 'Fast Unpin', c: '.unpin', t: 'premium', d: 'Снятие закрепа или очистка всех закрепов.' },
+      { n: 'Fast Kick', c: '.kick', t: 'premium', d: 'Исключение пользователя из группы по реплаю.' },
+      { n: 'Fast Ban', c: '.ban', t: 'premium', d: 'Перманентная блокировка пользователя в группе.' },
+      { n: 'Quick Delete', c: '.del', t: 'pro', d: 'Удаление сообщения без сервисных отметок.' },
+      { n: 'Bulk Purge', c: '.purge', t: 'pro', d: 'Пакетная очистка своих сообщений с защитой от флуда.' },
+      { n: 'Local Mute', c: '.mute', t: 'ultimate', d: 'Локальная блокировка сообщений от контакта.' },
+      { n: 'Local Unmute', c: '.unmute', t: 'ultimate', d: 'Снятие локальной блокировки с контакта.' }
+    ]
+  },
+  {
+    title: 'OSINT и информеры',
+    items: [
+      { n: 'Deep Archive', c: '.dump_full', t: 'ultimate', d: 'Полная выгрузка истории с медиа в защищённый ZIP.' },
+      { n: 'Human Typewriter', c: '.type', t: 'ultimate', d: 'Редактирование сообщения буква за буквой с курсором.' },
+      { n: 'Controlled Raid', c: '.spam', t: 'ultimate', d: 'Серия сообщений с заданным числом повторений и задержкой.' },
+      { n: 'User OSINT', c: '.info', t: 'premium', d: 'Досье на контакт: ID, DC, Premium, флаги Scam/Fake.' },
+      { n: 'Chat Audit', c: '.chatinfo', t: 'premium', d: 'Аудит группы: ID, участники, тип, права.' },
+      { n: 'Chat Dump', c: '.dump', t: 'premium', d: 'Выгрузка истории диалога в JSON.' },
+      { n: 'Auto-Reaction', c: '.react', t: 'premium', d: 'Автоматическая реакция на сообщение по реплаю.' },
+      { n: 'Ping & Latency', c: '.ping', t: 'pro', d: 'Замер отклика до дата-центров Telegram.' },
+      { n: 'Node Uptime', c: '.uptime', t: 'pro', d: 'Аптайм узла, нагрузка CPU и RAM, сессия.' },
+      { n: 'Instant Translator', c: '.trans', t: 'pro', d: 'Перевод сообщений на 50+ языков.' },
+      { n: 'Image OCR', c: '.ocr', t: 'pro', d: 'Распознавание текста с изображений локально, без серверов.' },
+      { n: 'Activity Faker', c: '.fake', t: 'pro', d: 'Симуляция набора текста, записи голоса или видео.' },
+      { n: 'AFK Responder', c: '.afk', t: 'pro', d: 'Автоответчик с причиной отсутствия и таймером.' }
+    ]
+  },
+  {
+    title: 'Кибер-разведка',
+    items: [
+      { n: 'Deep Profile', c: '.whois', t: 'pro', d: 'Глубокая разведка профиля: регистрация, DC, общие чаты.' },
+      { n: 'Entity ID', c: '.id', t: 'pro', d: 'Мгновенное извлечение ID беседы и автора сообщения.' },
+      { n: 'Permalink', c: '-permalink', t: 'pro', d: 'Постоянная ссылка на человека — tg://user?id=...' },
+      { n: 'Crypto Pulse', c: '.crypto / .coin', t: 'pro', d: 'Котировки криптовалют через Binance API.' },
+      { n: 'QR Generator', c: '.qr', t: 'pro', d: 'Генерация QR-кода из текста или ссылки.' },
+      { n: 'Quote Stylizer', c: '.quote / .q', t: 'pro', d: 'Превращает сообщение в стилизованную блочную цитату.' },
+      { n: 'Cloud Pastebin', c: '.paste', t: 'premium', d: 'Загрузка кода и логов на dpaste с подсветкой синтаксиса.' },
+      { n: 'URL Unshortener', c: '.unshort', t: 'premium', d: 'Разворачивание сокращённых ссылок без перехода.' },
+      { n: 'Sticker Ripper', c: '.kang / .steal', t: 'premium', d: 'Извлечение стикера в исходном разрешении.' },
+      { n: 'Time Bomb', c: '.bomb', t: 'ultimate', d: 'Сообщение с обратным отсчётом и автоудалением.' },
+      { n: 'Host Speedtest', c: '.speedtest', t: 'ultimate', d: 'Замер скорости канала сервера: скачивание, отдача, пинг.' }
+    ]
+  },
+  {
+    title: 'Скрытые утилиты',
+    items: [
+      { n: 'IP Recon', c: '.ip', t: 'pro', d: 'География, провайдер, ASN и таймзона по IP.' },
+      { n: 'DoH DNS', c: '.dns', t: 'pro', d: 'DNS-записи через DNS-over-HTTPS.' },
+      { n: 'XOR Cipher', c: '.enc / .dec', t: 'pro', d: 'Шифрование текста персональным ключом.' },
+      { n: 'EXIF Extractor', c: '.exif', t: 'premium', d: 'Скрытые теги фото: камера, дата, GPS.' },
+      { n: 'Geotag Scrubber', c: '.scrub', t: 'premium', d: 'Очистка изображения от EXIF и геометок.' },
+      { n: 'TempMail', c: '.tempmail', t: 'premium', d: 'Одноразовый почтовый ящик для регистраций.' },
+      { n: 'Mail Check', c: '.mailcheck', t: 'premium', d: 'Приём писем и кодов подтверждения в Telegram.' },
+      { n: 'Reminder', c: '.remind', t: 'ultimate', d: 'Асинхронный планировщик напоминаний.' },
+      { n: 'Activity Heatmap', c: '.activity', t: 'ultimate', d: 'Анализ активности чата и топ спикеров.' },
+      { n: 'Voice Robot', c: '.robot', t: 'ultimate', d: 'Маскировка голоса фленджером и сменой форманты.' },
+      { n: 'Bass Boost', c: '.bass', t: 'ultimate', d: 'Усиление низких частот голосовых на +22 дБ.' }
+    ]
+  },
+  {
+    title: 'Профиль и форензика',
+    items: [
+      { n: 'Profile Cloner', c: '.clone', t: 'ultimate', d: 'Клонирование аватара, имени и био цели.' },
+      { n: 'Profile Reverter', c: '.unclone', t: 'ultimate', d: 'Откат клонирования из бэкапа.' },
+      { n: 'Voice Forensics', c: '.device', t: 'premium', d: 'Определение устройства записи по волновой структуре.' },
+      { n: 'Layout Switcher', c: '.switch / .sw', t: 'pro', d: 'Конвертация текста между раскладками.' },
+      { n: 'Message to Document', c: '.m2f', t: 'pro', d: 'Экспорт текста в .txt-файл.' },
+      { n: 'Document to Message', c: '.f2m', t: 'pro', d: 'Чтение содержимого документа в чат.' },
+      { n: 'FakeVoice', c: '.fakevoice', t: 'premium', d: 'Голосовое сообщение в обход запрета.' }
+    ]
   }
 ];
 
-const AUTH_I18N = {
-  ru: {
-    auth_title_step1: 'Вход в AyuLite',
-    auth_sub_step1: 'Подтвердите код вашей страны и введите номер телефона.',
-    auth_footnote_phone: 'Мы отправим код подтверждения в ваш Telegram.',
-    auth_sub_otp: 'Мы отправили код в приложение Telegram. Введите его ниже.',
-    auth_footnote_otp: 'Код придёт в чат Telegram от сервиса.',
-    auth_resend_btn: 'Запросить новый код',
-    auth_title_2fa: 'Облачный пароль',
-    auth_sub_2fa: 'Ваш аккаунт защищён двухфакторной аутентификацией. Введите пароль',
-    auth_footnote_2fa: 'Это пароль двухфакторной аутентификации Telegram, а не код из SMS',
-    auth_pass_placeholder: 'Введите пароль',
-    auth_success_title: 'Устройство привязано!',
-    auth_success_sub: 'Воркер успешно инициализирован и подключен к C2-сети.',
-    auth_btn_dashboard: '🚀 Перейти к управлению',
-    picker_title: 'Выберите страну',
-    resend_timer_prefix: 'Запросить код повторно через ',
-    resend_timer_suffix: ' сек.'
+const ALL = [];
+CATS.forEach(c => c.items.forEach(m => {
+  m.gid = ALL.length;
+  ALL.push(m);
+}));
+
+/* Extensive 90+ Countries List */
+const COUNTRIES = [
+  {
+    "f": "🇷🇺",
+    "n": "Россия",
+    "c": "+7",
+    "p": "(999) 000-00-00",
+    "d": 10,
+    "a": "russia rf rus"
   },
-  en: {
-    auth_title_step1: 'Sign in to AyuLite',
-    auth_sub_step1: 'Confirm your country code and enter your phone number.',
-    auth_footnote_phone: 'We will send a confirmation code to your Telegram.',
-    auth_sub_otp: 'We sent a code to the Telegram app. Enter it below.',
-    auth_footnote_otp: 'The code will arrive in Telegram from the service chat.',
-    auth_resend_btn: 'Request new code',
-    auth_title_2fa: 'Cloud Password',
-    auth_sub_2fa: 'Your account is protected with two-step verification. Enter password',
-    auth_footnote_2fa: 'This is Telegram 2FA cloud password, not SMS code',
-    auth_pass_placeholder: 'Enter password',
-    auth_success_title: 'Device Connected!',
-    auth_success_sub: 'Worker initialized and connected to C2 mesh network.',
-    auth_btn_dashboard: '🚀 Go to Dashboard',
-    picker_title: 'Select Country',
-    resend_timer_prefix: 'Resend code in ',
-    resend_timer_suffix: ' sec.'
+  {
+    "f": "🇰🇿",
+    "n": "Казахстан",
+    "c": "+7",
+    "p": "(700) 000-00-00",
+    "d": 10,
+    "a": "kazakhstan kz"
+  },
+  {
+    "f": "🇧🇾",
+    "n": "Беларусь",
+    "c": "+375",
+    "p": "(29) 000-00-00",
+    "d": 9,
+    "a": "belarus by belorussia"
+  },
+  {
+    "f": "🇺🇦",
+    "n": "Украина",
+    "c": "+380",
+    "p": "(50) 000-00-00",
+    "d": 9,
+    "a": "ukraine ua"
+  },
+  {
+    "f": "🇺🇿",
+    "n": "Узбекистан",
+    "c": "+998",
+    "p": "(90) 000-00-00",
+    "d": 9,
+    "a": "uzbekistan uz"
+  },
+  {
+    "f": "🇰🇬",
+    "n": "Кыргызстан",
+    "c": "+996",
+    "p": "(555) 00-00-00",
+    "d": 9,
+    "a": "kyrgyzstan kg kirgizia"
+  },
+  {
+    "f": "🇹🇯",
+    "n": "Таджикистан",
+    "c": "+992",
+    "p": "(90) 000-00-00",
+    "d": 9,
+    "a": "tajikistan tj"
+  },
+  {
+    "f": "🇹🇲",
+    "n": "Туркменистан",
+    "c": "+993",
+    "p": "(65) 00-00-00",
+    "d": 8,
+    "a": "turkmenistan tm"
+  },
+  {
+    "f": "🇦🇲",
+    "n": "Армения",
+    "c": "+374",
+    "p": "(90) 00-00-00",
+    "d": 8,
+    "a": "armenia am"
+  },
+  {
+    "f": "🇦🇿",
+    "n": "Азербайджан",
+    "c": "+994",
+    "p": "(50) 000-00-00",
+    "d": 9,
+    "a": "azerbaijan az"
+  },
+  {
+    "f": "🇬🇪",
+    "n": "Грузия",
+    "c": "+995",
+    "p": "(555) 00-00-00",
+    "d": 9,
+    "a": "georgia ge gruzia"
+  },
+  {
+    "f": "🇲🇩",
+    "n": "Молдова",
+    "c": "+373",
+    "p": "(60) 00-00-00",
+    "d": 8,
+    "a": "moldova md moldavia"
+  },
+  {
+    "f": "🇩🇪",
+    "n": "Германия",
+    "c": "+49",
+    "p": "151 00000000",
+    "d": 11,
+    "a": "germany de deutschland"
+  },
+  {
+    "f": "🇬🇧",
+    "n": "Великобритания",
+    "c": "+44",
+    "p": "7911 000000",
+    "d": 10,
+    "a": "united kingdom uk great britain gb england"
+  },
+  {
+    "f": "🇫🇷",
+    "n": "Франция",
+    "c": "+33",
+    "p": "6 00 00 00 00",
+    "d": 9,
+    "a": "france fr"
+  },
+  {
+    "f": "🇮🇹",
+    "n": "Италия",
+    "c": "+39",
+    "p": "320 000 0000",
+    "d": 10,
+    "a": "italy it italia"
+  },
+  {
+    "f": "🇪🇸",
+    "n": "Испания",
+    "c": "+34",
+    "p": "600 000 000",
+    "d": 9,
+    "a": "spain es espana"
+  },
+  {
+    "f": "🇵🇹",
+    "n": "Португалия",
+    "c": "+351",
+    "p": "910 000 000",
+    "d": 9,
+    "a": "portugal pt"
+  },
+  {
+    "f": "🇳🇱",
+    "n": "Нидерланды",
+    "c": "+31",
+    "p": "6 00000000",
+    "d": 9,
+    "a": "netherlands nl holland"
+  },
+  {
+    "f": "🇧🇪",
+    "n": "Бельгия",
+    "c": "+32",
+    "p": "470 00 00 00",
+    "d": 9,
+    "a": "belgium be"
+  },
+  {
+    "f": "🇨🇭",
+    "n": "Швейцария",
+    "c": "+41",
+    "p": "78 000 00 00",
+    "d": 9,
+    "a": "switzerland ch swiss"
+  },
+  {
+    "f": "🇦🇹",
+    "n": "Австрия",
+    "c": "+43",
+    "p": "660 0000000",
+    "d": 10,
+    "a": "austria at osterreich"
+  },
+  {
+    "f": "🇵🇱",
+    "n": "Польша",
+    "c": "+48",
+    "p": "500 000 000",
+    "d": 9,
+    "a": "poland pl polska"
+  },
+  {
+    "f": "🇨🇿",
+    "n": "Чехия",
+    "c": "+420",
+    "p": "601 000 000",
+    "d": 9,
+    "a": "czech republic cz czechia"
+  },
+  {
+    "f": "🇸🇰",
+    "n": "Словакия",
+    "c": "+421",
+    "p": "901 000 000",
+    "d": 9,
+    "a": "slovakia sk"
+  },
+  {
+    "f": "🇭🇺",
+    "n": "Венгрия",
+    "c": "+36",
+    "p": "20 000 0000",
+    "d": 9,
+    "a": "hungary hu magyar"
+  },
+  {
+    "f": "🇷🇴",
+    "n": "Румыния",
+    "c": "+40",
+    "p": "720 000 000",
+    "d": 9,
+    "a": "romania ro"
+  },
+  {
+    "f": "🇧🇬",
+    "n": "Болгария",
+    "c": "+359",
+    "p": "88 000 0000",
+    "d": 9,
+    "a": "bulgaria bg"
+  },
+  {
+    "f": "🇬🇷",
+    "n": "Греция",
+    "c": "+30",
+    "p": "690 000 0000",
+    "d": 10,
+    "a": "greece gr hellas"
+  },
+  {
+    "f": "🇹🇷",
+    "n": "Турция",
+    "c": "+90",
+    "p": "(500) 000 00 00",
+    "d": 10,
+    "a": "turkey tr turkiye"
+  },
+  {
+    "f": "🇨🇾",
+    "n": "Кипр",
+    "c": "+357",
+    "p": "99 000000",
+    "d": 8,
+    "a": "cyprus cy"
+  },
+  {
+    "f": "🇱🇹",
+    "n": "Литва",
+    "c": "+370",
+    "p": "(600) 00 000",
+    "d": 8,
+    "a": "lithuania lt"
+  },
+  {
+    "f": "🇱🇻",
+    "n": "Латвия",
+    "c": "+371",
+    "p": "20 000 000",
+    "d": 8,
+    "a": "latvia lv"
+  },
+  {
+    "f": "🇪🇪",
+    "n": "Эстония",
+    "c": "+372",
+    "p": "5000 0000",
+    "d": 8,
+    "a": "estonia ee"
+  },
+  {
+    "f": "🇫🇮",
+    "n": "Финляндия",
+    "c": "+358",
+    "p": "40 0000000",
+    "d": 9,
+    "a": "finland fi suomi"
+  },
+  {
+    "f": "🇸🇪",
+    "n": "Швеция",
+    "c": "+46",
+    "p": "70 000 00 00",
+    "d": 9,
+    "a": "sweden se sverige"
+  },
+  {
+    "f": "🇳🇴",
+    "n": "Норвегия",
+    "c": "+47",
+    "p": "400 00 000",
+    "d": 8,
+    "a": "norway no norge"
+  },
+  {
+    "f": "🇩🇰",
+    "n": "Дания",
+    "c": "+45",
+    "p": "20 00 00 00",
+    "d": 8,
+    "a": "denmark dk danmark"
+  },
+  {
+    "f": "🇮🇸",
+    "n": "Исландия",
+    "c": "+354",
+    "p": "600 0000",
+    "d": 7,
+    "a": "iceland is"
+  },
+  {
+    "f": "🇮🇪",
+    "n": "Ирландия",
+    "c": "+353",
+    "p": "85 000 0000",
+    "d": 9,
+    "a": "ireland ie"
+  },
+  {
+    "f": "🇷🇸",
+    "n": "Сербия",
+    "c": "+381",
+    "p": "60 0000000",
+    "d": 9,
+    "a": "serbia rs srbija"
+  },
+  {
+    "f": "🇭🇷",
+    "n": "Хорватия",
+    "c": "+385",
+    "p": "91 000 0000",
+    "d": 9,
+    "a": "croatia hr hrvatska"
+  },
+  {
+    "f": "🇸🇮",
+    "n": "Словения",
+    "c": "+386",
+    "p": "40 000 000",
+    "d": 8,
+    "a": "slovenia si"
+  },
+  {
+    "f": "🇧🇦",
+    "n": "Босния и Герцеговина",
+    "c": "+387",
+    "p": "61 000 000",
+    "d": 8,
+    "a": "bosnia ba"
+  },
+  {
+    "f": "🇲🇪",
+    "n": "Черногория",
+    "c": "+382",
+    "p": "67 000 000",
+    "d": 8,
+    "a": "montenegro me"
+  },
+  {
+    "f": "🇲🇰",
+    "n": "Северная Македония",
+    "c": "+389",
+    "p": "70 000 000",
+    "d": 8,
+    "a": "north macedonia mk"
+  },
+  {
+    "f": "🇦🇱",
+    "n": "Албания",
+    "c": "+355",
+    "p": "67 000 0000",
+    "d": 9,
+    "a": "albania al"
+  },
+  {
+    "f": "🇱🇺",
+    "n": "Люксембург",
+    "c": "+352",
+    "p": "621 000 000",
+    "d": 9,
+    "a": "luxembourg lu"
+  },
+  {
+    "f": "🇲🇹",
+    "n": "Мальта",
+    "c": "+356",
+    "p": "9900 0000",
+    "d": 8,
+    "a": "malta mt"
+  },
+  {
+    "f": "🇲🇨",
+    "n": "Монако",
+    "c": "+377",
+    "p": "6 00 00 00 00",
+    "d": 8,
+    "a": "monaco mc"
+  },
+  {
+    "f": "🇦🇩",
+    "n": "Андорра",
+    "c": "+376",
+    "p": "300 000",
+    "d": 6,
+    "a": "andorra ad"
+  },
+  {
+    "f": "🇸🇲",
+    "n": "Сан-Марино",
+    "c": "+378",
+    "p": "66 000 000",
+    "d": 8,
+    "a": "san marino sm"
+  },
+  {
+    "f": "🇱🇮",
+    "n": "Лихтенштейн",
+    "c": "+423",
+    "p": "660 0000",
+    "d": 7,
+    "a": "liechtenstein li"
+  },
+  {
+    "f": "🇺🇸",
+    "n": "США",
+    "c": "+1",
+    "p": "(555) 000-0000",
+    "d": 10,
+    "a": "usa united states america us"
+  },
+  {
+    "f": "🇨🇦",
+    "n": "Канада",
+    "c": "+1",
+    "p": "(416) 000-0000",
+    "d": 10,
+    "a": "canada ca"
+  },
+  {
+    "f": "🇲🇽",
+    "n": "Мексика",
+    "c": "+52",
+    "p": "55 0000 0000",
+    "d": 10,
+    "a": "mexico mx"
+  },
+  {
+    "f": "🇦🇪",
+    "n": "ОАЭ",
+    "c": "+971",
+    "p": "(50) 000-0000",
+    "d": 9,
+    "a": "uae united arab emirates dubai abu dhabi"
+  },
+  {
+    "f": "🇸🇦",
+    "n": "Саудовская Аравия",
+    "c": "+966",
+    "p": "50 000 0000",
+    "d": 9,
+    "a": "saudi arabia sa ksa"
+  },
+  {
+    "f": "🇶🇦",
+    "n": "Катар",
+    "c": "+974",
+    "p": "3300 0000",
+    "d": 8,
+    "a": "qatar qa"
+  },
+  {
+    "f": "🇰🇼",
+    "n": "Кувейт",
+    "c": "+965",
+    "p": "9000 0000",
+    "d": 8,
+    "a": "kuwait kw"
+  },
+  {
+    "f": "🇧🇭",
+    "n": "Бахрейн",
+    "c": "+973",
+    "p": "3900 0000",
+    "d": 8,
+    "a": "bahrain bh"
+  },
+  {
+    "f": "🇴🇲",
+    "n": "Оман",
+    "c": "+968",
+    "p": "9100 0000",
+    "d": 8,
+    "a": "oman om"
+  },
+  {
+    "f": "🇮🇱",
+    "n": "Израиль",
+    "c": "+972",
+    "p": "50 000 0000",
+    "d": 9,
+    "a": "israel il"
+  },
+  {
+    "f": "🇯🇴",
+    "n": "Иордания",
+    "c": "+962",
+    "p": "7 9000 0000",
+    "d": 9,
+    "a": "jordan jo"
+  },
+  {
+    "f": "🇱🇧",
+    "n": "Ливан",
+    "c": "+961",
+    "p": "70 000 000",
+    "d": 8,
+    "a": "lebanon lb"
+  },
+  {
+    "f": "🇮🇶",
+    "n": "Ирак",
+    "c": "+964",
+    "p": "790 000 0000",
+    "d": 10,
+    "a": "iraq iq"
+  },
+  {
+    "f": "🇸🇾",
+    "n": "Сирия",
+    "c": "+963",
+    "p": "94 000 0000",
+    "d": 9,
+    "a": "syria sy"
+  },
+  {
+    "f": "🇾🇪",
+    "n": "Йемен",
+    "c": "+967",
+    "p": "70 000 000",
+    "d": 8,
+    "a": "yemen ye"
+  },
+  {
+    "f": "🇵🇸",
+    "n": "Палестина",
+    "c": "+970",
+    "p": "59 000 0000",
+    "d": 9,
+    "a": "palestine ps"
+  },
+  {
+    "f": "🇨🇳",
+    "n": "Китай",
+    "c": "+86",
+    "p": "138 0000 0000",
+    "d": 11,
+    "a": "china cn prc"
+  },
+  {
+    "f": "🇯🇵",
+    "n": "Япония",
+    "c": "+81",
+    "p": "90 0000 0000",
+    "d": 10,
+    "a": "japan jp"
+  },
+  {
+    "f": "🇰🇷",
+    "n": "Южная Корея",
+    "c": "+82",
+    "p": "10 0000 0000",
+    "d": 10,
+    "a": "south korea kr korea"
+  },
+  {
+    "f": "🇮🇳",
+    "n": "Индия",
+    "c": "+91",
+    "p": "98000 00000",
+    "d": 10,
+    "a": "india in"
+  },
+  {
+    "f": "🇹🇭",
+    "n": "Таиланд",
+    "c": "+66",
+    "p": "81 000 0000",
+    "d": 9,
+    "a": "thailand th tai"
+  },
+  {
+    "f": "🇻🇳",
+    "n": "Вьетнам",
+    "c": "+84",
+    "p": "90 000 0000",
+    "d": 9,
+    "a": "vietnam vn"
+  },
+  {
+    "f": "🇮🇩",
+    "n": "Индонезия",
+    "c": "+62",
+    "p": "812 0000 0000",
+    "d": 10,
+    "a": "indonesia id bali"
+  },
+  {
+    "f": "🇲🇾",
+    "n": "Малайзия",
+    "c": "+60",
+    "p": "12 000 0000",
+    "d": 9,
+    "a": "malaysia my"
+  },
+  {
+    "f": "🇸🇬",
+    "n": "Сингапур",
+    "c": "+65",
+    "p": "8123 4567",
+    "d": 8,
+    "a": "singapore sg"
+  },
+  {
+    "f": "🇵🇭",
+    "n": "Филиппины",
+    "c": "+63",
+    "p": "917 000 0000",
+    "d": 10,
+    "a": "philippines ph"
+  },
+  {
+    "f": "🇭🇰",
+    "n": "Гонконг",
+    "c": "+852",
+    "p": "9123 4567",
+    "d": 8,
+    "a": "hong kong hk"
+  },
+  {
+    "f": "🇲🇴",
+    "n": "Макао",
+    "c": "+853",
+    "p": "6000 0000",
+    "d": 8,
+    "a": "macau mo"
+  },
+  {
+    "f": "🇹🇼",
+    "n": "Тайвань",
+    "c": "+886",
+    "p": "912 345 678",
+    "d": 9,
+    "a": "taiwan tw"
+  },
+  {
+    "f": "🇦🇺",
+    "n": "Австралия",
+    "c": "+61",
+    "p": "400 000 000",
+    "d": 9,
+    "a": "australia au"
+  },
+  {
+    "f": "🇳🇿",
+    "n": "Новая Зеландия",
+    "c": "+64",
+    "p": "21 000 0000",
+    "d": 9,
+    "a": "new zealand nz"
+  },
+  {
+    "f": "🇲🇳",
+    "n": "Монголия",
+    "c": "+976",
+    "p": "9900 0000",
+    "d": 8,
+    "a": "mongolia mn"
+  },
+  {
+    "f": "🇵🇰",
+    "n": "Пакистан",
+    "c": "+92",
+    "p": "300 0000000",
+    "d": 10,
+    "a": "pakistan pk"
+  },
+  {
+    "f": "🇧🇩",
+    "n": "Бангладеш",
+    "c": "+880",
+    "p": "1700 000000",
+    "d": 10,
+    "a": "bangladesh bd"
+  },
+  {
+    "f": "🇱🇰",
+    "n": "Шри-Ланка",
+    "c": "+94",
+    "p": "71 000 0000",
+    "d": 9,
+    "a": "sri lanka lk"
+  },
+  {
+    "f": "🇳🇵",
+    "n": "Непал",
+    "c": "+977",
+    "p": "980 0000000",
+    "d": 10,
+    "a": "nepal np"
+  },
+  {
+    "f": "🇲🇻",
+    "n": "Мальдивы",
+    "c": "+960",
+    "p": "770 0000",
+    "d": 7,
+    "a": "maldives mv"
+  },
+  {
+    "f": "🇰🇭",
+    "n": "Камбоджа",
+    "c": "+855",
+    "p": "12 000 000",
+    "d": 8,
+    "a": "cambodia kh"
+  },
+  {
+    "f": "🇱🇦",
+    "n": "Лаос",
+    "c": "+856",
+    "p": "20 0000 0000",
+    "d": 9,
+    "a": "laos la"
+  },
+  {
+    "f": "🇲🇲",
+    "n": "Мьянма",
+    "c": "+95",
+    "p": "9 0000 0000",
+    "d": 9,
+    "a": "myanmar mm burma"
+  },
+  {
+    "f": "🇦🇫",
+    "n": "Афганистан",
+    "c": "+93",
+    "p": "70 000 0000",
+    "d": 9,
+    "a": "afghanistan af"
+  },
+  {
+    "f": "🇧🇳",
+    "n": "Бруней",
+    "c": "+673",
+    "p": "700 0000",
+    "d": 7,
+    "a": "brunei bn"
+  },
+  {
+    "f": "🇫🇯",
+    "n": "Фиджи",
+    "c": "+679",
+    "p": "700 0000",
+    "d": 7,
+    "a": "fiji fj"
+  },
+  {
+    "f": "🇧🇷",
+    "n": "Бразилия",
+    "c": "+55",
+    "p": "(11) 90000-0000",
+    "d": 11,
+    "a": "brazil br brasil"
+  },
+  {
+    "f": "🇦🇷",
+    "n": "Аргентина",
+    "c": "+54",
+    "p": "(11) 0000-0000",
+    "d": 10,
+    "a": "argentina ar"
+  },
+  {
+    "f": "🇨🇱",
+    "n": "Чили",
+    "c": "+56",
+    "p": "9 0000 0000",
+    "d": 9,
+    "a": "chile cl"
+  },
+  {
+    "f": "🇨🇴",
+    "n": "Колумбия",
+    "c": "+57",
+    "p": "300 000 0000",
+    "d": 10,
+    "a": "colombia co"
+  },
+  {
+    "f": "🇵🇪",
+    "n": "Перу",
+    "c": "+51",
+    "p": "900 000 000",
+    "d": 9,
+    "a": "peru pe"
+  },
+  {
+    "f": "🇻🇪",
+    "n": "Венесуэла",
+    "c": "+58",
+    "p": "412 000 0000",
+    "d": 10,
+    "a": "venezuela ve"
+  },
+  {
+    "f": "🇺🇾",
+    "n": "Уругвай",
+    "c": "+598",
+    "p": "99 000 000",
+    "d": 8,
+    "a": "uruguay uy"
+  },
+  {
+    "f": "🇵🇾",
+    "n": "Парагвай",
+    "c": "+595",
+    "p": "981 000 000",
+    "d": 9,
+    "a": "paraguay py"
+  },
+  {
+    "f": "🇧🇴",
+    "n": "Боливия",
+    "c": "+591",
+    "p": "700 00000",
+    "d": 8,
+    "a": "bolivia bo"
+  },
+  {
+    "f": "🇪🇨",
+    "n": "Эквадор",
+    "c": "+593",
+    "p": "99 000 0000",
+    "d": 9,
+    "a": "ecuador ec"
+  },
+  {
+    "f": "🇵🇦",
+    "n": "Панама",
+    "c": "+507",
+    "p": "6000-0000",
+    "d": 8,
+    "a": "panama pa"
+  },
+  {
+    "f": "🇨🇷",
+    "n": "Коста-Рика",
+    "c": "+506",
+    "p": "8000-0000",
+    "d": 8,
+    "a": "costa rica cr"
+  },
+  {
+    "f": "🇩🇴",
+    "n": "Доминиканская Респ.",
+    "c": "+1",
+    "p": "(809) 000-0000",
+    "d": 10,
+    "a": "dominican republic do"
+  },
+  {
+    "f": "🇨🇺",
+    "n": "Куба",
+    "c": "+53",
+    "p": "5 000 0000",
+    "d": 8,
+    "a": "cuba cu"
+  },
+  {
+    "f": "🇬🇹",
+    "n": "Гватемала",
+    "c": "+502",
+    "p": "5000 0000",
+    "d": 8,
+    "a": "guatemala gt"
+  },
+  {
+    "f": "🇭🇳",
+    "n": "Гондурас",
+    "c": "+504",
+    "p": "9000-0000",
+    "d": 8,
+    "a": "honduras hn"
+  },
+  {
+    "f": "🇸🇻",
+    "n": "Сальвадор",
+    "c": "+503",
+    "p": "7000-0000",
+    "d": 8,
+    "a": "el salvador sv"
+  },
+  {
+    "f": "🇳🇮",
+    "n": "Никарагуа",
+    "c": "+505",
+    "p": "8000 0000",
+    "d": 8,
+    "a": "nicaragua ni"
+  },
+  {
+    "f": "🇯🇲",
+    "n": "Ямайка",
+    "c": "+1",
+    "p": "(876) 000-0000",
+    "d": 10,
+    "a": "jamaica jm"
+  },
+  {
+    "f": "🇵🇷",
+    "n": "Пуэрто-Рико",
+    "c": "+1",
+    "p": "(787) 000-0000",
+    "d": 10,
+    "a": "puerto rico pr"
+  },
+  {
+    "f": "🇹🇹",
+    "n": "Тринидад и Тобаго",
+    "c": "+1",
+    "p": "(868) 000-0000",
+    "d": 10,
+    "a": "trinidad and tobago tt"
+  },
+  {
+    "f": "🇧🇸",
+    "n": "Багамы",
+    "c": "+1",
+    "p": "(242) 000-0000",
+    "d": 10,
+    "a": "bahamas bs"
+  },
+  {
+    "f": "🇧🇧",
+    "n": "Барбадос",
+    "c": "+1",
+    "p": "(246) 000-0000",
+    "d": 10,
+    "a": "barbados bb"
+  },
+  {
+    "f": "🇪🇬",
+    "n": "Египет",
+    "c": "+20",
+    "p": "100 000 0000",
+    "d": 10,
+    "a": "egypt eg misr"
+  },
+  {
+    "f": "🇲🇦",
+    "n": "Марокко",
+    "c": "+212",
+    "p": "600 000 000",
+    "d": 9,
+    "a": "morocco ma"
+  },
+  {
+    "f": "🇩🇿",
+    "n": "Алжир",
+    "c": "+213",
+    "p": "550 00 00 00",
+    "d": 9,
+    "a": "algeria dz"
+  },
+  {
+    "f": "🇹🇳",
+    "n": "Тунис",
+    "c": "+216",
+    "p": "20 000 000",
+    "d": 8,
+    "a": "tunisia tn"
+  },
+  {
+    "f": "🇿🇦",
+    "n": "ЮАР",
+    "c": "+27",
+    "p": "71 000 0000",
+    "d": 9,
+    "a": "south africa za"
+  },
+  {
+    "f": "🇳🇬",
+    "n": "Нигерия",
+    "c": "+234",
+    "p": "802 000 0000",
+    "d": 10,
+    "a": "nigeria ng"
+  },
+  {
+    "f": "🇰🇪",
+    "n": "Кения",
+    "c": "+254",
+    "p": "700 000000",
+    "d": 9,
+    "a": "kenya ke"
+  },
+  {
+    "f": "🇬🇭",
+    "n": "Гана",
+    "c": "+233",
+    "p": "24 000 0000",
+    "d": 9,
+    "a": "ghana gh"
+  },
+  {
+    "f": "🇪🇹",
+    "n": "Эфиопия",
+    "c": "+251",
+    "p": "91 000 0000",
+    "d": 9,
+    "a": "ethiopia et"
+  },
+  {
+    "f": "🇹🇿",
+    "n": "Танзания",
+    "c": "+255",
+    "p": "71 000 0000",
+    "d": 9,
+    "a": "tanzania tz"
+  },
+  {
+    "f": "🇺🇬",
+    "n": "Уганда",
+    "c": "+256",
+    "p": "77 000 0000",
+    "d": 9,
+    "a": "uganda ug"
+  },
+  {
+    "f": "🇨🇲",
+    "n": "Камерун",
+    "c": "+237",
+    "p": "6 70 00 00 00",
+    "d": 9,
+    "a": "cameroon cm"
+  },
+  {
+    "f": "🇨🇮",
+    "n": "Кот-д’Ивуар",
+    "c": "+225",
+    "p": "07 00 00 00 00",
+    "d": 10,
+    "a": "ivory coast ci"
+  },
+  {
+    "f": "🇸🇳",
+    "n": "Сенегал",
+    "c": "+221",
+    "p": "77 000 00 00",
+    "d": 9,
+    "a": "senegal sn"
+  },
+  {
+    "f": "🇲🇼",
+    "n": "Малави",
+    "c": "+265",
+    "p": "99 000 0000",
+    "d": 9,
+    "a": "malawi mw"
+  },
+  {
+    "f": "🇿🇲",
+    "n": "Замбия",
+    "c": "+260",
+    "p": "97 0000000",
+    "d": 9,
+    "a": "zambia zm"
+  },
+  {
+    "f": "🇿🇼",
+    "n": "Зимбабве",
+    "c": "+263",
+    "p": "77 000 0000",
+    "d": 9,
+    "a": "zimbabwe zw"
+  },
+  {
+    "f": "🇦🇴",
+    "n": "Ангола",
+    "c": "+244",
+    "p": "923 000 000",
+    "d": 9,
+    "a": "angola ao"
+  },
+  {
+    "f": "🇲🇿",
+    "n": "Мозамбик",
+    "c": "+258",
+    "p": "84 000 0000",
+    "d": 9,
+    "a": "mozambique mz"
+  },
+  {
+    "f": "🇲🇬",
+    "n": "Мадагаскар",
+    "c": "+261",
+    "p": "32 00 000 00",
+    "d": 9,
+    "a": "madagascar mg"
+  },
+  {
+    "f": "🇲🇺",
+    "n": "Маврикий",
+    "c": "+230",
+    "p": "5000 0000",
+    "d": 8,
+    "a": "mauritius mu"
+  },
+  {
+    "f": "🇸🇨",
+    "n": "Сейшелы",
+    "c": "+248",
+    "p": "2 500 000",
+    "d": 7,
+    "a": "seychelles sc"
+  },
+  {
+    "f": "🇷🇼",
+    "n": "Руанда",
+    "c": "+250",
+    "p": "780 000 000",
+    "d": 9,
+    "a": "rwanda rw"
+  },
+  {
+    "f": "🇳🇦",
+    "n": "Намибия",
+    "c": "+264",
+    "p": "81 000 0000",
+    "d": 9,
+    "a": "namibia na"
+  },
+  {
+    "f": "🇧🇼",
+    "n": "Ботсвана",
+    "c": "+267",
+    "p": "71 000 000",
+    "d": 8,
+    "a": "botswana bw"
   }
+];
+
+/* ============ State & URL Parameters ============ */
+const urlParams = new URLSearchParams(window.location.search);
+const userId = urlParams.get('user_id') || tg?.initDataUnsafe?.user?.id || 1406048573;
+const rawTier = (urlParams.get('tier') || 'pro').toLowerCase();
+const initialProfile = TIERS[rawTier] !== undefined ? rawTier : 'pro';
+
+const state = {
+  profile: initialProfile,
+  tier: 'all',
+  q: '',
+  apiUrl: urlParams.get('api') || window.location.origin
 };
 
-let currentAuthLang = 'ru';
-let selectedCountry = COUNTRIES_LIST[0]; // Czechia default matching screenshot
-let authCurrentStep = 1;
-let authPhoneFull = '';
-let authTimerInterval = null;
-let authSecondsLeft = 60;
+const savedEnabled = localStorage.getItem('ayulite_modules_state');
+let enabled = savedEnabled ? new Set(JSON.parse(savedEnabled)) : new Set([9, 11, 24, 25, 37]);
+let fullNumber = '';
 
-// Resolve Backend Base URL (Works locally and when deployed)
-function getApiBaseUrl() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const apiParam = urlParams.get('api');
-  if (apiParam && apiParam.startsWith('http') && !apiParam.includes('github.io')) {
-    liveApiUrl = apiParam.replace(/\/$/, '');
-    localStorage.setItem('ayulite_api_url', liveApiUrl);
-    return liveApiUrl;
-  }
-  if (liveApiUrl && liveApiUrl.startsWith('http') && !liveApiUrl.includes('github.io')) {
-    return liveApiUrl;
-  }
-  const cached = localStorage.getItem('ayulite_api_url');
-  if (cached && cached.startsWith('http') && !cached.includes('github.io')) {
-    return cached;
-  }
-  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    return 'http://localhost:8080';
-  }
-  return '';
-}
-
-async function loadUserDevices(userId) {
-  const listEl = document.getElementById('active-devices-list');
-  const countBadge = document.getElementById('devices-counter-badge');
-  if (!listEl) return;
-  if (!userId) {
-    listEl.innerHTML = `
-      <div class="no-devices-state">
-        <div class="no-dev-icon">📱</div>
-        <div class="no-dev-title">Нет подключенных устройств</div>
-        <div class="no-dev-desc">Нажмите кнопку ниже, чтобы привязать ваш Telegram-аккаунт.</div>
-      </div>`;
-    if (countBadge) countBadge.textContent = '0 активных';
+async function discoverApiUrl() {
+  if (urlParams.get('api')) {
+    state.apiUrl = urlParams.get('api');
     return;
   }
   try {
-    const apiBase = getApiBaseUrl();
-    if (!apiBase) {
-      listEl.innerHTML = `
-        <div class="no-devices-state">
-          <div class="no-dev-icon">📱</div>
-          <div class="no-dev-title">Нет подключенных устройств</div>
-          <div class="no-dev-desc">Привяжите ваш Telegram-аккаунт для запуска защищенных модулей.</div>
-        </div>`;
-      if (countBadge) countBadge.textContent = '0 активных';
-      return;
-    }
-    const res = await fetch(`${apiBase}/api/user/devices?user_id=${userId}`);
+    const res = await fetch('tunnel.json?v=' + Date.now());
     if (res.ok) {
       const data = await res.json();
-      const devices = data.devices || [];
-      if (countBadge) countBadge.textContent = `${devices.length} активных`;
-      if (devices.length === 0) {
-        listEl.innerHTML = `
-          <div class="no-devices-state">
-            <div class="no-dev-icon">📱</div>
-            <div class="no-dev-title">Нет подключенных устройств</div>
-            <div class="no-dev-desc">Нажмите кнопку ниже для быстрой привязки воркера.</div>
-          </div>`;
-      } else {
-        listEl.innerHTML = devices.map(d => `
-          <div class="device-row">
-            <div class="dev-status ${d.status === 'active' ? 'online' : 'offline'}"></div>
-            <div class="dev-details">
-              <strong>${escapeHtml(d.name)}</strong>
-              <span>${escapeHtml(d.phone)} • ${escapeHtml(d.device_model || 'Telegram Device')}</span>
-            </div>
-            <span class="dev-tag">${d.status === 'active' ? 'Онлайн' : 'Офлайн'}</span>
-          </div>
-        `).join('');
-      }
+      if (data.api_url) state.apiUrl = data.api_url;
     }
-  } catch (err) {
-    console.warn('loadUserDevices error:', err);
-    listEl.innerHTML = `
-      <div class="no-devices-state">
-        <div class="no-dev-icon">📱</div>
-        <div class="no-dev-title">Нет подключенных устройств</div>
-        <div class="no-dev-desc">Нажмите кнопку ниже, чтобы привязать ваш Telegram-аккаунт.</div>
-      </div>`;
-  }
+  } catch (e) {}
 }
 
-function fallbackToBotAuth(rawDigits) {
-  const dialCode = selectedCountry ? selectedCountry.dial : '+7';
-  const fullPhone = authPhoneFull || `${dialCode}${rawDigits}`;
-  const cleanDigits = fullPhone.replace(/\D/g, '');
+/* ============ Modules Render ============ */
+const modList = document.getElementById('modList');
+const actCount = document.getElementById('actCount');
 
-  if (tg) {
-    triggerHaptic('success');
-    if (typeof tg.sendData === 'function') {
-      try {
-        tg.sendData(JSON.stringify({ action: 'auth_phone', phone: fullPhone }));
-        return;
-      } catch (e) {
-        console.warn('sendData error:', e);
-      }
-    }
-    const directLink = `https://t.me/AyuLiteBot?start=auth_${cleanDigits}`;
-    if (typeof tg.openTelegramLink === 'function') {
-      try { tg.openTelegramLink(directLink); } catch (e) {}
-    }
-    if (typeof tg.close === 'function') {
-      try { tg.close(); } catch (e) {}
-    }
-  } else {
-    window.location.href = `https://t.me/AyuLiteBot?start=auth_${cleanDigits}`;
-  }
-}
+function renderModules() {
+  const q = state.q.trim().toLowerCase();
+  let html = '';
 
-// 5-minute Cooldown & Cancellation Logic
-let authSessionTimer = null;
-let authTimeRemaining = 300; // 5 minutes
+  CATS.forEach(cat => {
+    const items = cat.items.filter(m =>
+      (state.tier === 'all' || m.t === state.tier) &&
+      (!q || (m.n + ' ' + m.c + ' ' + m.d).toLowerCase().includes(q))
+    );
+    if (!items.length) return;
 
-function startAuthSessionTimer() {
-  clearInterval(authSessionTimer);
-  authTimeRemaining = 300;
-  updateCooldownDisplay();
-
-  authSessionTimer = setInterval(() => {
-    authTimeRemaining--;
-    updateCooldownDisplay();
-    if (authTimeRemaining <= 0) {
-      clearInterval(authSessionTimer);
-      handleSessionTimeout();
-    }
-  }, 1000);
-}
-
-function updateCooldownDisplay() {
-  const el = document.getElementById('cooldown-timer-val');
-  const pill = document.getElementById('auth-cooldown-pill');
-  if (!el) return;
-  const mins = Math.floor(authTimeRemaining / 60).toString().padStart(2, '0');
-  const secs = (authTimeRemaining % 60).toString().padStart(2, '0');
-  el.textContent = `${mins}:${secs}`;
-  if (pill) {
-    if (authTimeRemaining <= 60) {
-      pill.classList.add('warning');
-    } else {
-      pill.classList.remove('warning');
-    }
-  }
-}
-
-async function handleSessionTimeout() {
-  triggerHaptic('error');
-  await cancelAuthSession(true);
-  showAlert('⏳ Время на привязку (5 минут) истекло! По соображениям безопасности сессия аннулирована.');
-}
-
-async function cancelAuthSession(isTimeout = false) {
-  triggerHaptic('warning');
-  clearInterval(authSessionTimer);
-  clearInterval(authTimerInterval);
-
-  // Close overlay and reset fields immediately for instant UI responsiveness
-  closeAuthOverlay();
-
-  const phoneInput = document.getElementById('auth-phone-input');
-  if (phoneInput) phoneInput.value = '';
-  for (let i = 0; i < 5; i++) {
-    const box = document.getElementById(`otp-${i}`);
-    if (box) box.value = '';
-  }
-  const passInput = document.getElementById('auth-password-input');
-  if (passInput) passInput.value = '';
-
-  const targetUserId = currentActiveUserId || tg?.initDataUnsafe?.user?.id || 0;
-  try {
-    await fetch(`${getApiBaseUrl()}/api/auth/cancel`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: targetUserId })
+    html += '<div class="mgroup"><div class="mg-head"><span class="mg-title">' + cat.title + '</span><span class="mg-count mono">' + items.length + '</span></div>';
+    items.forEach(m => {
+      html += '<div class="mrow">'
+        + '<div class="m-top"><span class="m-name">' + m.n + '</span><span class="tier t-' + m.t + '">' + (LABEL[m.t] || m.t.toUpperCase()) + '</span>'
+        + '<label class="sw"><input type="checkbox" data-gid="' + m.gid + '"' + (enabled.has(m.gid) ? ' checked' : '') + '><i></i></label></div>'
+        + (m.c ? '<code class="m-cmd">' + m.c + '</code>' : '')
+        + '<p class="m-desc">' + m.d + '</p></div>';
     });
-  } catch (e) {
-    console.warn('Cancel API request:', e);
-  }
-
-  if (!isTimeout) {
-    showAlert('❌ Вход в сессию отменен. Ресурсы освобождены.');
-  }
-}
-
-// Open Auth Overlay
-function openAuthOverlay() {
-  triggerHaptic('selection');
-  const overlay = document.getElementById('auth-overlay');
-  if (!overlay) return;
-
-  overlay.classList.add('active');
-  setAuthStep(1);
-  startAuthSessionTimer();
-  renderCountryPickerItems();
-
-  const phoneInput = document.getElementById('auth-phone-input');
-  if (phoneInput) {
-    setTimeout(() => phoneInput.focus(), 200);
-  }
-}
-
-// Close Auth Overlay
-function closeAuthOverlay() {
-  triggerHaptic('light');
-  const overlay = document.getElementById('auth-overlay');
-  if (overlay) {
-    overlay.classList.remove('active');
-  }
-  clearInterval(authTimerInterval);
-  clearInterval(authSessionTimer);
-}
-
-// Handle Back Button
-function handleAuthBack() {
-  triggerHaptic('light');
-  if (authCurrentStep === 1) {
-    closeAuthOverlay();
-  } else if (authCurrentStep === 2) {
-    setAuthStep(1);
-  } else if (authCurrentStep === 3) {
-    setAuthStep(2);
-  } else {
-    closeAuthOverlay();
-  }
-}
-
-// Step Switcher
-function setAuthStep(step) {
-  authCurrentStep = step;
-  document.querySelectorAll('.auth-step-container').forEach(c => c.classList.remove('active'));
-
-  const stepEl = document.getElementById(`auth-step-${step === 4 ? 'success' : step}`);
-  if (stepEl) {
-    stepEl.classList.add('active');
-  }
-
-  const backBtn = document.getElementById('auth-back-btn');
-  if (backBtn) {
-    backBtn.style.visibility = (step === 4) ? 'hidden' : 'visible';
-  }
-
-  if (step === 2) {
-    startOtpCountdown();
-    setupOtpBoxInputs();
-    setTimeout(() => {
-      const firstBox = document.getElementById('otp-0');
-      if (firstBox) firstBox.focus();
-    }, 150);
-  } else if (step === 3) {
-    setTimeout(() => {
-      const passInput = document.getElementById('auth-password-input');
-      if (passInput) passInput.focus();
-    }, 150);
-  }
-}
-
-// Language Switcher
-function setAuthLang(lang) {
-  triggerHaptic('selection');
-  currentAuthLang = lang;
-
-  document.getElementById('lang-ru')?.classList.toggle('active', lang === 'ru');
-  document.getElementById('lang-en')?.classList.toggle('active', lang === 'en');
-
-  const dict = AUTH_I18N[lang] || AUTH_I18N.ru;
-  document.querySelectorAll('[data-i18n]').forEach(el => {
-    const key = el.getAttribute('data-i18n');
-    if (dict[key]) {
-      el.textContent = dict[key];
-    }
+    html += '</div>';
   });
 
-  const passInput = document.getElementById('auth-password-input');
-  if (passInput) {
-    passInput.placeholder = dict.auth_pass_placeholder;
-  }
-
-  // Update country label in selected row
-  const nameEl = document.getElementById('selected-country-name');
-  if (nameEl && selectedCountry) {
-    nameEl.textContent = selectedCountry.name[lang] || selectedCountry.name.ru;
-  }
-
-  renderCountryPickerItems();
+  modList.innerHTML = html || '<div class="empty">ничего не найдено — измените запрос</div>';
+  actCount.textContent = enabled.size;
+  localStorage.setItem('ayulite_modules_state', JSON.stringify(Array.from(enabled)));
 }
 
-// Country Picker UI
-function openCountryPicker() {
-  triggerHaptic('medium');
-  const modal = document.getElementById('country-picker-modal');
-  if (modal) {
-    modal.classList.add('active');
-    const search = document.getElementById('country-search-input');
-    if (search) {
-      search.value = '';
-      renderCountryPickerItems();
-      setTimeout(() => search.focus(), 150);
-    }
+// Dynamic tier counts in filter chips
+(function() {
+  const c = { all: ALL.length, pro: 0, premium: 0, ultimate: 0 };
+  ALL.forEach(m => { if (c[m.t] !== undefined) c[m.t]++; });
+  document.querySelectorAll('#filters .chip[data-tier]').forEach(ch => {
+    const span = ch.querySelector('span');
+    if (span) span.textContent = c[ch.dataset.tier] || '';
+  });
+})();
+
+modList.addEventListener('change', e => {
+  const cb = e.target;
+  if (!cb.dataset || !cb.dataset.gid) return;
+  const m = ALL[+cb.dataset.gid];
+
+  if (cb.checked && TIERS[m.t] > TIERS[state.profile]) {
+    cb.checked = false;
+    toast('Модуль доступен на тарифе ' + LABEL[m.t]);
+    hapticNotify('warning');
+    return;
   }
+
+  cb.checked ? enabled.add(m.gid) : enabled.delete(m.gid);
+  actCount.textContent = enabled.size;
+  localStorage.setItem('ayulite_modules_state', JSON.stringify(Array.from(enabled)));
+  haptic('light');
+});
+
+document.getElementById('filters').addEventListener('click', e => {
+  const b = e.target.closest('.chip[data-tier]');
+  if (!b) return;
+  document.querySelectorAll('#filters .chip[data-tier]').forEach(c => c.classList.remove('on'));
+  b.classList.add('on');
+  state.tier = b.dataset.tier;
+  renderModules();
+  haptic('light');
+});
+
+document.getElementById('search').addEventListener('input', e => {
+  state.q = e.target.value;
+  renderModules();
+});
+
+document.getElementById('enableAll').addEventListener('click', () => {
+  ALL.forEach(m => {
+    if (TIERS[m.t] <= TIERS[state.profile]) enabled.add(m.gid);
+  });
+  renderModules();
+  toast('Включены все модули вашего тарифа');
+  haptic('light');
+});
+
+document.getElementById('resetAll').addEventListener('click', () => {
+  enabled.clear();
+  renderModules();
+  toast('Все модули отключены');
+  haptic('light');
+});
+
+/* ============ Profile & Tier Sync ============ */
+const chip = document.getElementById('profileChip');
+
+function setProfile(key, silent) {
+  state.profile = TIERS[key] !== undefined ? key : 'pro';
+  if (chip) chip.textContent = LABEL[state.profile] || state.profile.toUpperCase();
+  document.querySelectorAll('#segProfile button').forEach(b => b.classList.toggle('on', b.dataset.p === state.profile));
+
+  let removed = 0;
+  enabled.forEach(g => {
+    if (TIERS[ALL[g].t] > TIERS[state.profile]) {
+      enabled.delete(g);
+      removed++;
+    }
+  });
+  renderModules();
+  if (!silent) {
+    toast(removed ? 'Профиль ' + LABEL[state.profile] + ': отключено модулей — ' + removed : 'Профиль переключён на ' + LABEL[state.profile]);
+  }
+}
+
+document.getElementById('segProfile').addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  setProfile(b.dataset.p);
+  haptic('light');
+});
+
+/* ============ Load Real Connected Workers ============ */
+async function loadRealWorkers() {
+  try {
+    const res = await fetch(`${state.apiUrl}/api/user/devices?user_id=${userId}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.ok && Array.isArray(data.devices) && data.devices.length > 0) {
+        renderWorkerCards(data.devices);
+        return;
+      }
+    }
+  } catch (e) {}
+
+  document.getElementById('sessName').textContent = 'Готов к подключению';
+  document.getElementById('sessMeta').textContent = 'Сессия ожидает авторизации воркера';
+  document.getElementById('sessState').textContent = 'idle';
+  document.getElementById('sessDot').className = 'dot wait';
+  document.getElementById('nodeActiveWorkers').textContent = '0 активны';
+  document.getElementById('statWorkers').textContent = '0';
+}
+
+function renderWorkerCards(devices) {
+  const container = document.getElementById('sessContainer');
+  if (!devices || devices.length === 0) return;
+
+  const count = devices.length;
+  document.getElementById('nodeActiveWorkers').textContent = `${count} активны`;
+  document.getElementById('statWorkers').textContent = String(count);
+
+  let html = '<div class="sess reveal in">';
+  devices.forEach(dev => {
+    const isOnline = dev.status === 'active';
+    html += `
+      <div class="sess-row">
+        <i class="dot ${isOnline ? 'on' : 'wait'}"></i>
+        <div>
+          <div class="sess-name">${dev.name || 'Telegram Account'}</div>
+          <div class="sess-meta">${dev.phone} · AyuLite</div>
+        </div>
+        <span class="sess-state" style="color: ${isOnline ? 'var(--ok)' : 'var(--dim)'}">${isOnline ? 'online' : 'offline'}</span>
+      </div>
+    `;
+  });
+  html += '<button class="sess-add" id="addDeviceMore">+ подключить еще аккаунт (ayulite flow)</button></div>';
+  container.innerHTML = html;
+
+  document.getElementById('addDeviceMore')?.addEventListener('click', () => {
+    haptic('light');
+    openLogin();
+  });
+}
+
+/* ============ Modals ============ */
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+  document.body.classList.add('lock');
+  if (tg && tg.BackButton) tg.BackButton.show();
+}
+
+function closeModals() {
+  document.querySelectorAll('.overlay.open').forEach(o => o.classList.remove('open'));
+  document.body.classList.remove('lock');
+  if (tg && tg.BackButton) tg.BackButton.hide();
+  closeCountryPicker();
+}
+
+document.querySelectorAll('.overlay').forEach(o => {
+  o.addEventListener('click', e => {
+    if (e.target === o || e.target.closest('[data-close]')) closeModals();
+  });
+});
+
+/* ============ Country Picker & Cyber Search (150+ Countries) ============ */
+const ccWrap = document.getElementById('cc');
+const ccList = document.getElementById('ccList');
+const ccBackdrop = document.getElementById('ccBackdrop');
+const ccItems = document.getElementById('ccItems');
+const ccSearchInput = document.getElementById('ccSearchInput');
+const ccSearchClear = document.getElementById('ccSearchClear');
+const ccDoneBtn = document.getElementById('ccDoneBtn');
+const phoneInput = document.getElementById('phoneInput');
+
+let ccSel = 0; // Default Russia (index 0)
+let ccFiltered = COUNTRIES.map((c, i) => ({ ...c, originalIndex: i }));
+
+function renderCountryItems(list) {
+  if (!ccItems) return;
+  if (!list.length) {
+    ccItems.innerHTML = '<div class="cc-empty">Ничего не найдено</div>';
+    return;
+  }
+  ccItems.innerHTML = list.map(item => {
+    const isSel = item.originalIndex === ccSel;
+    return '<button class="cc-opt' + (isSel ? ' sel' : '') + '" data-idx="' + item.originalIndex + '" type="button">' +
+      '<span>' + item.f + '</span>' +
+      '<span>' + item.n + '</span>' +
+      '<code>' + item.c + '</code>' +
+    '</button>';
+  }).join('');
+}
+
+renderCountryItems(ccFiltered);
+
+function filterCountries(q) {
+  const query = (q || '').trim().toLowerCase().replace(/^\+/, '');
+  if (!query) {
+    ccFiltered = COUNTRIES.map((c, i) => ({ ...c, originalIndex: i }));
+  } else {
+    ccFiltered = COUNTRIES.map((c, i) => ({ ...c, originalIndex: i })).filter(item => {
+      const codeDigits = item.c.replace(/\D/g, '');
+      const name = item.n.toLowerCase();
+      const aliases = (item.a || '').toLowerCase();
+      return name.includes(query) ||
+             codeDigits.startsWith(query) ||
+             item.c.toLowerCase().includes(query) ||
+             aliases.includes(query);
+    });
+  }
+  renderCountryItems(ccFiltered);
+  if (ccSearchClear) {
+    ccSearchClear.classList.toggle('show', (q || '').length > 0);
+  }
+}
+
+function openCountryPicker() {
+  if (!ccWrap) return;
+  ccWrap.classList.add('open');
+  if (ccList) ccList.hidden = false;
+  if (ccBackdrop) ccBackdrop.hidden = false;
+  if (ccSearchInput) {
+    ccSearchInput.value = '';
+    filterCountries('');
+    setTimeout(() => ccSearchInput.focus(), 60);
+  }
+  if (ccItems) {
+    const s = ccItems.querySelector('.sel');
+    if (s) s.scrollIntoView({ block: 'nearest' });
+  }
+  haptic('light');
 }
 
 function closeCountryPicker() {
-  triggerHaptic('light');
-  document.getElementById('country-picker-modal')?.classList.remove('active');
+  if (!ccWrap) return;
+  ccWrap.classList.remove('open');
+  if (ccList) ccList.hidden = true;
+  if (ccBackdrop) ccBackdrop.hidden = true;
+  if (ccSearchClear) ccSearchClear.classList.remove('show');
 }
 
-function renderCountryPickerItems(filterText = '') {
-  const container = document.getElementById('country-list-items');
-  if (!container) return;
+function selectCountry(idx) {
+  if (idx < 0 || idx >= COUNTRIES.length) return;
+  ccSel = idx;
+  const c = COUNTRIES[ccSel];
+  const elFlag = document.getElementById('ccFlag');
+  const elName = document.getElementById('ccName');
+  const elCode = document.getElementById('ccCode');
+  if (elFlag) elFlag.textContent = c.f;
+  if (elName) elName.textContent = c.n;
+  if (elCode) elCode.textContent = c.c;
 
-  const query = filterText.toLowerCase().trim();
-  const filtered = COUNTRIES_LIST.filter(c => {
-    const ruName = c.name.ru.toLowerCase();
-    const enName = c.name.en.toLowerCase();
-    return ruName.includes(query) || enName.includes(query) || c.dial.includes(query) || c.alpha.toLowerCase().includes(query);
-  });
-
-  container.innerHTML = filtered.map(c => `
-    <div class="country-item" onclick="selectCountryItem('${c.alpha}')">
-      <div class="country-item-left">
-        <span class="country-badge-sm">${c.alpha}</span>
-        <span class="country-item-name">${c.name[currentAuthLang] || c.name.ru}</span>
-      </div>
-      <span class="country-item-dial">${c.dial}</span>
-    </div>
-  `).join('');
-}
-
-function filterCountries(val) {
-  renderCountryPickerItems(val);
-}
-
-function selectCountryItem(alpha) {
-  triggerHaptic('selection');
-  const found = COUNTRIES_LIST.find(c => c.alpha === alpha);
-  if (!found) return;
-
-  selectedCountry = found;
-  const alphaEl = document.getElementById('selected-country-alpha');
-  if (alphaEl) alphaEl.textContent = found.alpha;
-  const nameEl = document.getElementById('selected-country-name');
-  if (nameEl) nameEl.textContent = found.name[currentAuthLang] || found.name.ru;
-  const dialEl = document.getElementById('selected-dial-code');
-  if (dialEl) dialEl.textContent = found.dial;
-
+  // Immediately close picker
   closeCountryPicker();
 
-  const phoneInput = document.getElementById('auth-phone-input');
-  if (phoneInput) phoneInput.focus();
-}
+  // Highlight selected item in list
+  if (ccItems) {
+    ccItems.querySelectorAll('.cc-opt').forEach(opt => {
+      opt.classList.toggle('sel', +opt.dataset.idx === ccSel);
+    });
+  }
 
-// Phone Input Masking & State
-function setupPhoneInputListeners() {
-  const phoneInput = document.getElementById('auth-phone-input');
-  const submitPhoneBtn = document.getElementById('btn-submit-phone');
-
+  // Update phone input placeholder and focus
   if (phoneInput) {
-    phoneInput.addEventListener('input', (e) => {
-      // Allow only numbers and spaces
-      let val = e.target.value.replace(/\D/g, '');
-      // Format with spaces (3 3 4 or 3 3 2 2)
-      let formatted = '';
-      for (let i = 0; i < val.length; i++) {
-        if (i === 3 || i === 6 || i === 8) formatted += ' ';
-        formatted += val[i];
-      }
-      e.target.value = formatted;
-
-      const isValid = val.length >= 7;
-      if (submitPhoneBtn) {
-        submitPhoneBtn.classList.toggle('ready', isValid);
-      }
-    });
-
-    phoneInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        submitPhoneAuth();
-      }
-    });
+    phoneInput.placeholder = c.p || '000 000-00-00';
+    phoneInput.value = '';
+    setTimeout(() => phoneInput.focus(), 80);
   }
+  haptic('light');
 }
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', setupPhoneInputListeners);
-} else {
-  setupPhoneInputListeners();
-}
-
-// Submit Phone
-async function submitPhoneAuth() {
-  const phoneInput = document.getElementById('auth-phone-input');
-  const rawDigits = phoneInput?.value.replace(/\D/g, '') || '';
-
-  if (rawDigits.length < 6) {
-    triggerHaptic('warning');
-    showAlert('Пожалуйста, введите корректный номер телефона.');
-    return;
-  }
-
-  triggerHaptic('medium');
-  const dialCode = selectedCountry.dial;
-  authPhoneFull = `${dialCode}${rawDigits}`;
-
-  // Update visual representation in step 2
-  const otpDisplay = document.getElementById('otp-phone-display');
-  if (otpDisplay) {
-    otpDisplay.textContent = `${dialCode} ${phoneInput.value}`;
-  }
-
-  const submitBtn = document.getElementById('btn-submit-phone');
-  if (submitBtn) {
-    submitBtn.style.opacity = '0.5';
-    submitBtn.disabled = true;
-  }
-
-  try {
-    const targetUserId = currentActiveUserId || tg?.initDataUnsafe?.user?.id;
-    const apiBase = getApiBaseUrl();
-
-    if (!apiBase) {
-      console.warn('No active API tunnel found, using Telegram Direct Link fallback');
-      fallbackToBotAuth(rawDigits);
-      return;
-    }
-
-    const res = await fetch(`${apiBase}/api/auth/send_code`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: targetUserId || 0, phone: authPhoneFull })
-    });
-
-    const data = await res.json();
-    if (data.ok) {
-      triggerHaptic('success');
-      setAuthStep(2);
+// Toggle country picker when clicking Russia / current country button
+const btnCc = document.getElementById('ccBtn');
+if (btnCc) {
+  btnCc.addEventListener('click', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (ccWrap.classList.contains('open')) {
+      closeCountryPicker();
     } else {
-      triggerHaptic('warning');
-      showAlert(data.error || 'Ошибка отправки кода подтверждения.');
+      openCountryPicker();
     }
-  } catch (err) {
-    console.warn('API connection error, engaging seamless Bot fallback:', err);
-    localStorage.removeItem('ayulite_api_url');
-    triggerHaptic('warning');
-    fallbackToBotAuth(rawDigits);
-  } finally {
-    if (submitBtn) {
-      submitBtn.style.opacity = '1';
-      submitBtn.disabled = false;
-    }
-  }
-}
-
-// 5-Digit OTP Box Setup
-function setupOtpBoxInputs() {
-  const boxes = [0, 1, 2, 3, 4].map(i => document.getElementById(`otp-${i}`));
-
-  boxes.forEach((box, idx) => {
-    if (!box) return;
-
-    box.value = '';
-    box.classList.remove('filled');
-
-    box.oninput = (e) => {
-      const val = e.target.value.replace(/\D/g, '');
-      if (val) {
-        box.value = val.slice(-1);
-        box.classList.add('filled');
-        if (idx < 4) {
-          boxes[idx + 1].focus();
-        } else {
-          // All 5 filled!
-          submitOtpAuth();
-        }
-      } else {
-        box.classList.remove('filled');
-      }
-    };
-
-    box.onkeydown = (e) => {
-      if (e.key === 'Backspace' && !box.value && idx > 0) {
-        boxes[idx - 1].focus();
-      } else if (e.key === 'Enter') {
-        submitOtpAuth();
-      }
-    };
-
-    box.onpaste = (e) => {
-      e.preventDefault();
-      const pasteText = (e.clipboardData || window.clipboardData).getData('text');
-      const digits = pasteText.replace(/\D/g, '').slice(0, 5);
-      if (digits) {
-        for (let i = 0; i < 5; i++) {
-          if (digits[i]) {
-            boxes[i].value = digits[i];
-            boxes[i].classList.add('filled');
-          }
-        }
-        if (digits.length === 5) {
-          boxes[4].focus();
-          submitOtpAuth();
-        } else {
-          boxes[digits.length]?.focus();
-        }
-      }
-    };
   });
 }
 
-// Countdown Timer for Step 2
-function startOtpCountdown() {
-  clearInterval(authTimerInterval);
-  authSecondsLeft = 60;
+// Click on any country in the list
+if (ccItems) {
+  ccItems.addEventListener('click', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    const b = e.target.closest('.cc-opt');
+    if (!b) return;
+    const idx = parseInt(b.dataset.idx, 10);
+    selectCountry(idx);
+  });
+}
 
-  const timerEl = document.getElementById('timer-sec');
-  const timerBox = document.getElementById('auth-resend-timer');
-  const resendBtn = document.getElementById('btn-resend-code');
+// Click on Done button just closes or selects top match if searched
+if (ccDoneBtn) {
+  ccDoneBtn.addEventListener('click', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    const query = (ccSearchInput?.value || '').trim();
+    if (query && ccFiltered.length > 0) {
+      selectCountry(ccFiltered[0].originalIndex);
+    } else {
+      closeCountryPicker();
+      if (phoneInput) phoneInput.focus();
+    }
+  });
+}
 
-  if (timerBox) timerBox.style.display = 'inline';
-  if (resendBtn) resendBtn.style.display = 'none';
+// Search input handling
+if (ccSearchInput) {
+  ccSearchInput.addEventListener('input', e => {
+    filterCountries(e.target.value);
+  });
+  ccSearchInput.addEventListener('click', e => e.stopPropagation());
+  ccSearchInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      e.stopPropagation();
+      const query = (ccSearchInput.value || '').trim();
+      if (query && ccFiltered.length > 0) {
+        selectCountry(ccFiltered[0].originalIndex);
+      } else {
+        closeCountryPicker();
+        if (phoneInput) phoneInput.focus();
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      closeCountryPicker();
+    }
+  });
+}
 
-  authTimerInterval = setInterval(() => {
-    authSecondsLeft--;
-    if (timerEl) timerEl.textContent = authSecondsLeft;
+if (ccSearchClear) {
+  ccSearchClear.addEventListener('click', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (ccSearchInput) {
+      ccSearchInput.value = '';
+      filterCountries('');
+      ccSearchInput.focus();
+    }
+  });
+}
 
-    if (authSecondsLeft <= 0) {
-      clearInterval(authTimerInterval);
-      if (timerBox) timerBox.style.display = 'none';
-      if (resendBtn) resendBtn.style.display = 'inline-block';
+// Backdrop or click outside closes picker
+if (ccBackdrop) {
+  ccBackdrop.addEventListener('click', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    closeCountryPicker();
+  });
+}
+
+document.addEventListener('click', e => {
+  if (ccWrap && ccWrap.classList.contains('open') && !e.target.closest('.cc')) {
+    closeCountryPicker();
+  }
+});
+
+/* ============ Universal Country Phone Masking ============ */
+function formatByMask(digits, maskPattern, maxDigits) {
+  if (!maskPattern) return digits;
+  const targetDigits = maxDigits ? digits.slice(0, maxDigits) : digits;
+  const res = [];
+  let dIdx = 0;
+  const dLen = targetDigits.length;
+
+  for (let i = 0; i < maskPattern.length; i++) {
+    const ch = maskPattern[i];
+    if (/\d/.test(ch)) {
+      if (dIdx < dLen) {
+        res.push(targetDigits[dIdx++]);
+      } else {
+        break;
+      }
+    } else {
+      if (dIdx < dLen) {
+        res.push(ch);
+      } else {
+        break;
+      }
+    }
+  }
+
+  if (dIdx < dLen) {
+    res.push(' ' + targetDigits.slice(dIdx));
+  }
+  return res.join('');
+}
+
+phoneInput.addEventListener('input', (e) => {
+  const c = COUNTRIES[ccSel] || COUNTRIES[0];
+  let raw = e.target.value.replace(/\D/g, '');
+
+  // If user pasted or typed the country code, strip it cleanly
+  const codeDigits = c.c.replace(/\D/g, '');
+  if (c.c === '+7') {
+    if (raw.startsWith('7') || raw.startsWith('8')) raw = raw.slice(1);
+  } else if (raw.startsWith(codeDigits)) {
+    raw = raw.slice(codeDigits.length);
+  }
+
+  // Format using country mask
+  e.target.value = formatByMask(raw, c.p, c.d);
+});
+
+/* ============ Login Flow (Real Backend API) ============ */
+const steps = ['ls0', 'ls1', 'ls1b', 'ls2'];
+function showStep(step) {
+  const steps = ['ls0', 'ls1', 'ls1b', 'ls2'];
+  const targetId = typeof step === 'number' ? steps[step] : step;
+
+  steps.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.hidden = (id !== targetId);
+  });
+
+  // RAF + Timeout for robust mobile & WebApp autofocus
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      if (targetId === 'ls0') {
+        document.getElementById('phoneInput')?.focus();
+      } else if (targetId === 'ls1') {
+        const first = document.querySelector('#codeBox input');
+        if (first) first.focus();
+      } else if (targetId === 'ls1b') {
+        const p = document.getElementById('passwordInput');
+        if (p) {
+          p.focus();
+          try { p.click(); } catch (e) {}
+        }
+      }
+    }, 80);
+  });
+}
+
+let resendInt = null;
+function startResend() {
+  const btn = document.getElementById('resend');
+  let t = 60;
+  clearInterval(resendInt);
+  btn.disabled = true;
+  btn.textContent = 'Запросить код повторно через ' + t + ' с';
+  resendInt = setInterval(() => {
+    t--;
+    if (t <= 0) {
+      clearInterval(resendInt);
+      btn.disabled = false;
+      btn.textContent = 'Запросить новый код';
+    } else {
+      btn.textContent = 'Запросить код повторно через ' + t + ' с';
     }
   }, 1000);
 }
 
-// Resend Code
-async function resendAuthCode() {
-  triggerHaptic('medium');
-  startOtpCountdown();
-
-  try {
-    const targetUserId = currentActiveUserId || tg?.initDataUnsafe?.user?.id || 0;
-    await fetch(`${getApiBaseUrl()}/api/auth/resend_code`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: targetUserId })
-    });
-    showAlert('📩 Свежий код подтверждения отправлен в ваш Telegram!');
-  } catch (err) {
-    showAlert('📩 Код отправлен повторно.');
-  }
+function openLogin() {
+  showStep('ls0');
+  openModal('loginModal');
+  setTimeout(() => phoneInput.focus(), 120);
 }
 
-// Submit OTP Code
-async function submitOtpAuth() {
-  const boxes = [0, 1, 2, 3, 4].map(i => document.getElementById(`otp-${i}`));
-  const code = boxes.map(b => b?.value || '').join('');
+document.getElementById('heroAdd')?.addEventListener('click', () => { openLogin(); haptic('light'); });
+document.getElementById('hdrAddBtn')?.addEventListener('click', () => { openLogin(); haptic('light'); });
+document.getElementById('addDevice')?.addEventListener('click', () => { openLogin(); haptic('light'); });
 
-  if (code.length !== 5) {
-    triggerHaptic('warning');
-    showAlert('Введите 5-значный код из Telegram.');
+// Step 0: Send Code
+document.getElementById('toCode').addEventListener('click', async () => {
+  const c = COUNTRIES[ccSel] || COUNTRIES[0];
+  const prefix = c.c || '+7';
+  let digits = phoneInput.value.replace(/\D/g, '');
+
+  const codeDigits = prefix.replace(/\D/g, '');
+  if (prefix === '+7') {
+    if (digits.startsWith('7') || digits.startsWith('8')) digits = digits.slice(1);
+  } else if (digits.startsWith(codeDigits)) {
+    digits = digits.slice(codeDigits.length);
+  }
+
+  if (digits.length < 5) {
+    toast('Проверьте номер телефона');
+    hapticNotify('warning');
     return;
   }
 
-  triggerHaptic('medium');
+  fullNumber = prefix + digits;
+  const btn = document.getElementById('toCode');
+  btn.disabled = true;
+  btn.textContent = 'Отправка кода…';
+  haptic('light');
 
   try {
-    const targetUserId = currentActiveUserId || tg?.initDataUnsafe?.user?.id || 0;
-    const res = await fetch(`${getApiBaseUrl()}/api/auth/verify_code`, {
+    const res = await fetch(`${state.apiUrl}/api/auth/send_code`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: targetUserId, code: code })
+      body: JSON.stringify({ user_id: userId, phone: fullNumber })
     });
-
     const data = await res.json();
+
+    if (data.ok) {
+      hapticNotify('success');
+      showStep('ls1');
+      startResend();
+      toast('Код отправлен в Telegram');
+      setTimeout(() => { const f = document.querySelector('#codeBox input'); f && f.focus(); }, 120);
+    } else {
+      hapticNotify('error');
+      toast(data.error || 'Ошибка отправки кода');
+    }
+  } catch (err) {
+    hapticNotify('error');
+    toast('Ошибка связи с сервером');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Продолжить';
+  }
+});
+
+// Direct Telegram Bot Button
+document.getElementById('btnTgDirect')?.addEventListener('click', () => {
+  haptic('light');
+  const digits = phoneInput.value.replace(/\D/g, '');
+  const c = COUNTRIES[ccSel] || COUNTRIES[0];
+  const prefix = c.c || '+7';
+  const phone = digits ? `${prefix}${digits}` : '';
+  const botUrl = phone ? `https://t.me/AyuLiteBot?start=auth_${phone}` : `https://t.me/AyuLiteBot?start=login`;
+  if (tg?.openTelegramLink) tg.openTelegramLink(botUrl);
+  else window.open(botUrl, '_blank');
+});
+
+document.getElementById('resend').addEventListener('click', () => {
+  startResend();
+  document.getElementById('toCode').click();
+  haptic('light');
+});
+
+// 5-Digit Code Inputs
+const codeInputs = [...document.querySelectorAll('#codeBox input')];
+const confirmBtn = document.getElementById('confirmCode');
+const btnPasteCode = document.getElementById('btnPasteCode');
+
+function fillCodeDigits(text) {
+  const digits = (text || '').replace(/\D/g, '').slice(0, codeInputs.length);
+  if (!digits) {
+    toast('В буфере нет цифр кода');
+    hapticNotify('warning');
+    return;
+  }
+  digits.split('').forEach((d, i) => {
+    if (codeInputs[i]) codeInputs[i].value = d;
+  });
+  haptic('light');
+  if (digits.length === codeInputs.length) {
+    confirmBtn.click();
+  } else {
+    const nextIdx = Math.min(digits.length, codeInputs.length - 1);
+    codeInputs[nextIdx]?.focus();
+  }
+}
+
+async function pasteCodeFromClipboard() {
+  let text = '';
+  try {
+    if (navigator.clipboard && navigator.clipboard.readText) {
+      text = await navigator.clipboard.readText();
+    }
+  } catch (err) {
+    console.warn('Clipboard read error:', err);
+  }
+
+  if (!text) {
+    text = prompt('Вставьте код подтверждения из Telegram:') || '';
+  }
+
+  if (text) {
+    fillCodeDigits(text);
+  }
+}
+
+if (btnPasteCode) {
+  btnPasteCode.addEventListener('click', (e) => {
+    e.preventDefault();
+    pasteCodeFromClipboard();
+  });
+}
+
+codeInputs.forEach((inp, idx) => {
+  inp.addEventListener('input', () => {
+    inp.value = inp.value.replace(/\D/g, '').slice(-1);
+    if (inp.value && codeInputs[idx + 1]) codeInputs[idx + 1].focus();
+    const fullCode = codeInputs.map(i => i.value).join('');
+    if (fullCode.length === codeInputs.length) {
+      confirmBtn.click();
+    }
+    haptic('light');
+  });
+
+  inp.addEventListener('paste', e => {
+    e.preventDefault();
+    const pasted = (e.clipboardData || window.clipboardData)?.getData('text') || '';
+    fillCodeDigits(pasted);
+  });
+
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Backspace' && !inp.value && codeInputs[idx - 1]) {
+      codeInputs[idx - 1].focus();
+      e.preventDefault();
+    }
+  });
+});
+
+// Step 1: Verify Code
+confirmBtn.addEventListener('click', async () => {
+  const code = codeInputs.map(i => i.value).join('');
+  if (code.length < 4) {
+    toast('Введите полный код');
+    hapticNotify('warning');
+    return;
+  }
+
+  confirmBtn.disabled = true;
+  confirmBtn.textContent = 'Проверка кода…';
+  haptic('light');
+
+  try {
+    const res = await fetch(`${state.apiUrl}/api/auth/verify_code`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId, code: code })
+    });
+    const data = await res.json();
+
     if (data.ok) {
       if (data.need_password) {
-        // Step 3 2FA Cloud Password Needed!
-        triggerHaptic('warning');
-        setAuthStep(3);
+        hapticNotify('warning');
+        showStep('ls1b');
+        toast('Требуется облачный пароль 2FA');
+        setTimeout(() => document.getElementById('passwordInput')?.focus(), 120);
       } else {
-        // Success without 2FA
-        triggerHaptic('success');
-        showAuthSuccess(data.account || { name: 'Telegram User', phone: authPhoneFull });
+        handleAuthSuccess(data.account);
       }
     } else {
-      triggerHaptic('warning');
-      showAlert(data.error || 'Неверный проверочный код. Попробуйте еще раз.');
-      boxes.forEach(b => { if (b) { b.value = ''; b.classList.remove('filled'); } });
-      boxes[0]?.focus();
+      hapticNotify('error');
+      toast(data.error || 'Неверный код подтверждения');
     }
   } catch (err) {
-    console.warn('API verify fallback simulation:', err);
-    triggerHaptic('success');
-    showAuthSuccess({ name: 'Telegram Account', phone: authPhoneFull });
+    hapticNotify('error');
+    toast('Ошибка соединения');
+  } finally {
+    confirmBtn.disabled = false;
+    confirmBtn.textContent = 'Подтвердить код';
   }
+});
+
+/* ============ Глаз: единственный канонический обработчик показа пароля ============ */
+const pwdInput = document.getElementById('passwordInput');
+const btnTogglePwd = document.getElementById('btnTogglePwd');
+const pwdWrap = document.querySelector('.pwd-wrap');
+
+const EYE_ON  = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+const EYE_OFF = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+
+function setPwdVisible(visible) {
+  if (!pwdInput) return;
+
+  // 1) Нативное переключение type
+  pwdInput.type = visible ? 'text' : 'password';
+
+  // 2) Снятие CSS-маскировки webkitTextSecurity через inline-стиль
+  try {
+    pwdInput.style.webkitTextSecurity = visible ? 'none' : 'disc';
+  } catch (e) {}
+
+  // 3) Класс для совместимости
+  pwdInput.classList.toggle('show-text', visible);
+
+  // 4) Иконка и состояние кнопки
+  if (btnTogglePwd) {
+    btnTogglePwd.classList.toggle('active', visible);
+    btnTogglePwd.innerHTML = visible ? EYE_OFF : EYE_ON;
+    btnTogglePwd.setAttribute('aria-label', visible ? 'Скрыть пароль' : 'Показать пароль');
+  }
+
+  // 5) Возврат фокуса и каретки в конец
+  setTimeout(() => {
+    pwdInput.focus();
+    try {
+      const l = pwdInput.value.length;
+      pwdInput.setSelectionRange(l, l);
+    } catch (e) {}
+  }, 10);
 }
 
-// Toggle Password Eye Icon
-function togglePasswordEye() {
-  triggerHaptic('selection');
-  const passInput = document.getElementById('auth-password-input');
-  if (!passInput) return;
+if (btnTogglePwd && pwdInput) {
+  btnTogglePwd.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setPwdVisible(pwdInput.type !== 'text');
+    haptic('light');
+  });
+}
 
-  const isPass = passInput.type === 'password';
-  passInput.type = isPass ? 'text' : 'password';
-
-  const eyeIcon = document.getElementById('eye-icon');
-  if (eyeIcon) {
-    if (isPass) {
-      // Slashed eye (visible)
-      eyeIcon.innerHTML = `
-        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-        <line x1="1" y1="1" x2="23" y2="23"></line>
-      `;
-    } else {
-      // Normal eye
-      eyeIcon.innerHTML = `
-        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-        <circle cx="12" cy="12" r="3"></circle>
-      `;
+if (pwdWrap && pwdInput) {
+  pwdWrap.addEventListener('click', (e) => {
+    if (e.target !== btnTogglePwd && !btnTogglePwd?.contains(e.target)) {
+      pwdInput.focus();
     }
-  }
+  });
 }
 
-// Submit 2FA Cloud Password
-async function submitPasswordAuth() {
-  const passInput = document.getElementById('auth-password-input');
-  const password = passInput?.value || '';
+if (pwdInput) {
+  pwdInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      document.getElementById('confirmPassword')?.click();
+    }
+  });
+}
 
-  if (!password) {
-    triggerHaptic('warning');
-    showAlert('Введите облачный пароль двухфакторной аутентификации.');
+// Explicit direct cancel buttons
+document.querySelectorAll('.btn-cancel-session').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    closeModals();
+    haptic('light');
+  });
+});
+
+// Step 1B: Verify 2FA Password
+document.getElementById('confirmPassword')?.addEventListener('click', async () => {
+  const pwd = document.getElementById('passwordInput').value;
+  if (!pwd) {
+    toast('Введите облачный пароль');
+    hapticNotify('warning');
     return;
   }
 
-  triggerHaptic('heavy');
-  const btn = document.getElementById('btn-submit-password');
-  if (btn) {
-    btn.style.opacity = '0.5';
-    btn.disabled = true;
-  }
+  const btn = document.getElementById('confirmPassword');
+  btn.disabled = true;
+  btn.textContent = 'Авторизация…';
+  haptic('light');
 
   try {
-    const targetUserId = currentActiveUserId || tg?.initDataUnsafe?.user?.id || 0;
-    const res = await fetch(`${getApiBaseUrl()}/api/auth/verify_password`, {
+    const res = await fetch(`${state.apiUrl}/api/auth/verify_password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: targetUserId, password: password })
+      body: JSON.stringify({ user_id: userId, password: pwd })
     });
-
     const data = await res.json();
+
     if (data.ok) {
-      triggerHaptic('success');
-      showAuthSuccess(data.account || { name: 'Telegram User', phone: authPhoneFull });
+      handleAuthSuccess(data.account);
     } else {
-      triggerHaptic('warning');
-      showAlert(data.error || 'Неверный облачный пароль 2FA.');
+      hapticNotify('error');
+      toast(data.error || 'Неверный 2FA пароль');
     }
   } catch (err) {
-    console.warn('API password verify fallback simulation:', err);
-    triggerHaptic('success');
-    showAuthSuccess({ name: 'Telegram Account', phone: authPhoneFull });
+    hapticNotify('error');
+    toast('Ошибка соединения');
   } finally {
-    if (btn) {
-      btn.style.opacity = '1';
-      btn.disabled = false;
-    }
+    btn.disabled = false;
+    btn.textContent = 'Войти в аккаунт';
   }
+});
+
+function handleAuthSuccess(account) {
+  hapticNotify('success');
+  showStep('ls2');
+  document.getElementById('connectedDevName').textContent = account?.name || 'User Account';
+  document.getElementById('devMeta').textContent = `${account?.phone || fullNumber} · AyuLite`;
+  loadRealWorkers();
 }
 
-// Show Final Success Screen
-function showAuthSuccess(account) {
-  setAuthStep(4);
-  const nameEl = document.getElementById('success-acc-name');
-  const phoneEl = document.getElementById('success-acc-phone');
-  const modelEl = document.getElementById('success-acc-model');
+document.getElementById('loginDone').addEventListener('click', () => {
+  closeModals();
+  loadRealWorkers();
+  codeInputs.forEach(i => i.value = '');
+  toast('Устройство привязано к C2-сети');
+  haptic('light');
+});
 
-  if (nameEl) nameEl.textContent = account.name || 'Telegram User';
-  if (phoneEl) phoneEl.textContent = account.phone || authPhoneFull;
-  if (modelEl) modelEl.textContent = account.device_model || 'Samsung Galaxy S24 Ultra (Encrypted)';
+/* ============ Pay Flow ============ */
+let curPlan = { name: '', key: 'pro', price: '' };
 
-  // Increment active worker counter
-  const workerStat = document.getElementById('stat-workers');
-  if (workerStat) {
-    const current = parseInt(workerStat.textContent, 10) || 1;
-    workerStat.textContent = current + 1;
+document.querySelectorAll('[data-plan]').forEach(b => {
+  b.addEventListener('click', () => {
+    curPlan = { name: b.dataset.plan, key: b.dataset.key, price: b.dataset.price };
+    document.getElementById('payTitle').textContent = 'Активация · ' + curPlan.name;
+    document.getElementById('payPrice').textContent = curPlan.price;
+    openModal('payModal');
+    haptic('light');
+  });
+});
+
+document.querySelectorAll('.pay-row').forEach(r => {
+  r.addEventListener('click', () => {
+    closeModals();
+    hapticNotify('success');
+    toast('Запрос на оплату сформирован (' + r.dataset.method + ')');
+  });
+});
+
+/* ============ Toast ============ */
+let toastT = null;
+function toast(msg) {
+  const t = document.getElementById('toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastT);
+  toastT = setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+/* ============ Bottom Nav & Scrollspy ============ */
+const secIO = new IntersectionObserver(es => es.forEach(x => {
+  if (x.isIntersecting) {
+    document.querySelectorAll('#bnav a').forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + x.target.id));
   }
-}
+}), { rootMargin: '-30% 0px -50% 0px' });
 
-// Полнотекстовый поиск по 54 модулям и синтаксису команд
-function searchModules(query) {
-  const q = query.toLowerCase().trim();
-  const cards = document.querySelectorAll('.module-card');
-  const categories = document.querySelectorAll('.module-category');
+['nodes', 'modules', 'pricing', 'settings'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) secIO.observe(el);
+});
 
-  cards.forEach(card => {
-    const text = card.textContent.toLowerCase();
-    const matches = !q || text.includes(q);
-    card.style.display = matches ? 'flex' : 'none';
+document.querySelectorAll('#bnav a').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    haptic('light');
+    const targetId = btn.getAttribute('href').replace('#', '');
+    const targetEl = document.getElementById(targetId);
+    if (targetEl) targetEl.scrollIntoView({ behavior: 'smooth' });
   });
+});
 
-  categories.forEach(cat => {
-    const allCards = cat.querySelectorAll('.module-card');
-    let hasVisible = false;
-    allCards.forEach(c => {
-      if (c.style.display !== 'none') hasVisible = true;
-    });
-    cat.style.display = hasVisible ? 'flex' : 'none';
-  });
-}
+/* ============ Reveal ============ */
+const io = new IntersectionObserver(es => es.forEach(x => {
+  if (x.isIntersecting) {
+    x.target.classList.add('in');
+    io.unobserve(x.target);
+  }
+}), { threshold: .06 });
+
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+/* ============ Misc ============ */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModals();
+  if (e.key === '/' && !/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) {
+    e.preventDefault();
+    document.getElementById('search').focus();
+  }
+});
+
+/* ============ Startup ============ */
+(async function init() {
+  await discoverApiUrl();
+  setProfile(initialProfile, true);
+  await loadRealWorkers();
+})();

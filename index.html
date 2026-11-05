@@ -1,1678 +1,298 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>AyuLite C2</title>
-  <!-- Telegram Web App SDK -->
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link rel="stylesheet" href="style.css?v=4.5">
-  <!-- Google Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <script>
-    // Bulletproof inline handlers so buttons are 100% clickable even before scripts load
-    function switchTab(tabId, btn) {
-      document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
-      document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.remove('active'); });
-      if (btn) btn.classList.add('active');
-      var target = document.getElementById(tabId);
-      if (target) target.classList.add('active');
-      if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
-        try { window.Telegram.WebApp.HapticFeedback.selectionChanged(); } catch (e) {}
-      }
-    }
-
-    function openAuthOverlay() {
-      var el = document.getElementById('auth-overlay');
-      if (el) el.classList.add('active');
-      if (typeof startAuthSessionTimer === 'function') startAuthSessionTimer();
-      if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
-        try { window.Telegram.WebApp.HapticFeedback.impactOccurred('medium'); } catch (e) {}
-      }
-    }
-
-    function closeAuthOverlay() {
-      var el = document.getElementById('auth-overlay');
-      if (el) el.classList.remove('active');
-    }
-  </script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0b0c">
+<title>AyuLite C2 — панель управления</title>
+<!-- Telegram Web App SDK -->
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;600&family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=7.0">
 </head>
-<body>
-  <div class="app-container">
-    <!-- Header: User Profile & VIP status -->
-    <header class="app-header">
-      <div class="user-profile">
-        <div class="avatar-wrapper">
-          <img id="user-avatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=AyuLite" alt="Avatar">
-          <span class="status-indicator"></span>
-        </div>
-        <div class="user-meta">
-          <div class="user-name-row">
-            <span id="user-name">Пользователь</span>
-            <span class="badge-vip" id="vip-badge">PREMIUM</span>
-          </div>
-          <span class="user-id" id="user-id">ID: Синхронизация...</span>
-          <span class="user-expiry" id="user-expiry" style="font-size: 11px; color: #94a3b8; display: block; margin-top: 1px;">⏳ Срок: Бессрочно</span>
-        </div>
-      </div>
-      <button class="icon-btn" id="btn-refresh" title="Обновить">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-      </button>
-    </header>
-
-      <!-- QUICK CONNECT DEVICE BANNER -->
-      <div class="quick-connect-banner" onclick="openAuthOverlay()">
-        <div class="qc-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="5" y="2" width="14" height="20" rx="3" ry="3"></rect>
-            <line x1="12" y1="18" x2="12.01" y2="18"></line>
-          </svg>
-        </div>
-        <div class="qc-content">
-          <div class="qc-title">Привязать Telegram-аккаунт</div>
-          <div class="qc-desc">Быстрое подключение воркера (AyuLite Flow)</div>
-        </div>
-        <div class="qc-action-btn">
-          <span>Вход</span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
-        </div>
-      </div>
-
-
-    <!-- Navigation Tabs -->
-    <nav class="nav-tabs">
-      <button class="tab-btn active" data-tab="tab-premium" onclick="switchTab('tab-premium', this)">
-        <span class="tab-icon">💎</span>
-        <span>Клуб</span>
-      </button>
-      <button class="tab-btn" data-tab="tab-features" onclick="switchTab('tab-features', this)">
-        <span class="tab-icon">⚡️</span>
-        <span>Модули</span>
-      </button>
-      <button class="tab-btn" data-tab="tab-stats" onclick="switchTab('tab-stats', this)">
-        <span class="tab-icon">📊</span>
-        <span>Узлы</span>
-      </button>
-      <button class="tab-btn" data-tab="tab-settings" onclick="switchTab('tab-settings', this)">
-        <span class="tab-icon">⚙️</span>
-        <span>Опции</span>
-      </button>
-    </nav>
-
-    <!-- Main Content Area -->
-    <main class="content-area">
-
-      <!-- TAB 1: PREMIUM CLUB (PLANS & BENEFITS) -->
-      <section id="tab-premium" class="tab-content active">
-        <div class="hero-banner">
-          <div class="hero-glow"></div>
-          <div class="hero-tag">AyuLite VIP Access</div>
-          <h2>Закрытый доступ к сверхфункциям</h2>
-          <p>Разблокируйте протокольные обходы, теневое зеркалирование и безлимитный перехват медиа.</p>
-        </div>
-
-        <h3 class="section-title">Тарифные планы (Доступные подписки)</h3>
-        <div class="pricing-grid">
-          <!-- Card 1: ULTIMATE -->
-          <div class="pricing-card ultimate-card">
-            <div class="card-badge badge-ultimate">Ultimate 🔮</div>
-            <h4 style="color: #c084fc;">1. Ultimate</h4>
-            <div class="price" style="color: #a855f7;">199 ⭐️ <span>/ месяц</span></div>
-            <ul class="features-list">
-              <li>✓ <b>До 5 воркеров</b> в единой Mesh-сети</li>
-              <li>✓ <b>Shadow Mirror:</b> теневое зеркало чатов в канал</li>
-              <li>✓ <b>TTL Grabber:</b> захват сгорающих фото/видео (1 view)</li>
-              <li>✓ <b>Session Sentinel:</b> защита от сброса и килла сессий</li>
-              <li>✓ Локальный AI Speech-to-Text (.stt)</li>
-            </ul>
-            <button class="btn btn-gradient" onclick="openSubscribeModal('Ultimate', '199 ⭐️')">Активировать Ultimate</button>
-          </div>
-
-          <!-- Card 2: PREMIUM -->
-          <div class="pricing-card premium-card">
-            <div class="card-badge badge-premium">Premium 💎</div>
-            <h4 style="color: #38bdf8;">2. Premium</h4>
-            <div class="price" style="color: #06b6d4;">99 ⭐️ <span>/ месяц</span></div>
-            <ul class="features-list">
-              <li>✓ <b>До 3 воркеров</b> параллельно</li>
-              <li>✓ <b>TTL Grabber:</b> перехват сгорающих медиа</li>
-              <li>✓ Полный перехват удалений и правок (текст + медиа)</li>
-              <li>✓ Экспорт архивов диалогов до 100 МБ</li>
-              <li>✓ Ghost-режим скрытого мониторинга</li>
-            </ul>
-            <button class="btn btn-primary" onclick="openSubscribeModal('Premium', '99 ⭐️')">Выбрать Premium</button>
-          </div>
-
-          <!-- Card 3: PRO -->
-          <div class="pricing-card pro-card">
-            <div class="card-badge badge-pro">Pro 🚀</div>
-            <h4 style="color: #34d399;">3. Pro</h4>
-            <div class="price" style="color: #10b981;">49 ⭐️ <span>/ месяц</span></div>
-            <ul class="features-list">
-              <li>✓ <b>До 2 активных воркеров</b></li>
-              <li>✓ Перехват удалений и правок (текст + фото)</li>
-              <li>✓ Ghost-режим (скрытое чтение)</li>
-              <li>✓ Экспорт архивов до 50 МБ</li>
-            </ul>
-            <button class="btn btn-pro" onclick="openSubscribeModal('Pro', '49 ⭐️')">Подключить Pro</button>
-          </div>
-        </div>
-      </section>
-
-            <!-- TAB 2: EXCLUSIVE MODULES SHOWCASE -->
-      <section id="tab-features" class="tab-content">
-        <div class="section-intro">
-          <h3 id="modules-title">Каталог 54 модулей AyuLite</h3>
-          <p id="modules-subtitle">Индивидуальная активация протокольных инструментов по тарифам Pro, Premium и Ultimate.</p>
-        </div>
-
-        <!-- Минималистичная поисковая строка по модулям -->
-        <div class="search-module-wrapper">
-          <input type="text" class="search-module-input" id="module-search-input" placeholder="🔍 Поиск по 54 модулям и командам (.purge, .fakevoice, .ip)..." oninput="searchModules(this.value)">
-        </div>
-
-        <!-- Переключатель фильтрации модулей по подписке -->
-        <div class="tier-filter-bar">
-          <button class="filter-pill active" data-filter="my" onclick="setModuleFilter('my')">⚡️ Мой тариф (<span id="my-tier-badge">PRO</span>)</button>
-          <button class="filter-pill" data-filter="pro" onclick="setModuleFilter('pro')">🟢 PRO (15)</button>
-          <button class="filter-pill" data-filter="premium" onclick="setModuleFilter('premium')">🔵 PREMIUM (16)</button>
-          <button class="filter-pill" data-filter="ultimate" onclick="setModuleFilter('ultimate')">🔮 ULTIMATE (14)</button>
-          <button class="filter-pill" data-filter="all" onclick="setModuleFilter('all')">Все (54)</button>
-        </div>
-
-        <!-- Мастер-панель группового управления -->
-        <div class="master-modules-bar">
-          <button class="btn-master btn-enable-all" onclick="enableAllModules()">
-            <span>🚀</span> Включить все функции
-          </button>
-          <button class="btn-master btn-disable-all" onclick="disableAllModules()">
-            <span>🔄</span> Сбросить все
-          </button>
-        </div>
-
-        <div class="modules-list">
-          <!-- КАТЕГОРИЯ 1: ЗАЩИТА И ТЕНЕВЫЕ ПРОТОКОЛЫ (12) -->
-          <div class="module-category">
-            <div class="module-category-title">🛡️ Защита и Теневые протоколы (12)</div>
-
-            <div class="module-card" data-tier="ultimate" data-rank="3">
-              <div class="module-icon">🪞</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Shadow Mirror</h4>
-                  <span class="badge-lock badge-ultimate">ULTIMATE</span>
-                </div>
-                <p>Теневая репликация закрытых диалогов в скрытый резервный канал. Автоматически перехватывает и дублирует всю переписку, включая случаи, когда собеседник удалил сообщения «для обоих».</p>
-                <div class="module-syntax">⚙️ Режим: Фоновый перехват MTProto • Сохранение в резервный канал</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Shadow Mirror')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="ultimate" data-rank="3">
-              <div class="module-icon">🛡️</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Session Sentinel</h4>
-                  <span class="badge-lock badge-ultimate">ULTIMATE</span>
-                </div>
-                <p>Аппаратная защита MTProto-сессии от удаленного завершения (session revoke / terminate). Автоматически пресекает попытки сброса авторизации со сторонних устройств и клиентов.</p>
-                <div class="module-syntax">⚙️ Режим: Фоновый Watchdog сессий • Авто-защита сессионного ключа</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Session Sentinel')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="ultimate" data-rank="3">
-              <div class="module-icon">🕵️</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Secret Chats Spy</h4>
-                  <span class="badge-lock badge-ultimate">ULTIMATE</span>
-                </div>
-                <p>Мониторинг, расшифровка и теневое логирование событий внутри сквозных секретных чатов (E2EE) на уровне локального клиента до их удаления по таймеру.</p>
-                <div class="module-syntax">⚙️ Режим: MTProto E2E Hook • Перехват сгорающих секретных чатов</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Secret Chats Spy')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="ultimate" data-rank="3">
-              <div class="module-icon">👁️</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Bio Watcher</h4>
-                  <span class="badge-lock badge-ultimate">ULTIMATE</span>
-                </div>
-                <p>Отслеживание профилей контактов в реальном времени. Фиксирует изменения аватарки, @username, имени, фамилии и описания профиля (Bio) с мгновенной отправкой отчета.</p>
-                <div class="module-syntax">⚙️ Режим: Фоновый демон мониторинга профилей пользователей</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Bio Watcher')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="ultimate" data-rank="3">
-              <div class="module-icon">👻</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Ghost Online</h4>
-                  <span class="badge-lock badge-ultimate">ULTIMATE</span>
-                </div>
-                <p>Полное сокрытие сетевого статуса (Last Seen / Online) во время работы юзербота. Блокирует отправку пакетов обновления сетевой активности в Telegram MTProto.</p>
-                <div class="module-syntax">⚙️ Режим: Блокировка UpdateUserStatus • Невидимый сетевой статус</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Ghost Online')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="ultimate" data-rank="3">
-              <div class="module-icon">🧨</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Panic Switch (.nuke)</h4>
-                  <span class="badge-lock badge-ultimate">ULTIMATE</span>
-                </div>
-                <p>Экстренное безвозвратное стирание всех локальных баз данных SQLite, медиа-кэша, конфигураций и мгновенный отзыв активных сессий воркеров по триггер-команде.</p>
-                <div class="module-syntax">Команда: .nuke confirm • Полная детонация и очистка данных</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Panic Switch')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="ultimate" data-rank="3">
-              <div class="module-icon">🔐</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Zero-Knowledge Vault</h4>
-                  <span class="badge-lock badge-ultimate">ULTIMATE</span>
-                </div>
-                <p>Локальный защищенный криптографический сейф: автоматическое аппаратное шифрование сохраняемых медиафайлов и логов по стандарту AES-256-GCM с нулевым разглашением ключа.</p>
-                <div class="module-syntax">⚙️ Режим: Прозрачное шифрование AES-256-GCM перед записью</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Zero-Knowledge Vault')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="premium" data-rank="2">
-              <div class="module-icon">🔥</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>TTL Grabber</h4>
-                  <span class="badge-lock badge-premium">PREMIUM</span>
-                </div>
-                <p>Мгновенный автоматический перехват сгорающих самоуничтожающихся фото и видео (включая таймеры 1 view) до того, как они будут открыты и удалены сервером.</p>
-                <div class="module-syntax">⚙️ Режим: Авто-перехват (TTL от 1 до 86400 сек + 1-view медиа)</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'TTL Grabber')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="premium" data-rank="2">
-              <div class="module-icon">🕶️</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Ghost Story Ripper</h4>
-                  <span class="badge-lock badge-premium">PREMIUM</span>
-                </div>
-                <p>Фоновое скрытое скачивание и сохранение сгорающих Stories отслеживаемых контактов в оригинальном разрешении без отображения в списке просмотревших.</p>
-                <div class="module-syntax">⚙️ Режим: Фоновый риппер историй в data/media_vault</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Ghost Story Ripper')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="pro" data-rank="1">
-              <div class="module-icon">🗑️</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Anti-Delete</h4>
-                  <span class="badge-lock badge-pro">PRO</span>
-                </div>
-                <p>Перехват удаленных собеседниками текстовых и медиа-сообщений в реальном времени с моментальной отправкой оригинала и метаданных в ваш чат отчетов.</p>
-                <div class="module-syntax">⚙️ Режим: Авто-перехватчик UpdateDeleteMessages (ЛС и группы)</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Anti-Delete')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="pro" data-rank="1">
-              <div class="module-icon">✏️</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Anti-Edit</h4>
-                  <span class="badge-lock badge-pro">PRO</span>
-                </div>
-                <p>Фиксация исходного содержания сообщений до редактирования. Отправляет уведомление с версией «до» и «после», наглядно подсвечивая измененные фрагменты.</p>
-                <div class="module-syntax">⚙️ Режим: Авто-перехватчик UpdateEditMessage с кэшем в SQLite</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Anti-Edit')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="pro" data-rank="1">
-              <div class="module-icon">👁️‍🗨️</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Ghost Read</h4>
-                  <span class="badge-lock badge-pro">PRO</span>
-                </div>
-                <p>Невидимое чтение входящих сообщений в личных диалогах. Предотвращает отправку запроса SendReadHistory — собеседник не увидит синих галочек прочтения.</p>
-                <div class="module-syntax">⚙️ Режим: Фоновый фильтр запросов подтверждения прочтения</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Ghost Read')">
-                <span class="slider"></span>
-              </label>
-            </div>
-          </div>
-
-          <!-- КАТЕГОРИЯ 2: МЕДИА-КОМБАЙН И AI (7) -->
-          <div class="module-category">
-            <div class="module-category-title">🎙️ Медиа-комбайн и AI (7)</div>
-
-            <div class="module-card" data-tier="ultimate" data-rank="3">
-              <div class="module-icon">🧠</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Speech-to-Text (.stt)</h4>
-                  <span class="badge-lock badge-ultimate">ULTIMATE</span>
-                </div>
-                <p>Нейросетевая расшифровка аудиопотока из голосовых сообщений и видео-кружков прямо в текстовый формат. Поддерживает русский и английский языки.</p>
-                <div class="module-syntax">Команда: .stt (ответом на голосовое сообщение или кружок)</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Speech-to-Text')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="ultimate" data-rank="3">
-              <div class="module-icon">🗣️</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Text-to-Speech (.tts)</h4>
-                  <span class="badge-lock badge-ultimate">ULTIMATE</span>
-                </div>
-                <p>Нейросетевой синтез реалистичной человеческой речи диктора из введенного текста с автоматической конвертацией в нативное голосовое сообщение Telegram (Opus 48kHz).</p>
-                <div class="module-syntax">Команда: .tts &lt;текст&gt; или .tts (ответом на сообщение)</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Text-to-Speech')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="premium" data-rank="2">
-              <div class="module-icon">⭕️</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Video to Circle (.circle)</h4>
-                  <span class="badge-lock badge-premium">PREMIUM</span>
-                </div>
-                <p>Мгновенная трансформация любых обычных видеороликов и GIF-анимаций в нативное круглое видеосообщение Telegram (1:1 Round Video) через аппаратный FFmpeg.</p>
-                <div class="module-syntax">Команда: .circle (ответом на видеоролик или GIF)</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Video to Circle')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="premium" data-rank="2">
-              <div class="module-icon">🔄</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Round Video (.round)</h4>
-                  <span class="badge-lock badge-premium">PREMIUM</span>
-                </div>
-                <p>Аппаратная обрезка, центрирование пропорций и конвертация видеофайлов в нативный круглый формат с ускоренным рендерингом.</p>
-                <div class="module-syntax">Команда: .round (ответом на видеофайл)</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Round Video')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="premium" data-rank="2">
-              <div class="module-icon">🎙️</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Voice Converter (.voice)</h4>
-                  <span class="badge-lock badge-premium">PREMIUM</span>
-                </div>
-                <p>Извлечение звуковой дорожки из любого видеофайла или MP3-трека и отправка в чат как нативное голосовое сообщение с визуализацией волны.</p>
-                <div class="module-syntax">Команда: .voice (ответом на видео или аудиосообщение)</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Voice Converter')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="premium" data-rank="2">
-              <div class="module-icon">💾</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Media Saver (.save)</h4>
-                  <span class="badge-lock badge-premium">PREMIUM</span>
-                </div>
-                <p>Обход запрета на сохранение, скачивание и пересылку медиафайлов в защищенных Telegram-каналах и чатах (Restricted Content). Сохраняет медиа в «Избранное».</p>
-                <div class="module-syntax">Команда: .save (ответом на защищенное фото, видео или файл)</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Media Saver')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="premium" data-rank="2">
-              <div class="module-icon">📥</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Restricted DL (.dl)</h4>
-                  <span class="badge-lock badge-premium">PREMIUM</span>
-                </div>
-                <p>Быстрый алиас для извлечения защищенных медиафайлов из каналов с ограничением копирования напрямую в ваше личное облачное «Избранное» (Saved Messages).</p>
-                <div class="module-syntax">Команда: .dl (ответом на защищенное медиа-сообщение)</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Restricted DL')">
-                <span class="slider"></span>
-              </label>
-            </div>
-          </div>
-
-          <!-- КАТЕГОРИЯ 3: МОДЕРАЦИЯ И ЧАТ-МЕНЕДЖМЕНТ (9) -->
-          <div class="module-category">
-            <div class="module-category-title">⚙️ Модерация и Чат-менеджмент (9)</div>
-
-            <div class="module-card" data-tier="premium" data-rank="2">
-              <div class="module-icon">📢</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Mass Tagging (.tagall)</h4>
-                  <span class="badge-lock badge-premium">PREMIUM</span>
-                </div>
-                <p>Умный массовый созыв участников группы пакетами по 5 человек с паузами безопасности для надежной защиты от блокировок и системного FloodWait.</p>
-                <div class="module-syntax">Команда: .tagall &lt;текст сбора&gt; (работает в группах)</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Mass Tagging')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="premium" data-rank="2">
-              <div class="module-icon">📌</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Fast Pin (.pin)</h4>
-                  <span class="badge-lock badge-premium">PREMIUM</span>
-                </div>
-                <p>Быстрое закрепление выбранного сообщения в чате по реплаю с опцией тихого закрепа без раздражающего звукового системного уведомления участникам.</p>
-                <div class="module-syntax">Команда: .pin (ответом на закрепляемое сообщение)</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Fast Pin')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="premium" data-rank="2">
-              <div class="module-icon">📍</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Fast Unpin (.unpin)</h4>
-                  <span class="badge-lock badge-premium">PREMIUM</span>
-                </div>
-                <p>Мгновенное снятие закрепления с сообщения по реплаю или полная очистка всех закрепов в текущем диалоге или группе в одно касание.</p>
-                <div class="module-syntax">Команда: .unpin (по реплаю или без параметров)</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Fast Unpin')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="premium" data-rank="2">
-              <div class="module-icon">👢</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Fast Kick (.kick)</h4>
-                  <span class="badge-lock badge-premium">PREMIUM</span>
-                </div>
-                <p>Оперативное исключение нарушителя порядка из группы в одно касание по реплаю на его сообщение при наличии базовых прав модератора.</p>
-                <div class="module-syntax">Команда: .kick (ответом на сообщение нарушителя)</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Fast Kick')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="premium" data-rank="2">
-              <div class="module-icon">⛔️</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Fast Ban (.ban)</h4>
-                  <span class="badge-lock badge-premium">PREMIUM</span>
-                </div>
-                <p>Полная перманентная блокировка доступа пользователя к группе с лишением всех прав на чтение и отправку сообщений по реплаю.</p>
-                <div class="module-syntax">Команда: .ban (ответом на сообщение пользователя)</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Fast Ban')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="pro" data-rank="1">
-              <div class="module-icon">⚡️</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Quick Delete (.del)</h4>
-                  <span class="badge-lock badge-pro">PRO</span>
-                </div>
-                <p>Бесследное удаление целевого сообщения по реплаю и собственной команды юзербота без появления сервисных отметок и задержек.</p>
-                <div class="module-syntax">Команда: .del (ответом на удаляемое сообщение)</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Quick Delete')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="pro" data-rank="1">
-              <div class="module-icon">🧹</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Bulk Purge (.purge)</h4>
-                  <span class="badge-lock badge-pro">PRO</span>
-                </div>
-                <p>Пакетная очистка последних N своих сообщений в диалоге через групповые MTProto вызовы delete_messages с защитой от флуд-лимитов.</p>
-                <div class="module-syntax">Команда: .purge &lt;количество, например .purge 25&gt;</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Bulk Purge')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="ultimate" data-rank="3">
-              <div class="module-icon">🔇</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Local Mute (.mute)</h4>
-                  <span class="badge-lock badge-ultimate">ULTIMATE</span>
-                </div>
-                <p>Локальная персональная блокировка контакта. Автоматически перехватывает и моментально удаляет любые новые сообщения от заглушенного пользователя в текущем чате.</p>
-                <div class="module-syntax">Команда: .mute (ответом на сообщение контакта)</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Local Mute')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="ultimate" data-rank="3">
-              <div class="module-icon">🔊</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Local Unmute (.unmute)</h4>
-                  <span class="badge-lock badge-ultimate">ULTIMATE</span>
-                </div>
-                <p>Снятие локальной блокировки с контакта и полное восстановление стандартного приема и отображения входящих сообщений.</p>
-                <div class="module-syntax">Команда: .unmute (ответом на сообщение контакта)</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Local Unmute')">
-                <span class="slider"></span>
-              </label>
-            </div>
-          </div>
-
-          <!-- КАТЕГОРИЯ 4: OSINT, ИНФОРМЕРЫ И РЕАКЦИИ (17) -->
-          <div class="module-category">
-            <div class="module-category-title">📊 OSINT, Информеры и Реакции (17)</div>
-
-            <div class="module-card" data-tier="ultimate" data-rank="3">
-              <div class="module-icon">🗄️</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Deep Archive (.dump_full)</h4>
-                  <span class="badge-lock badge-ultimate">ULTIMATE</span>
-                </div>
-                <p>Глубокая репликация переписки: выгружает историю сообщений, скачивает все фото, голосовые и документы, упаковывает в единый защищенный ZIP-архив и отправляет в «Избранное».</p>
-                <div class="module-syntax">Команда: .dump_full &lt;лимит сообщений, по умолч. 80&gt;</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Deep Archive')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="ultimate" data-rank="3">
-              <div class="module-icon">⌨️</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Human Typewriter (.type)</h4>
-                  <span class="badge-lock badge-ultimate">ULTIMATE</span>
-                </div>
-                <p>Эмуляция реалистичного набора текста живым человеком: динамически редактирует сообщение буква за буквой с мерцающим курсором пишущей машинки.</p>
-                <div class="module-syntax">Команда: .type &lt;текст для живого набора&gt;</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Human Typewriter')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="ultimate" data-rank="3">
-              <div class="module-icon">💥</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Controlled Raid (.spam)</h4>
-                  <span class="badge-lock badge-ultimate">ULTIMATE</span>
-                </div>
-                <p>Контролируемая отправка серии сообщений с заданным количеством повторений и задержкой для проведения стресс-тестирования чата.</p>
-                <div class="module-syntax">Команда: .spam &lt;кол-во, до 15&gt; &lt;текст сообщения&gt;</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Controlled Raid')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="premium" data-rank="2">
-              <div class="module-icon">👤</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>User OSINT (.info)</h4>
-                  <span class="badge-lock badge-premium">PREMIUM</span>
-                </div>
-                <p>Сбор подробного цифрового досье на контакт: точный Telegram ID, DC дата-центра, Premium-статус, бот-признаки, флаги Scam/Fake и юзернейм.</p>
-                <div class="module-syntax">Команда: .info (по реплаю или .info @username / ID)</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'User OSINT')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="premium" data-rank="2">
-              <div class="module-icon">🏰</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Chat Audit (.chatinfo)</h4>
-                  <span class="badge-lock badge-premium">PREMIUM</span>
-                </div>
-                <p>Глубокий аудит группы или канала: точный Chat ID, число участников, тип (супергруппа/канал/мегагруппа) и права доступа.</p>
-                <div class="module-syntax">Команда: .chatinfo (в любом чате или канале)</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Chat Audit')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="premium" data-rank="2">
-              <div class="module-icon">📦</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Chat Dump (.dump)</h4>
-                  <span class="badge-lock badge-premium">PREMIUM</span>
-                </div>
-                <p>Быстрая выгрузка истории сообщений диалога в структурированный JSON-документ с автоматической отправкой файла в ваше «Избранное».</p>
-                <div class="module-syntax">Команда: .dump &lt;лимит сообщений, например .dump 100&gt;</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Chat Dump')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="premium" data-rank="2">
-              <div class="module-icon">⚡️</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Auto-Reaction (.react)</h4>
-                  <span class="badge-lock badge-premium">PREMIUM</span>
-                </div>
-                <p>Моментальная автоматическая простановка указанной эмодзи-реакции на выбранное сообщение собеседника по реплаю в одно действие.</p>
-                <div class="module-syntax">Команда: .react &lt;эмодзи, напр. 🔥 или ❤️&gt; (по реплаю)</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Auto-Reaction')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="pro" data-rank="1">
-              <div class="module-icon">⏱️</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Ping & Latency (.ping)</h4>
-                  <span class="badge-lock badge-pro">PRO</span>
-                </div>
-                <p>Замер времени сетевого отклика (RTT/Latency) между сервером воркера и MTProto датацентрами Telegram с точностью до десятых долей миллисекунды.</p>
-                <div class="module-syntax">Команда: .ping • Мгновенная диагностика пинга</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Ping & Latency')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="pro" data-rank="1">
-              <div class="module-icon">📈</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Node Uptime (.uptime)</h4>
-                  <span class="badge-lock badge-pro">PRO</span>
-                </div>
-                <p>Мониторинг непрерывной работы узла C2, текущей нагрузки на CPU (%), потребления оперативной памяти RAM (%) и идентификатора активной сессии.</p>
-                <div class="module-syntax">Команда: .uptime • Диагностика ресурсов и сессии</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Node Uptime')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            
-
-            
-
-            
-
-            <div class="module-card" data-tier="pro" data-rank="1">
-              <div class="module-icon">🌐</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Instant Translator (.trans)</h4>
-                  <span class="badge-lock badge-pro">PRO</span>
-                </div>
-                <p>Мгновенный перевод текста сообщения на русский, английский и более 50 других языков с автоматическим определением языка оригинала.</p>
-                <div class="module-syntax">Команда: .trans ru (по реплаю) или .trans en &lt;текст&gt;</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Instant Translator')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            
-
-            <div class="module-card" data-tier="pro" data-rank="1">
-              <div class="module-icon">🔍</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Image OCR (.ocr)</h4>
-                  <span class="badge-lock badge-pro">PRO</span>
-                </div>
-                <p>Локальное нейросетевое распознавание печатного текста с прикрепленного изображения или скриншота на базе движка RapidOCR ONNX без внешних серверов.</p>
-                <div class="module-syntax">Команда: .ocr (ответом на фото или документ с картинкой)</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Image OCR')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="pro" data-rank="1">
-              <div class="module-icon">🎭</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Activity Faker (.fake)</h4>
-                  <span class="badge-lock badge-pro">PRO</span>
-                </div>
-                <p>Симуляция статусов активности учетной записи: непрерывный набор текста, запись голосового сообщения или съемка видеосообщения в течение 4 секунд.</p>
-                <div class="module-syntax">Команда: .fake typing / .fake voice / .fake video</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Activity Faker')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="pro" data-rank="1">
-              <div class="module-icon">🌙</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>AFK Responder (.afk)</h4>
-                  <span class="badge-lock badge-pro">PRO</span>
-                </div>
-                <p>Умный автоответчик при отсутствии владельца: отправляет входящим собеседникам причину отсутствия и таймер неактивности, выключается при первом исходящем смс.</p>
-                <div class="module-syntax">Команда: .afk &lt;причина, например .afk Обед&gt;</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'AFK Responder')">
-                <span class="slider"></span>
-              </label>
-            </div>
-          </div>
-                  <!-- КАТЕГОРИЯ 5: POWER TOOLS И КИБЕР-РАЗВЕДКА (10) -->
-          <div class="module-category">
-            <div class="module-category-title">⚡️ Power Tools и Кибер-Разведка (10)</div>
-
-            <div class="module-card" data-tier="pro" data-rank="1">
-              <div class="module-icon">🕵️</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Deep Profile OSINT (.whois)</h4>
-                  <span class="badge-lock badge-pro">PRO</span>
-                </div>
-                <p>Глубокая киберразведка профиля пользователя или чата: сбор Telegram ID, DC, даты регистрации, Premium, Bot/Scam/Fake статусов, количества общих чатов и полного био.</p>
-                <div class="module-syntax">Команда: .whois (по реплаю или .whois @username / user_id)</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Deep Profile OSINT')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="pro" data-rank="1">
-              <div class="module-icon">🆔</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Quick Entity ID (.id)</h4>
-                  <span class="badge-lock badge-pro">PRO</span>
-                </div>
-                <p>Мгновенное извлечение технических ID текущей беседы, автора входящего сообщения и реплая без ожидания.</p>
-                <div class="module-syntax">Команда: .id (в любом чате или в ответ на смс)</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Quick Entity ID')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="pro" data-rank="1">
-              <div class="module-icon">📈</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Binance Crypto Pulse (.crypto / .coin)</h4>
-                  <span class="badge-lock badge-pro">PRO</span>
-                </div>
-                <p>Онлайн-мониторинг биржевых спотовых цен криптовалют (BTC, TON, ETH, SOL, NOT, DOGS) с 24-часовым изменением % и дневными максимумами/минимумами через Binance API.</p>
-                <div class="module-syntax">Команда: .crypto или .coin TON BTC SOL</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Crypto Pulse')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="pro" data-rank="1">
-              <div class="module-icon">🏁</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Matrix QR Generator (.qr)</h4>
-                  <span class="badge-lock badge-pro">PRO</span>
-                </div>
-                <p>Генерация графического матричного QR-кода в высоком разрешении из любого текста или веб-ссылки и мгновенная отправка в чат.</p>
-                <div class="module-syntax">Команда: .qr https://example.com или .qr (в ответ на текст)</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'QR Generator')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="pro" data-rank="1">
-              <div class="module-icon">💬</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Quote Stylizer (.quote / .q)</h4>
-                  <span class="badge-lock badge-pro">PRO</span>
-                </div>
-                <p>Превращение любого сообщения собеседника в стилизованную блочную цитату с указанием имени автора в рамке.</p>
-                <div class="module-syntax">Команда: .quote или .q (в ответ на цитируемое сообщение)</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Quote Stylizer')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            
-
-            <div class="module-card" data-tier="premium" data-rank="2">
-              <div class="module-icon">📋</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Cloud Pastebin (.paste)</h4>
-                  <span class="badge-lock badge-premium">PREMIUM</span>
-                </div>
-                <p>Загрузка длинных кусков кода, конфигов или логов на dpaste.org с автоматической подсветкой синтаксиса и выдачей аккуратной ссылки со сроком жизни 14 дней.</p>
-                <div class="module-syntax">Команда: .paste &lt;текст/код&gt; или .paste (в ответ на длинное смс/документ)</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Cloud Pastebin')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="premium" data-rank="2">
-              <div class="module-icon">🛡️</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>URL Unshortener (.unshort)</h4>
-                  <span class="badge-lock badge-premium">PREMIUM</span>
-                </div>
-                <p>Аудит безопасности и разворачивание сокращенных ссылок (bit.ly, t.co, clck): пошаговая трассировка HTTP-редиректов до конечного целевого сайта без перехода.</p>
-                <div class="module-syntax">Команда: .unshort &lt;короткая ссылка&gt; или .unshort (по реплаю)</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'URL Unshortener')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="premium" data-rank="2">
-              <div class="module-icon">🎨</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Sticker Ripper (.kang / .steal)</h4>
-                  <span class="badge-lock badge-premium">PREMIUM</span>
-                </div>
-                <p>Извлечение любого отправленного стикера в исходном разрешении и автоматическое сохранение в Избранное (Saved Messages) в виде чистого файла/картинки.</p>
-                <div class="module-syntax">Команда: .kang или .steal (в ответ на стикер)</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Sticker Ripper')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="ultimate" data-rank="3">
-              <div class="module-icon">💣</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Time Bomb Self-Destruct (.bomb)</h4>
-                  <span class="badge-lock badge-ultimate">ULTIMATE</span>
-                </div>
-                <p>Отправка секретного сообщения с живым динамическим обратным отсчетом времени: сообщение тикает каждую секунду и бесследно удаляется по истечении таймера.</p>
-                <div class="module-syntax">Команда: .bomb &lt;секунды от 3 до 300&gt; &lt;текст сообщения&gt;</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Time Bomb')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="ultimate" data-rank="3">
-              <div class="module-icon">⚡️</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Host Speedtest (.speedtest)</h4>
-                  <span class="badge-lock badge-ultimate">ULTIMATE</span>
-                </div>
-                <p>Реальный аппаратный замер скорости сетевого канала сервера C2 (Ookla Speedtest): измерение скорости скачивания, отдачи, задержки Ping и геолокации хоста.</p>
-                <div class="module-syntax">Команда: .speedtest (в любом чате)</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Host Speedtest')">
-                <span class="slider"></span>
-              </label>
-            </div>
-          </div>
-          <!-- КАТЕГОРИЯ 6: RECON NINJA И STEALTH УТИЛИТЫ (13) -->
-          <div class="module-category">
-            <div class="module-category-title">🥷 Recon Ninja и Stealth Утилиты (13)</div>
-
-            <div class="module-card" data-tier="pro" data-rank="1">
-              <div class="module-icon">🌐</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>IP Recon Intelligence (.ip)</h4>
-                  <span class="badge-lock badge-pro">PRO</span>
-                </div>
-                <p>Глубокая разведка по IP-адресу: определение страны, города, провайдера (ISP), автономной системы (ASN), таймзоны и географических координат.</p>
-                <div class="module-syntax">Команда: .ip 1.1.1.1</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'IP Recon')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="pro" data-rank="1">
-              <div class="module-icon">📡</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Cloudflare DoH DNS (.dns)</h4>
-                  <span class="badge-lock badge-pro">PRO</span>
-                </div>
-                <p>Защищенное резолвирование DNS через протокол DNS-over-HTTPS (DoH): получение записей A, AAAA, MX и TTL любого домена в обход провайдерских блокировок.</p>
-                <div class="module-syntax">Команда: .dns telegram.org</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'DoH DNS')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            
-
-            <div class="module-card" data-tier="pro" data-rank="1">
-              <div class="module-icon">🔐</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>XOR Secret Cipher (.enc / .dec)</h4>
-                  <span class="badge-lock badge-pro">PRO</span>
-                </div>
-                <p>Симметричное криптографическое шифрование текста персональным секретным ключом: передача скрытых сообщений в открытых чатах без риска деанонимизации.</p>
-                <div class="module-syntax">Команда: .enc pass123 секретный_текст / .dec pass123 &lt;шифр&gt;</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Secret Cipher')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="premium" data-rank="2">
-              <div class="module-icon">📷</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Forensic EXIF Extractor (.exif)</h4>
-                  <span class="badge-lock badge-premium">PREMIUM</span>
-                </div>
-                <p>Криминалистический парсинг цифровых скрытых тегов фотографий: марка и модель камеры, дата съемки, диафрагма, объектив и точные спутниковые GPS-координаты.</p>
-                <div class="module-syntax">Команда: .exif (в ответ на оригинальное фото или документ)</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'EXIF Extractor')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="premium" data-rank="2">
-              <div class="module-icon">🛡️</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Media Geotag Scrubber (.scrub)</h4>
-                  <span class="badge-lock badge-premium">PREMIUM</span>
-                </div>
-                <p>Тотальная очистка изображения перед отправкой: полное физическое удаление всех EXIF-тегов, серийных номеров, геометок и скрытой стеганографии.</p>
-                <div class="module-syntax">Команда: .scrub (в ответ на изображение)</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Geotag Scrubber')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="premium" data-rank="2">
-              <div class="module-icon">📫</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Disposable TempMail (.tempmail)</h4>
-                  <span class="badge-lock badge-premium">PREMIUM</span>
-                </div>
-                <p>Мгновенная генерация временного защищенного почтового ящика для прохождения анонимных регистраций без раскрытия реальной электронной почты.</p>
-                <div class="module-syntax">Команда: .tempmail</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Disposable TempMail')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="premium" data-rank="2">
-              <div class="module-icon">📬</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Mailbox Code Receiver (.mailcheck)</h4>
-                  <span class="badge-lock badge-premium">PREMIUM</span>
-                </div>
-                <p>Быстрая проверка входящих писем и одноразовых кодов подтверждения прямо в окне Telegram с автоматическим выводом отправителя и тела письма.</p>
-                <div class="module-syntax">Команда: .mailcheck &lt;login&gt; &lt;domain&gt;</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Mailbox Receiver')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="ultimate" data-rank="3">
-              <div class="module-icon">⏰</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Async Reminder Cron (.remind)</h4>
-                  <span class="badge-lock badge-ultimate">ULTIMATE</span>
-                </div>
-                <p>Автономный асинхронный планировщик задач: отправляет персональный пуш-алерт с заданным текстом в Избранное по прошествии указанного количества минут.</p>
-                <div class="module-syntax">Команда: .remind &lt;минуты&gt; &lt;текст напоминания&gt;</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Async Reminder')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="ultimate" data-rank="3">
-              <div class="module-icon">📊</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Chat Activity Heatmap (.activity)</h4>
-                  <span class="badge-lock badge-ultimate">ULTIMATE</span>
-                </div>
-                <p>Глубокий анализ последних 200 сообщений чата: соотношение медиа к тексту, топ 5 самых активных спикеров беседы и выявление флудеров.</p>
-                <div class="module-syntax">Команда: .activity (в любом чате или супергруппе)</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Chat Heatmap')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="ultimate" data-rank="3">
-              <div class="module-icon">🤖</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Voice Robot Modulator (.robot)</h4>
-                  <span class="badge-lock badge-ultimate">ULTIMATE</span>
-                </div>
-                <p>Акустическая маскировка голоса через FFmpeg DSP: наложение роботизированного фленджера и изменение форманты голоса для полной анонимизации речи.</p>
-                <div class="module-syntax">Команда: .robot (в ответ на голосовое сообщение)</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Voice Robot')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="ultimate" data-rank="3">
-              <div class="module-icon">🔊</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Extreme Bass Boost (.bass)</h4>
-                  <span class="badge-lock badge-ultimate">ULTIMATE</span>
-                </div>
-                <p>Профессиональное усиление низких частот звуковой дорожки голосовых сообщений (+22dB в диапазоне 110Hz) с компрессией в Telegram Opus.</p>
-                <div class="module-syntax">Команда: .bass (в ответ на голосовое сообщение)</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Bass Boost')">
-                <span class="slider"></span>
-              </label>
-            </div>
-          </div>
-          <!-- КАТЕГОРИЯ 7: SHADOW CLONER, DEVICE FORENSICS И NINJA ELITE (7) -->
-          <div class="module-category">
-            <div class="module-category-title">🦹 Shadow Cloner, Device Forensics и Ninja Elite (7)</div>
-
-            <div class="module-card" data-tier="ultimate" data-rank="3">
-              <div class="module-icon">🎭</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Profile Cloner (.clone)</h4>
-                  <span class="badge-lock badge-ultimate">ULTIMATE</span>
-                </div>
-                <p>Полное зеркальное клонирование чужого профиля: скачивает текущую аватарку цели, копирует имя, фамилию и био на ваш аккаунт с автоматическим созданием бэкапа.</p>
-                <div class="module-syntax">Команда: .clone @username или по реплаю на пользователя</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Profile Cloner')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="ultimate" data-rank="3">
-              <div class="module-icon">🔄</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Profile Reverter (.unclone)</h4>
-                  <span class="badge-lock badge-ultimate">ULTIMATE</span>
-                </div>
-                <p>Мгновенный откат клонирования: восстанавливает ваши оригинальные имя, фамилию, био и возвращает вашу родную аватарку из защищенного архива.</p>
-                <div class="module-syntax">Команда: .unclone</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Profile Reverter')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="premium" data-rank="2">
-              <div class="module-icon">🔬</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Voice Device Forensics (.device)</h4>
-                  <span class="badge-lock badge-premium">PREMIUM</span>
-                </div>
-                <p>Криминалистический анализ аудиосообщения: определение устройства записи (Apple iPhone iOS, Android Samsung/Xiaomi/Pixel, Telegram Desktop или Web) по структуре waveform и кодеку.</p>
-                <div class="module-syntax">Команда: .device (в ответ на голосовое сообщение или аудиофайл)</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Device Forensics')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="pro" data-rank="1">
-              <div class="module-icon">🔤</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Keyboard Layout Switcher (.switch / .sw)</h4>
-                  <span class="badge-lock badge-pro">PRO</span>
-                </div>
-                <p>Мгновенное исправление ошибочной раскладки клавиатуры: конвертирует текст между английской и русской раскладками (ghbdtn rfr ltkf ↔ привет как дела).</p>
-                <div class="module-syntax">Команда: .switch (по реплаю) или .switch &lt;текст&gt;</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Layout Switcher')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="pro" data-rank="1">
-              <div class="module-icon">📄</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Message to Document (.m2f)</h4>
-                  <span class="badge-lock badge-pro">PRO</span>
-                </div>
-                <p>Экспорт длинного текста или программного кода в прикрепленный текстовый файл формата .txt прямо в окно переписки.</p>
-                <div class="module-syntax">Команда: .m2f &lt;текст&gt; или по реплаю на сообщение</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Message to Document')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="pro" data-rank="1">
-              <div class="module-icon">📥</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>Document to Message (.f2m)</h4>
-                  <span class="badge-lock badge-pro">PRO</span>
-                </div>
-                <p>Чтение содержимого присланного текстового документа или лог-файла (.txt, .log, .py) и отправка его содержимого читаемым текстом.</p>
-                <div class="module-syntax">Команда: .f2m (в ответ на документ)</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Document to Message')">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="module-card" data-tier="premium" data-rank="2">
-              <div class="module-icon">🎙️</div>
-              <div class="module-info">
-                <div class="module-header">
-                  <h4>FakeVoice: Обход запрета на голосовые (.fakevoice)</h4>
-                  <span class="badge-lock badge-premium">PREMIUM</span>
-                </div>
-                <p>Отправка голосового сообщения из ответа получателю в обход приватности и запрета на голосовые.</p>
-                <div class="module-syntax">Синтаксис: .fakevoice &lt;кто&gt; | -fvoice (обязателен @ или ID)</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" onchange="toggleModule(this, 'Direct Voice Stream')">
-                <span class="slider"></span>
-              </label>
-            </div>
-          </div>
-</div>
-      </section>
-
-      <!-- TAB 3: NODES & METRICS -->
-      <section id="tab-stats" class="tab-content">
-        <h3 class="section-title">Состояние узлов C2</h3>
-        
-        <div class="stats-grid">
-          <div class="stat-box">
-            <span class="stat-num" id="stat-workers">2</span>
-            <span class="stat-label">Активных воркера</span>
-          </div>
-          <div class="stat-box">
-            <span class="stat-num" id="stat-intercepted">3 910</span>
-            <span class="stat-label">Локов в кэше</span>
-          </div>
-          <div class="stat-box">
-            <span class="stat-num">99.9%</span>
-            <span class="stat-label">Uptime MTProto</span>
-          </div>
-          <div class="stat-box">
-            <span class="stat-num">AES-256</span>
-            <span class="stat-label">Шифрование</span>
-          </div>
-        </div>
-
-                <div class="active-devices-card">
-          <div class="active-devices-header">
-            <h4>Подключенные сессии</h4>
-            <span class="badge-status-counter" id="devices-counter-badge">Синхронизация...</span>
-          </div>
-          <div id="active-devices-list" class="active-devices-list">
-            <div class="devices-loading-state">
-              <div class="spinner-small"></div>
-              <span>Загрузка подключенных устройств...</span>
-            </div>
-          </div>
-          <button class="btn btn-gradient" style="margin-top: 14px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="openAuthOverlay()">
-            <span>➕</span> Подключить устройство (AyuLite Flow)
-          </button>
-        </div>
-      </section>
-
-      <!-- TAB 4: SETTINGS -->
-      <section id="tab-settings" class="tab-content">
-        <h3 class="section-title">Системные параметры</h3>
-
-        <div class="settings-group">
-          <!-- Quick Tier Switcher for Testing & Status Verification -->
-          <div class="setting-item" style="flex-direction: column; align-items: flex-start; gap: 8px;">
-            <div>
-              <strong>Активный профиль подписки на сайте</strong>
-              <p>Мгновенное переключение уровня для проверки бейджей и доступа к модулям:</p>
-            </div>
-            <div style="display: flex; flex-wrap: wrap; gap: 6px; width: 100%; margin-top: 4px;">
-              <button class="btn btn-gradient" style="width: auto; padding: 6px 12px; font-size: 11px;" onclick="switchTierManual('ultimate')">🔮 Ultimate</button>
-              <button class="btn btn-primary" style="width: auto; padding: 6px 12px; font-size: 11px;" onclick="switchTierManual('premium')">💎 Premium</button>
-              <button class="btn btn-pro" style="width: auto; padding: 6px 12px; font-size: 11px;" onclick="switchTierManual('pro')">🚀 Pro</button>
-            </div>
-          </div>
-
-          <div class="setting-item">
-            <div>
-              <strong>Тактильный отклик (Haptics)</strong>
-              <p>Вибрация интерфейса при нажатии на тумблеры и кнопки</p>
-            </div>
-            <label class="switch">
-              <input type="checkbox" id="toggle-haptics" checked>
-              <span class="slider"></span>
-            </label>
-          </div>
-
-          <div class="setting-item">
-            <div>
-              <strong>Сжатие логов (GZIP)</strong>
-              <p>Экономия сетевого трафика при передаче пакетов в Telegram</p>
-            </div>
-            <label class="switch">
-              <input type="checkbox" checked>
-              <span class="slider"></span>
-            </label>
-          </div>
-
-          <div class="setting-item">
-            <div>
-              <strong>Облачная синхронизация</strong>
-              <p>Автоматический бэкап настроек модулей в зашифрованное хранилище</p>
-            </div>
-            <label class="switch">
-              <input type="checkbox" checked>
-              <span class="slider"></span>
-            </label>
-          </div>
-        </div>
-
-        <div class="app-version-card">
-          <span>AyuLite C2 Web Engine v2.4</span>
-          <span>Core Build: MTProto 1.36.0 • Dark Cyber</span>
-        </div>
-      </section>
-
-    </main>
-
-
-    <!-- FULLSCREEN DEVICE AUTH VIEW (SAVEMOD / AYULITE FLOW) -->
-    <div class="auth-fullscreen-overlay" id="auth-overlay">
-      <!-- Top Bar -->
-      <div class="auth-top-bar">
-        <button class="auth-back-btn" id="auth-back-btn" onclick="handleAuthBack()">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="15 18 9 12 15 6"></polyline>
-          </svg>
-        </button>
-        <div class="lang-switch-pill">
-          <button class="lang-opt active" id="lang-ru" onclick="setAuthLang('ru')">RU</button>
-          <button class="lang-opt" id="lang-en" onclick="setAuthLang('en')">EN</button>
-        </div>
-      </div>
-      <!-- Cooldown Indicator (5 min KD) -->
-      <div class="auth-cooldown-pill" id="auth-cooldown-pill">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"></circle>
-          <polyline points="12 6 12 12 16 14"></polyline>
-        </svg>
-        <span>КД на ввод: <strong id="cooldown-timer-val">05:00</strong></span>
-      </div>
-
-
-      <!-- STEP 1: PHONE NUMBER INPUT -->
-      <div class="auth-step-container active" id="auth-step-1">
-        <div class="auth-hero-logo">
-          <div class="logo-glow-ring"></div>
-          <div class="logo-avatar-box">
-            <img src="https://api.dicebear.com/7.x/bottts/svg?seed=AyuLite&backgroundColor=1e1b4b" alt="AyuLite">
-          </div>
-        </div>
-
-        <h2 class="auth-main-title" data-i18n="auth_title_step1">Вход в AyuLite</h2>
-        <p class="auth-subtitle" data-i18n="auth_sub_step1">Подтвердите код вашей страны и введите номер телефона.</p>
-
-        <!-- Country Selector Row -->
-        <div class="country-select-row" onclick="openCountryPicker()">
-          <div class="country-info-left">
-            <span class="country-badge" id="selected-country-alpha">CZ</span>
-            <span class="country-name" id="selected-country-name">Чехия</span>
-          </div>
-          <svg class="chevron-right" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="9 18 15 12 9 6"></polyline>
-          </svg>
-        </div>
-
-        <!-- Phone Input Container -->
-        <div class="phone-input-wrapper">
-          <span class="phone-dial-code" id="selected-dial-code">+420</span>
-          <div class="phone-dial-separator"></div>
-          <input type="tel" id="auth-phone-input" class="phone-number-field" placeholder="000 000 00 00" autocomplete="tel">
-        </div>
-
-        <p class="auth-footnote" data-i18n="auth_footnote_phone">Мы отправим код подтверждения в ваш Telegram.</p>
-
-        <!-- Circular Action Button -->
-        <button class="auth-fab-btn" id="btn-submit-phone" onclick="submitPhoneAuth()" title="Далее">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-            <polyline points="12 5 19 12 12 19"></polyline>
-          </svg>
-        </button>
-
-                <!-- Cancel Session Button -->
-        <button type="button" class="auth-cancel-session-btn" onclick="cancelAuthSession()" title="Отменить вход в сессию">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-          <span data-i18n="auth_cancel_btn">Отменить вход в сессию</span>
-        </button>
-
-        <div class="auth-watermark">@AyuLiteBot</div>
-      </div>
-
-      <!-- STEP 2: 5-DIGIT OTP CODE -->
-      <div class="auth-step-container" id="auth-step-2">
-        <div class="auth-hero-logo small">
-          <div class="logo-avatar-box">
-            <img src="https://api.dicebear.com/7.x/bottts/svg?seed=AyuLite&backgroundColor=1e1b4b" alt="AyuLite">
-          </div>
-        </div>
-
-        <div class="auth-phone-display" id="otp-phone-display">+420 000 000 000</div>
-        <p class="auth-subtitle" data-i18n="auth_sub_otp">Мы отправили код в приложение Telegram. Введите его ниже.</p>
-
-        <!-- 5 Separate Digit Boxes -->
-        <div class="otp-boxes-container">
-          <input type="text" maxlength="1" inputmode="numeric" class="otp-box" id="otp-0" autocomplete="one-time-code">
-          <input type="text" maxlength="1" inputmode="numeric" class="otp-box" id="otp-1">
-          <input type="text" maxlength="1" inputmode="numeric" class="otp-box" id="otp-2">
-          <input type="text" maxlength="1" inputmode="numeric" class="otp-box" id="otp-3">
-          <input type="text" maxlength="1" inputmode="numeric" class="otp-box" id="otp-4">
-        </div>
-
-        <p class="auth-footnote" data-i18n="auth_footnote_otp">Код придёт в чат Telegram от сервиса.</p>
-
-        <div class="auth-resend-box">
-          <span id="auth-resend-timer">Запросить код повторно через <b id="timer-sec">60</b> сек.</span>
-          <button class="btn-resend-link" id="btn-resend-code" onclick="resendAuthCode()" style="display: none;" data-i18n="auth_resend_btn">Запросить новый код</button>
-        </div>
-
-                <!-- Cancel Session Button -->
-        <button type="button" class="auth-cancel-session-btn" onclick="cancelAuthSession()" title="Отменить вход в сессию">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-          <span data-i18n="auth_cancel_btn">Отменить вход в сессию</span>
-        </button>
-
-        <div class="auth-watermark">@AyuLiteBot</div>
-      </div>
-
-      <!-- STEP 3: 2FA CLOUD PASSWORD -->
-      <div class="auth-step-container" id="auth-step-3">
-        <div class="auth-lock-circle">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-          </svg>
-        </div>
-
-        <h2 class="auth-main-title" data-i18n="auth_title_2fa">Облачный пароль</h2>
-        <p class="auth-subtitle" data-i18n="auth_sub_2fa">Ваш аккаунт защищён двухфакторной аутентификацией. Введите пароль</p>
-
-        <!-- Password Field with Eye Toggle -->
-        <div class="password-input-wrapper">
-          <input type="password" id="auth-password-input" class="password-field" placeholder="Введите пароль">
-          <button type="button" class="password-eye-btn" onclick="togglePasswordEye()" title="Показать/скрыть">
-            <svg id="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-              <circle cx="12" cy="12" r="3"></circle>
-            </svg>
-          </button>
-        </div>
-
-        <p class="auth-footnote" data-i18n="auth_footnote_2fa">Это пароль двухфакторной аутентификации Telegram, а не код из SMS</p>
-
-        <!-- Floating Submit Arrow -->
-        <button class="auth-fab-btn" id="btn-submit-password" onclick="submitPasswordAuth()" title="Войти">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-            <polyline points="12 5 19 12 12 19"></polyline>
-          </svg>
-        </button>
-
-                <!-- Cancel Session Button -->
-        <button type="button" class="auth-cancel-session-btn" onclick="cancelAuthSession()" title="Отменить вход в сессию">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-          <span data-i18n="auth_cancel_btn">Отменить вход в сессию</span>
-        </button>
-
-        <div class="auth-watermark">@AyuLiteBot</div>
-      </div>
-
-      <!-- STEP 4: SUCCESS CONFIRMATION -->
-      <div class="auth-step-container" id="auth-step-success">
-        <div class="auth-success-circle">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="20 6 9 17 4 12"></polyline>
-          </svg>
-        </div>
-
-        <h2 class="auth-main-title" style="color: #10b981;" data-i18n="auth_success_title">Устройство привязано!</h2>
-        <p class="auth-subtitle" data-i18n="auth_success_sub">Воркер успешно инициализирован и подключен к C2-сети.</p>
-
-        <div class="success-account-card" id="success-account-card">
-          <div class="dev-status online"></div>
-          <div class="success-acc-meta">
-            <strong id="success-acc-name">User Account</strong>
-            <span id="success-acc-phone">+420 000 000 000</span>
-            <span id="success-acc-model" style="font-size: 11px; color: #38bdf8;">Samsung Galaxy S24 Ultra</span>
-          </div>
-        </div>
-
-        <button class="btn btn-gradient" style="margin-top: 24px;" onclick="closeAuthOverlay()" data-i18n="auth_btn_dashboard">🚀 Перейти к управлению</button>
-
-        <div class="auth-watermark">@AyuLiteBot</div>
-      </div>
-
-      <!-- COUNTRY PICKER MODAL -->
-      <div class="country-picker-sheet" id="country-picker-modal">
-        <div class="country-picker-card">
-          <div class="country-picker-header">
-            <h4 data-i18n="picker_title">Выберите страну</h4>
-            <button class="modal-close" onclick="closeCountryPicker()">&times;</button>
-          </div>
-          <input type="text" id="country-search-input" class="country-search-input" placeholder="Поиск по стране или коду..." oninput="filterCountries(this.value)">
-          <div class="country-list" id="country-list-items">
-            <!-- Populated dynamically by JS -->
-          </div>
-        </div>
-      </div>
+<body id="top">
+
+<header class="hdr">
+  <div class="container hdr-in">
+    <a class="logo" href="#top">AYULITE<span>·C2</span></a>
+    <div class="hdr-right">
+      <span class="status mono"><i class="dot on"></i>online</span>
+      <span class="chip-profile mono" id="profileChip">PRO</span>
+      <button class="btn btn-sm" id="hdrAddBtn" style="padding: 5px 11px; font-size: 11.5px;">+ Воркер</button>
     </div>
-
-    <!-- Modal for Subscription -->
-    <div class="modal-overlay" id="modal-subscribe">
-      <div class="modal-card">
-        <div class="modal-header">
-          <h4 id="modal-plan-title">Активация плана</h4>
-          <button class="modal-close" onclick="closeSubscribeModal()">&times;</button>
-        </div>
-        <div class="modal-body">
-          <div class="modal-price-display">
-            <span id="modal-plan-price">149 ⭐️</span>
-          </div>
-          <p>Выберите удобный способ оплаты подписки для мгновенной активации привилегий:</p>
-          <div class="payment-methods">
-            <button class="pay-btn" onclick="processPayment('stars')">
-              <span>⭐️</span> Telegram Stars
-            </button>
-            <button class="pay-btn" onclick="processPayment('ton')">
-              <span>💎</span> TON Cryptocurrency
-            </button>
-            <button class="pay-btn" onclick="processPayment('crypto')">
-              <span>💳</span> Банковская карта / СБП
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
   </div>
+</header>
 
-  <script src="app.js?v=4.5"></script>
+<!-- ======= HERO ======= -->
+<div class="container">
+  <div class="hero">
+    <div class="reveal">
+      <div class="kicker">AYULITE C2 <b>/</b> MTPROTO 1.36.0</div>
+      <h1>Панель управления юзерботом</h1>
+      <p class="sub">Воркеры, модули и сессии Telegram в одном интерфейсе. 69 модулей, три тарифа — ничего лишнего.</p>
+      
+      <!-- ГЛАВНАЯ КНОПКА ДОБАВЛЕНИЯ АККАУНТА (БРОСАЕТСЯ В ГЛАЗА) -->
+      <div class="hero-cta">
+        <button class="btn btn-primary btn-lg btn-block" id="heroAdd" style="font-weight: 700; font-size: 15px; letter-spacing: .02em; box-shadow: 0 4px 20px rgba(214,249,75,.35);">+ Подключить аккаунт</button>
+        <a class="btn btn-block" href="#modules">Смотреть модули</a>
+      </div>
+    </div>
+    <aside class="node-card reveal" aria-label="Состояние узла">
+      <div class="node-head"><span>УЗЕЛ C2</span><i class="dot on"></i></div>
+      <div class="node-row"><span>воркеры</span><b id="nodeActiveWorkers">0 активны</b></div>
+      <div class="node-row"><span>локов в кэше</span><b>3 910</b></div>
+      <div class="node-row"><span>uptime</span><b>99.9%</b></div>
+      <div class="node-row"><span>шифрование</span><b>AES-256</b></div>
+      <div class="node-row"><span>core</span><b>MTProto 1.36.0</b></div>
+    </aside>
+  </div>
+</div>
+
+<!-- ======= 01 PRICING ======= -->
+<section id="pricing">
+  <div class="container">
+    <div class="sec-head reveal"><span class="sec-no">01</span><h2>Тарифы</h2></div>
+    <p class="sec-sub reveal">Оплата в Telegram Stars, TON или картой. Тариф применяется к аккаунту мгновенно.</p>
+    <div class="plans">
+      <article class="plan reveal">
+        <div class="plan-name">Pro</div>
+        <div class="price">49 ★<small>/ мес</small></div>
+        <ul>
+          <li>До 2 активных воркеров</li>
+          <li>Перехват удалений и правок (текст + фото)</li>
+          <li>Ghost-режим: скрытое чтение</li>
+          <li>Экспорт архивов до 50 МБ</li>
+        </ul>
+        <button class="btn btn-block" data-plan="Pro" data-key="pro" data-price="49 ★ / мес">Подключить Pro</button>
+      </article>
+      <article class="plan hot reveal">
+        <span class="tag">ОПТИМАЛЬНЫЙ</span>
+        <div class="plan-name">Premium</div>
+        <div class="price">99 ★<small>/ мес</small></div>
+        <ul>
+          <li>До 3 воркеров параллельно</li>
+          <li>Перехват сгорающих медиа (TTL)</li>
+          <li>Полный перехват удалений и правок</li>
+          <li>Экспорт архивов до 100 МБ</li>
+          <li>Ghost-режим скрытого мониторинга</li>
+        </ul>
+        <button class="btn btn-primary btn-block" data-plan="Premium" data-key="premium" data-price="99 ★ / мес">Выбрать Premium</button>
+      </article>
+      <article class="plan reveal">
+        <div class="plan-name">Ultimate</div>
+        <div class="price">199 ★<small>/ мес</small></div>
+        <ul>
+          <li>До 5 воркеров в Mesh-сети</li>
+          <li>Shadow Mirror: теневое зеркало чатов</li>
+          <li>TTL Grabber: фото и видео 1 view</li>
+          <li>Session Sentinel: защита сессий</li>
+          <li>Локальный AI Speech-to-Text</li>
+        </ul>
+        <button class="btn btn-block" data-plan="Ultimate" data-key="ultimate" data-price="199 ★ / мес">Активировать Ultimate</button>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ======= 02 MODULES ======= -->
+<section id="modules">
+  <div class="container">
+    <div class="sec-head reveal"><span class="sec-no">02</span><h2>Модули</h2></div>
+    <p class="sec-sub reveal">Каталог инструментов. Активно <b id="actCount">0</b> — тумблеры синхронизированы с вашим тарифом.</p>
+
+    <div class="toolbar reveal">
+      <label class="search">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input type="text" id="search" placeholder="поиск: имя или команда" autocomplete="off">
+      </label>
+      <div class="filters" id="filters">
+        <button class="chip on" data-tier="all">Все<span></span></button>
+        <button class="chip" data-tier="pro">Pro<span></span></button>
+        <button class="chip" data-tier="premium">Premium<span></span></button>
+        <button class="chip" data-tier="ultimate">Ultimate<span></span></button>
+        <button class="chip ghost" id="enableAll">включить всё</button>
+        <button class="chip ghost" id="resetAll">сбросить</button>
+      </div>
+    </div>
+
+    <div id="modList"></div>
+  </div>
+</section>
+
+<!-- ======= 03 NODES ======= -->
+<section id="nodes">
+  <div class="container">
+    <div class="sec-head reveal"><span class="sec-no">03</span><h2>Узлы и сессии</h2></div>
+    <p class="sec-sub reveal">Состояние C2-сети в реальном времени.</p>
+    <div class="stats">
+      <div class="stat reveal"><b id="statWorkers">0</b><span>активных воркера</span></div>
+      <div class="stat reveal"><b>3 910</b><span>локов в кэше</span></div>
+      <div class="stat reveal"><b>99.9%</b><span>uptime mtproto</span></div>
+      <div class="stat reveal"><b>AES-256</b><span>шифрование</span></div>
+    </div>
+    <div class="sess-container" id="sessContainer">
+      <div class="sess reveal">
+        <div class="sess-row">
+          <i class="dot wait" id="sessDot"></i>
+          <div>
+            <div class="sess-name" id="sessName">Синхронизация…</div>
+            <div class="sess-meta" id="sessMeta">ожидание подключения устройства</div>
+          </div>
+          <span class="sess-state" id="sessState">idle</span>
+        </div>
+        <button class="sess-add" id="addDevice">+ подключить аккаунт (ayulite flow)</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======= 04 SETTINGS ======= -->
+<section id="settings">
+  <div class="container">
+    <div class="sec-head reveal"><span class="sec-no">04</span><h2>Настройки</h2></div>
+    <p class="sec-sub reveal">Профиль и системные параметры панели.</p>
+
+    <div class="set-row reveal">
+      <div><b>Активный профиль</b><p>Уровень доступа для бейджей и модулей.</p></div>
+      <div class="seg" id="segProfile">
+        <button data-p="pro" class="on">Pro</button>
+        <button data-p="premium">Premium</button>
+        <button data-p="ultimate">Ultimate</button>
+      </div>
+    </div>
+    <div class="set-row reveal">
+      <div><b>Тактильный отклик</b><p>Вибрация интерфейса (TWA HapticFeedback).</p></div>
+      <label class="sw"><input type="checkbox" id="optHaptics" checked><i></i></label>
+    </div>
+    <div class="set-row reveal">
+      <div><b>Сжатие логов (GZIP)</b><p>Экономия трафика при передаче пакетов.</p></div>
+      <label class="sw"><input type="checkbox" checked><i></i></label>
+    </div>
+    <div class="set-row reveal" style="border-bottom:none">
+      <div><b>Облачная синхронизация</b><p>Бэкап настроек модулей в шифрованное хранилище.</p></div>
+      <label class="sw"><input type="checkbox" checked><i></i></label>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container foot">
+    <span>AYULITE C2 · WEB ENGINE v2.5 · CORE MTPROTO 1.36.0</span>
+    <span>© 2026 · RU</span>
+  </div>
+</footer>
+
+<nav class="bnav" id="bnav">
+  <a href="#nodes">Узлы</a>
+  <a href="#modules">Модули</a>
+  <a href="#pricing">Тарифы</a>
+  <a href="#settings">Настройки</a>
+</nav>
+
+<!-- ======= LOGIN MODAL ======= -->
+<div class="overlay" id="loginModal">
+  <div class="modal">
+    <button class="m-close" data-close aria-label="Закрыть">×</button>
+
+    <!-- Step 0: Phone -->
+    <div id="ls0">
+      <h3>Вход в AyuLite</h3>
+      <p class="m-sub">Выберите страну и введите номер телефона.</p>
+            <div class="cc" id="cc">
+        <button class="cc-btn" id="ccBtn" type="button">
+          <span id="ccFlag">🇷🇺</span><span id="ccName">Россия</span><code id="ccCode">+7</code>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <div class="cc-backdrop" id="ccBackdrop" hidden></div>
+        <div class="cc-list" id="ccList" hidden>
+          <div class="cc-search-box">
+            <div class="cc-search-inner">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <input type="text" class="cc-search-input" id="ccSearchInput" placeholder="Поиск (Россия, +7, US, KZ...)" autocomplete="off">
+              <button class="cc-search-clear" id="ccSearchClear" type="button" aria-label="Очистить">×</button>
+            </div>
+            <button class="cc-done-btn" id="ccDoneBtn" type="button">Готово</button>
+          </div>
+          <div class="cc-items" id="ccItems"></div>
+        </div>
+      </div>
+      <div class="field">
+        <input type="tel" inputmode="numeric" placeholder="(999) 000-00-00" id="phoneInput" autocomplete="tel">
+      </div>
+      <p class="note">Код подтверждения придёт в чат Telegram от официального сервиса @Telegram.</p>
+      <button class="btn btn-primary btn-block" id="toCode">Продолжить</button>
+      <button class="btn btn-block btn-tg-direct" id="btnTgDirect">🔗 Открыть привязку в @AyuLiteBot</button>
+      <button class="btn btn-cancel-session" data-close type="button">✕ Отменить вход в сессию</button>
+    </div>
+
+    <!-- Step 1: Code -->
+    <div id="ls1" hidden>
+      <h3>Код подтверждения</h3>
+      <p class="m-sub">Мы отправили код в приложение Telegram. Введите его ниже.</p>
+      <div class="code" id="codeBox">
+        <input maxlength="1" inputmode="numeric"><input maxlength="1" inputmode="numeric"><input maxlength="1" inputmode="numeric"><input maxlength="1" inputmode="numeric"><input maxlength="1" inputmode="numeric">
+      </div>
+      <div class="code-actions">
+        <button class="btn-paste" id="btnPasteCode" type="button">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+          Вставить код
+        </button>
+      </div>
+      <p class="resend"><button id="resend" disabled>Запросить код повторно через 60 с</button></p>
+      <button class="btn btn-primary btn-block" id="confirmCode">Подтвердить код</button>
+      <button class="btn btn-cancel-session" data-close type="button">✕ Отменить вход в сессию</button>
+    </div>
+
+    <!-- Step 1B: 2FA Password -->
+    <div id="ls1b" hidden>
+      <h3>Облачный пароль (2FA)</h3>
+      <p class="m-sub">На вашем аккаунте включена двухфакторная аутентификация. Введите пароль.</p>
+      <div class="pwd-wrap">
+        <input type="password" id="passwordInput" class="pwd-input"
+               placeholder="Введите ваш 2FA пароль"
+               autocomplete="current-password" autocorrect="off"
+               autocapitalize="off" spellcheck="false" name="password">
+        <button type="button" class="pwd-eye-btn" id="btnTogglePwd" aria-label="Показать пароль">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+      <button class="btn btn-primary btn-block" id="confirmPassword">Войти в аккаунт</button>
+      <button class="btn btn-cancel-session" data-close type="button">✕ Отменить вход в сессию</button>
+    </div>
+
+    <!-- Step 2: Success -->
+    <div id="ls2" hidden>
+      <div class="ok-mark">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d6f94b" stroke-width="2.4" stroke-linecap="round"><path d="m4.5 12.5 5 5 10-11"/></svg>
+      </div>
+      <h3>Устройство привязано</h3>
+      <p class="m-sub">Воркер инициализирован и подключён к C2-сети.</p>
+      <div class="dev-card">
+        <b id="connectedDevName">User Account</b>
+        <span id="devMeta">+7 000 000-00-00 · AyuLite</span>
+      </div>
+      <button class="btn btn-primary btn-block" id="loginDone">Перейти к управлению</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======= PAY MODAL ======= -->
+<div class="overlay" id="payModal">
+  <div class="modal">
+    <button class="m-close" data-close aria-label="Закрыть">×</button>
+    <h3 id="payTitle">Активация плана</h3>
+    <p class="m-sub">Выберите способ оплаты для мгновенной активации привилегий.</p>
+    <div class="pay-price mono" id="payPrice">—</div>
+    <div class="pay-row" data-method="Telegram Stars"><span>Telegram Stars</span><code>мгновенно</code></div>
+    <div class="pay-row" data-method="TON"><span>TON Cryptocurrency</span><code>on-chain</code></div>
+    <div class="pay-row" data-method="Карта / СБП"><span>Банковская карта · СБП</span><code>ru</code></div>
+  </div>
+</div>
+
+<div class="toast mono" id="toast"></div>
+
+<script src="app.js?v=7.0"></script>
 </body>
 </html>

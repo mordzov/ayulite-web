@@ -1,0 +1,2901 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0b0c">
+<title>AyuLite C2 — панель управления</title>
+<!-- Telegram Web App SDK -->
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;600&family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0b0c; --panel:#121214; --panel2:#161619;
+  --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.16);
+  --text:#e9e9ec; --mut:#90909a; --dim:#5d5d66;
+  --acc:#d6f94b; --acc-soft:rgba(214,249,75,.14);
+  --ok:#5be07a; --wait:#e0b95b;
+  --body:'Golos Text',system-ui,sans-serif;
+  --disp:'Unbounded',sans-serif;
+  --mono:'JetBrains Mono',monospace;
+  --safe:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--body);font-size:15px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;padding-bottom:calc(92px + var(--safe))}
+body.lock{overflow:hidden}
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:radial-gradient(70% 46% at 50% -8%,rgba(214,249,75,.055),transparent 70%)}
+::selection{background:var(--acc);color:#0b0b0c}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px;border-radius:4px}
+.mono{font-family:var(--mono)}
+.container{max-width:1120px;margin:0 auto;padding:0 20px}
+section{padding:56px 0;scroll-margin-top:70px}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:#26262b;border-radius:8px}
+::-webkit-scrollbar-track{background:transparent}
+
+/* ---------- header ---------- */
+.hdr{position:sticky;top:0;z-index:50;background:rgba(11,11,12,.82);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.hdr-in{display:flex;align-items:center;justify-content:space-between;height:56px;gap:12px}
+.logo{font-family:var(--mono);font-weight:700;font-size:13px;letter-spacing:.16em}
+.logo span{color:var(--acc)}
+.hdr-right{display:flex;align-items:center;gap:12px}
+.status{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--mut);letter-spacing:.08em}
+.chip-profile{font-size:10.5px;letter-spacing:.14em;padding:5px 9px;border:1px solid var(--line2);border-radius:6px;color:var(--text)}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block;flex:none}
+.dot.on{background:var(--ok);box-shadow:0 0 0 0 rgba(91,224,122,.5);animation:pulse 2.4s infinite}
+.dot.wait{background:var(--wait)}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(91,224,122,.45)}70%{box-shadow:0 0 0 7px rgba(91,224,122,0)}100%{box-shadow:0 0 0 0 rgba(91,224,122,0)}}
+
+/* ---------- buttons ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--line2);background:transparent;color:var(--text);padding:12px 20px;border-radius:10px;font-size:14px;font-weight:500;transition:.15s}
+.btn:hover{background:rgba(255,255,255,.05)}
+.btn:disabled{opacity:.4;pointer-events:none}
+.btn-primary{background:var(--acc);border-color:var(--acc);color:#0b0b0c;font-weight:600}
+.btn-primary:hover{background:#e2ff62}
+.btn-lg{padding:15px 22px;font-size:15px;border-radius:12px}
+.btn-block{width:100%}
+.link{background:none;border:none;color:var(--mut);font-size:13px;padding:10px;width:100%;text-align:center}
+.link:hover{color:var(--text)}
+
+/* ---------- hero ---------- */
+.hero{padding:44px 0 48px;display:grid;gap:28px}
+.kicker{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--mut)}
+.kicker b{color:var(--acc);font-weight:500}
+h1{font-family:var(--disp);font-weight:600;font-size:clamp(28px,7.4vw,50px);line-height:1.12;letter-spacing:-.01em;margin:16px 0 14px}
+.sub{color:var(--mut);font-size:15.5px;max-width:46ch}
+.hero-cta{display:grid;gap:10px;margin-top:24px}
+.node-card{border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,rgba(255,255,255,.025),transparent);padding:18px 20px;font-family:var(--mono);font-size:12.5px}
+.node-head{display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;margin-bottom:4px;border-bottom:1px solid var(--line);letter-spacing:.14em;font-size:11px;color:var(--mut)}
+.node-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed rgba(255,255,255,.07)}
+.node-row:last-child{border-bottom:none}
+.node-row span{color:var(--dim)}
+.node-row b{font-weight:500;color:var(--text)}
+@media(min-width:960px){
+  .hero{grid-template-columns:1.2fr .8fr;align-items:center;gap:56px;padding:80px 0 72px}
+  .hero-cta{gap:12px}
+}
+
+/* ---------- section head ---------- */
+.sec-head{display:flex;align-items:baseline;gap:14px}
+.sec-no{font-family:var(--mono);font-size:12px;color:var(--dim);letter-spacing:.1em}
+h2{font-family:var(--disp);font-weight:500;font-size:clamp(20px,5vw,26px)}
+.sec-sub{color:var(--mut);margin:8px 0 26px;max-width:62ch;font-size:14px}
+.sec-sub b{color:var(--text);font-weight:600}
+
+/* ---------- pricing ---------- */
+.plans{display:grid;gap:14px}
+.plan{position:relative;display:flex;flex-direction:column;border:1px solid var(--line);border-radius:16px;background:var(--panel);padding:24px}
+.plan.hot{border-color:rgba(214,249,75,.4)}
+.plan .tag{position:absolute;top:-11px;left:22px;background:var(--acc);color:#0b0b0c;font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.1em;padding:4px 9px;border-radius:6px}
+.plan-name{font-family:var(--mono);font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--mut)}
+.price{font-family:var(--disp);font-weight:500;font-size:32px;margin:12px 0 2px}
+.price small{font-family:var(--mono);font-size:12px;color:var(--dim);font-weight:400;margin-left:6px}
+.plan ul{list-style:none;margin:18px 0 22px;flex:1;display:grid;gap:10px}
+.plan li{position:relative;padding-left:18px;font-size:14px;color:#c8c8cf}
+.plan li::before{content:"";position:absolute;left:1px;top:8px;width:5px;height:5px;border-radius:1px;background:var(--acc)}
+@media(min-width:960px){.plans{grid-template-columns:repeat(3,1fr)}}
+
+/* ---------- modules ---------- */
+.toolbar{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+.search{display:flex;align-items:center;gap:9px;border:1px solid var(--line);border-radius:999px;padding:11px 16px;background:var(--panel);width:100%}
+.search svg{flex:none;opacity:.5}
+.search input{width:100%;background:none;border:none;outline:none;color:var(--text);font-family:var(--mono);font-size:12.5px}
+.search input::placeholder{color:var(--dim)}
+.filters{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.filters::-webkit-scrollbar{display:none}
+.chip{flex:none;font-family:var(--mono);font-size:12px;padding:8px 14px;border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--mut);transition:.15s}
+.chip span{color:var(--dim);margin-left:5px}
+.chip.on{color:var(--text);border-color:var(--line2);background:rgba(255,255,255,.045)}
+.chip.on::before{content:"";display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--acc);margin-right:8px;vertical-align:2px}
+.chip.ghost{border-style:dashed}
+
+.mgroup{margin-bottom:30px}
+.mg-head{display:flex;justify-content:space-between;align-items:baseline;padding:0 4px 10px;border-bottom:1px solid var(--line2)}
+.mg-title{font-size:12.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase}
+.mg-count{font-size:11px;color:var(--dim)}
+.mrow{padding:14px 4px;border-bottom:1px solid var(--line)}
+.m-top{display:flex;align-items:center;gap:8px}
+.m-top .sw{margin-left:auto}
+.m-name{font-size:14.5px;font-weight:600;min-width:0}
+.m-cmd{display:block;margin-top:4px;font-family:var(--mono);font-size:11px;color:var(--dim)}
+.m-desc{margin-top:6px;color:var(--mut);font-size:13.5px}
+.tier{flex:none;font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;padding:3px 7px;border:1px solid var(--line);border-radius:5px;color:var(--mut);white-space:nowrap}
+.tier.t-ultimate{color:var(--acc);border-color:rgba(214,249,75,.35)}
+.tier.t-premium{color:#dcdce2;border-color:var(--line2)}
+.sw{position:relative;width:38px;height:22px;flex:none;cursor:pointer;display:inline-block}
+.sw input{display:none}
+.sw i{position:absolute;inset:0;background:#222226;border:1px solid var(--line);border-radius:999px;transition:.18s}
+.sw i::after{content:"";position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:#85858e;transition:.18s}
+.sw input:checked+i{background:var(--acc);border-color:var(--acc)}
+.sw input:checked+i::after{left:19px;background:#0b0b0c}
+.empty{padding:50px 0;text-align:center;color:var(--dim);font-family:var(--mono);font-size:13px}
+
+/* ---------- nodes ---------- */
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.stat{border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:18px 20px}
+.stat b{display:block;font-family:var(--disp);font-weight:500;font-size:23px;margin-bottom:5px}
+.stat span{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut)}
+@media(min-width:960px){.stats{grid-template-columns:repeat(4,1fr)}}
+.sess{border:1px solid var(--line);border-radius:14px;margin-top:14px;overflow:hidden;background:var(--panel)}
+.sess-row{display:flex;align-items:center;gap:13px;padding:16px 18px}
+.sess-name{font-weight:600;font-size:14px}
+.sess-meta{font-family:var(--mono);font-size:11.5px;color:var(--mut);margin-top:2px;word-break:break-all}
+.sess-state{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--dim);letter-spacing:.08em}
+.sess-add{width:100%;padding:15px;background:none;border:none;border-top:1px dashed var(--line2);color:var(--mut);font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;transition:.15s}
+.sess-add:hover{color:var(--text);background:rgba(255,255,255,.02)}
+
+/* ---------- settings ---------- */
+.set-row{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:18px 0;border-bottom:1px solid var(--line)}
+.set-row b{font-size:15px;font-weight:600;display:block}
+.set-row p{color:var(--mut);font-size:13px;margin-top:3px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;flex:none}
+.seg button{background:none;border:none;border-right:1px solid var(--line);color:var(--mut);font-family:var(--mono);font-size:12px;padding:9px 15px;transition:.15s}
+.seg button:last-child{border-right:none}
+.seg button.on{background:#f2f2f0;color:#0b0b0c;font-weight:700}
+
+/* ---------- footer ---------- */
+footer{border-top:1px solid var(--line);padding:24px 0}
+.foot{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--dim)}
+
+/* ---------- bottom nav (TWA) ---------- */
+.bnav{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + var(--safe));z-index:80;
+  display:flex;justify-content:space-between;gap:4px;padding:5px;
+  width:min(430px,calc(100vw - 24px));
+  background:rgba(18,18,21,.88);backdrop-filter:blur(16px);border:1px solid var(--line);border-radius:999px}
+.bnav a{flex:1;text-align:center;font-family:var(--mono);font-size:11px;letter-spacing:.04em;color:var(--mut);padding:9px 2px;border-radius:999px;transition:.15s;white-space:nowrap}
+.bnav a.active{background:var(--acc);color:#0b0b0c;font-weight:700}
+
+/* ---------- modal ---------- */
+.overlay{position:fixed;inset:0;z-index:100;background:rgba(5,5,6,.72);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:18px;opacity:0;pointer-events:none;transition:opacity .2s}
+.overlay.open{opacity:1;pointer-events:auto}
+.modal{position:relative;width:min(400px,100%);max-height:calc(100dvh - 60px);overflow:auto;background:#141417;border:1px solid var(--line2);border-radius:18px;padding:26px;transform:translateY(10px);transition:transform .25s}
+.overlay.open .modal{transform:none}
+.modal h3{font-family:var(--disp);font-weight:500;font-size:18px;margin-bottom:6px}
+.m-sub{color:var(--mut);font-size:13.5px;margin-bottom:18px}
+.m-close{position:absolute;top:14px;right:16px;background:none;border:none;color:var(--dim);font-size:22px;line-height:1}
+.m-close:hover{color:var(--text)}
+.field{margin-bottom:14px}
+.field label{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:8px}
+.field input{width:100%;background:#0e0e10;border:1px solid var(--line2);border-radius:10px;padding:13px 14px;color:var(--text);font-family:var(--body);font-size:15px;outline:none;transition:border-color .15s}
+.field input:focus{border-color:var(--acc)}
+.note{font-size:12.5px;color:var(--dim);margin:-4px 0 16px}
+
+/* country picker */
+
+
+.code{display:flex;gap:8px;justify-content:center;margin:18px 0 8px}
+.code input{width:47px;height:56px;text-align:center;font-family:var(--mono);font-size:20px;background:#0e0e10;border:1px solid var(--line2);border-radius:10px;color:var(--text);outline:none}
+.code input:focus{border-color:var(--acc)}
+.resend{text-align:center;font-size:12.5px;color:var(--dim);margin-bottom:16px}
+.resend button{background:none;border:none;color:var(--mut);font-size:12.5px;text-decoration:underline;text-underline-offset:3px}
+.resend button:disabled{opacity:.5;cursor:default;text-decoration:none}
+.pay-price{font-family:var(--mono);font-size:13px;color:var(--mut);border:1px dashed var(--line2);border-radius:10px;padding:12px 16px;margin-bottom:16px}
+.pay-row{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border:1px solid var(--line);border-radius:12px;margin-bottom:10px;cursor:pointer;transition:.15s;font-size:14px;font-weight:500}
+.pay-row:hover{border-color:var(--line2);background:rgba(255,255,255,.03)}
+.pay-row code{font-size:11px;color:var(--dim)}
+.ok-mark{width:52px;height:52px;border-radius:50%;background:var(--acc-soft);display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+.dev-card{border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:18px}
+.dev-card b{font-size:14px}
+.dev-card span{display:block;font-family:var(--mono);font-size:12px;color:var(--mut);margin-top:4px}
+
+/* ---------- toast ---------- */
+.toast{position:fixed;left:50%;bottom:calc(76px + var(--safe));transform:translate(-50%,14px);z-index:200;max-width:calc(100vw - 40px);background:#18181c;border:1px solid var(--line2);border-radius:999px;padding:10px 20px;font-family:var(--mono);font-size:12px;text-align:center;opacity:0;pointer-events:none;transition:.25s}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* ---------- reveal ---------- */
+.reveal{opacity:0;transform:translateY(14px);transition:opacity .6s cubic-bezier(.2,.7,.2,1),transform .6s cubic-bezier(.2,.7,.2,1)}
+.reveal.in{opacity:1;transform:none}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  .reveal{opacity:1;transform:none}
+}
+
+.btn-tg-direct { margin-top: 8px; font-size: 12.5px; padding: 10px; }
+
+/* Cyber Country Picker & Search */
+[hidden] { display: none !important; }
+.cc{position:relative;margin-bottom:12px}
+.cc-btn{display:flex;align-items:center;gap:10px;width:100%;background:#0e0e10;border:1px solid var(--line2);border-radius:10px;padding:13px 14px;color:var(--text);font-size:14.5px;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.cc-btn code{margin-left:auto;color:var(--mut);font-size:12.5px}
+.cc-btn svg{flex:none;opacity:.6;transition:transform .18s}
+.cc.open .cc-btn svg{transform:rotate(180deg)}
+.cc.open .cc-btn{border-color:var(--acc)}
+
+.cc-backdrop{display:none;position:fixed;inset:0;z-index:85;background:rgba(0,0,0,.55);backdrop-filter:blur(2px)}
+.cc.open .cc-backdrop{display:block}
+
+.cc-list{display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:90;max-height:260px;flex-direction:column;background:#141418;border:1px solid var(--line2);border-radius:12px;box-shadow:0 18px 40px rgba(0,0,0,.75);overflow:hidden}
+.cc.open .cc-list{display:flex}
+
+.cc-search-box{padding:8px 10px;background:#18181e;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
+.cc-search-inner{flex:1;position:relative;display:flex;align-items:center}
+.cc-search-inner svg{position:absolute;left:10px;opacity:.55;stroke:var(--mut);pointer-events:none}
+.cc-search-input{width:100%;background:#0c0c0e;border:1px solid var(--line2);border-radius:8px;padding:8px 28px 8px 30px;color:var(--text);font-size:13.5px;font-family:inherit;outline:none;transition:border-color .15s,box-shadow .15s}
+.cc-search-input:focus{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc-glow)}
+.cc-search-clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--mut);font-size:16px;cursor:pointer;padding:2px;display:none;line-height:1}
+.cc-search-clear.show{display:block}
+.cc-search-clear:hover{color:var(--text)}
+.cc-done-btn{flex:none;background:var(--acc);color:#0a0a0c;border:none;border-radius:8px;padding:8px 12px;font-size:12.5px;font-weight:700;cursor:pointer;transition:filter .15s}
+.cc-done-btn:hover{filter:brightness(1.1)}
+.cc-items{flex:1;overflow-y:auto;max-height:200px;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.cc-opt{display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;background:none;border:none;color:var(--text);font-size:14px;text-align:left;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.02);-webkit-tap-highlight-color:transparent}
+.cc-opt:hover,.cc-opt:active{background:rgba(255,255,255,.07)}
+.cc-opt code{margin-left:auto;color:var(--mut);font-size:12px}
+.cc-opt.sel{color:var(--acc);background:rgba(214,249,75,.06)}
+.cc-opt.sel code{color:var(--acc)}
+.cc-empty{padding:20px 14px;text-align:center;color:var(--mut);font-size:13px}
+/* Paste Code Button */
+.code-actions{display:flex;justify-content:center;margin:12px 0 16px}
+.btn-paste{display:inline-flex;align-items:center;gap:7px;background:rgba(214,249,75,.08);border:1px solid rgba(214,249,75,.28);color:var(--acc);padding:9px 18px;border-radius:10px;font-size:13.5px;font-weight:600;cursor:pointer;transition:all .18s;font-family:inherit;-webkit-tap-highlight-color:transparent}
+.btn-paste:hover{background:rgba(214,249,75,.16);border-color:var(--acc);transform:translateY(-1px)}
+.btn-paste:active{transform:scale(.98)}
+.btn-paste svg{flex:none;stroke:var(--acc)}
+
+/* 2FA Password Field with native Telegram Desktop & Mobile WebEngine support */
+.pwd-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: 14px;
+  width: 100%;
+  cursor: text;
+}
+.pwd-wrap input {
+  width: 100%;
+  background: #0e0e10;
+  border: 1px solid var(--line2);
+  border-radius: 10px;
+  padding: 14px 44px 14px 14px;
+  color: var(--text);
+  font-family: var(--body);
+  font-size: 16px;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+  cursor: text;
+  pointer-events: auto !important;
+  -webkit-user-select: text !important;
+  user-select: text !important;
+}
+
+.pwd-wrap input:focus {
+  border-color: var(--acc);
+  box-shadow: 0 0 0 1px var(--acc-glow);
+}
+.pwd-eye-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--mut);
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color .15s;
+  z-index: 5;
+  -webkit-tap-highlight-color: transparent;
+}
+.pwd-eye-btn:hover {
+  color: var(--acc);
+}
+
+/* Noticeable Cancel Session Button */
+.btn-cancel-session {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 12px;
+  padding: 13px 18px;
+  background: rgba(255, 75, 75, 0.08);
+  border: 1px solid rgba(255, 75, 75, 0.28);
+  border-radius: 12px;
+  color: #ff6b6b;
+  font-family: inherit;
+  font-size: 14.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .18s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-cancel-session:hover {
+  background: rgba(255, 75, 75, 0.16);
+  border-color: #ff6b6b;
+  transform: translateY(-1px);
+}
+.btn-cancel-session:active {
+  transform: scale(0.98);
+}
+
+
+
+/* ===== 2FA: поле пароля (финальная версия) ===== */
+#ls1b{position:relative;z-index:1}
+#ls1b[hidden]{display:none !important}
+
+.pwd-wrap{
+  position:relative;          /* глаз позиционируется отсюда */
+  margin:0 0 16px;
+  isolation:isolate;
+}
+
+#passwordInput,
+.pwd-input{
+  display:block;
+  width:100%;
+  background:#0e0e10;
+  border:1px solid var(--line2,#3a3a40);
+  border-radius:10px;
+  padding:13px 46px 13px 14px;   /* отступ справа, чтобы текст не залезал под глаз */
+  color:var(--text,#e9e9ec);
+  font-family:var(--body,'Golos Text',system-ui,sans-serif);
+  font-size:15px;
+  outline:none;
+  transition:border-color .15s;
+  -webkit-user-select:text !important;
+  user-select:text !important;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+  pointer-events:auto !important;
+  caret-color:var(--acc,#d6f94b);
+}
+#passwordInput:focus{border-color:var(--acc,#d6f94b)}
+
+.pwd-eye-btn{
+  position:absolute !important;  /* ключевое: абсолют, а не relative */
+  top:50%;
+  right:6px;
+  transform:translateY(-50%);
+  width:38px;height:38px;
+  display:flex;align-items:center;justify-content:center;
+  background:transparent;border:none;border-radius:9px;
+  color:var(--mut,#90909a);
+  z-index:12;
+  pointer-events:auto !important;
+  -webkit-tap-highlight-color:transparent;
+}
+.pwd-eye-btn:hover{color:var(--text,#e9e9ec)}
+.pwd-eye-btn.active{color:var(--acc,#d6f94b)}
+
+</style>
+</head>
+<body id="top">
+
+<header class="hdr">
+  <div class="container hdr-in">
+    <a class="logo" href="#top">AYULITE<span>·C2</span></a>
+    <div class="hdr-right">
+      <span class="status mono"><i class="dot on"></i>online</span>
+      <span class="chip-profile mono" id="profileChip">PRO</span>
+      <button class="btn btn-sm" id="hdrAddBtn" style="padding: 5px 11px; font-size: 11.5px;">+ Воркер</button>
+    </div>
+  </div>
+</header>
+
+<!-- ======= HERO ======= -->
+<div class="container">
+  <div class="hero">
+    <div class="reveal">
+      <div class="kicker">AYULITE C2 <b>/</b> MTPROTO 1.36.0</div>
+      <h1>Панель управления юзерботом</h1>
+      <p class="sub">Воркеры, модули и сессии Telegram в одном интерфейсе. 69 модулей, три тарифа — ничего лишнего.</p>
+      
+      <!-- ГЛАВНАЯ КНОПКА ДОБАВЛЕНИЯ АККАУНТА (БРОСАЕТСЯ В ГЛАЗА) -->
+      <div class="hero-cta">
+        <button class="btn btn-primary btn-lg btn-block" id="heroAdd" style="font-weight: 700; font-size: 15px; letter-spacing: .02em; box-shadow: 0 4px 20px rgba(214,249,75,.35);">+ Подключить аккаунт</button>
+        <a class="btn btn-block" href="#modules">Смотреть модули</a>
+      </div>
+    </div>
+    <aside class="node-card reveal" aria-label="Состояние узла">
+      <div class="node-head"><span>УЗЕЛ C2</span><i class="dot on"></i></div>
+      <div class="node-row"><span>воркеры</span><b id="nodeActiveWorkers">0 активны</b></div>
+      <div class="node-row"><span>локов в кэше</span><b>3 910</b></div>
+      <div class="node-row"><span>uptime</span><b>99.9%</b></div>
+      <div class="node-row"><span>шифрование</span><b>AES-256</b></div>
+      <div class="node-row"><span>core</span><b>MTProto 1.36.0</b></div>
+    </aside>
+  </div>
+</div>
+
+<!-- ======= 01 PRICING ======= -->
+<section id="pricing">
+  <div class="container">
+    <div class="sec-head reveal"><span class="sec-no">01</span><h2>Тарифы</h2></div>
+    <p class="sec-sub reveal">Оплата в Telegram Stars, TON или картой. Тариф применяется к аккаунту мгновенно.</p>
+    <div class="plans">
+      <article class="plan reveal">
+        <div class="plan-name">Pro</div>
+        <div class="price">49 ★<small>/ мес</small></div>
+        <ul>
+          <li>До 2 активных воркеров</li>
+          <li>Перехват удалений и правок (текст + фото)</li>
+          <li>Ghost-режим: скрытое чтение</li>
+          <li>Экспорт архивов до 50 МБ</li>
+        </ul>
+        <button class="btn btn-block" data-plan="Pro" data-key="pro" data-price="49 ★ / мес">Подключить Pro</button>
+      </article>
+      <article class="plan hot reveal">
+        <span class="tag">ОПТИМАЛЬНЫЙ</span>
+        <div class="plan-name">Premium</div>
+        <div class="price">99 ★<small>/ мес</small></div>
+        <ul>
+          <li>До 3 воркеров параллельно</li>
+          <li>Перехват сгорающих медиа (TTL)</li>
+          <li>Полный перехват удалений и правок</li>
+          <li>Экспорт архивов до 100 МБ</li>
+          <li>Ghost-режим скрытого мониторинга</li>
+        </ul>
+        <button class="btn btn-primary btn-block" data-plan="Premium" data-key="premium" data-price="99 ★ / мес">Выбрать Premium</button>
+      </article>
+      <article class="plan reveal">
+        <div class="plan-name">Ultimate</div>
+        <div class="price">199 ★<small>/ мес</small></div>
+        <ul>
+          <li>До 5 воркеров в Mesh-сети</li>
+          <li>Shadow Mirror: теневое зеркало чатов</li>
+          <li>TTL Grabber: фото и видео 1 view</li>
+          <li>Session Sentinel: защита сессий</li>
+          <li>Локальный AI Speech-to-Text</li>
+        </ul>
+        <button class="btn btn-block" data-plan="Ultimate" data-key="ultimate" data-price="199 ★ / мес">Активировать Ultimate</button>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ======= 02 MODULES ======= -->
+<section id="modules">
+  <div class="container">
+    <div class="sec-head reveal"><span class="sec-no">02</span><h2>Модули</h2></div>
+    <p class="sec-sub reveal">Каталог инструментов. Активно <b id="actCount">0</b> — тумблеры синхронизированы с вашим тарифом.</p>
+
+    <div class="toolbar reveal">
+      <label class="search">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input type="text" id="search" placeholder="поиск: имя или команда" autocomplete="off">
+      </label>
+      <div class="filters" id="filters">
+        <button class="chip on" data-tier="all">Все<span></span></button>
+        <button class="chip" data-tier="pro">Pro<span></span></button>
+        <button class="chip" data-tier="premium">Premium<span></span></button>
+        <button class="chip" data-tier="ultimate">Ultimate<span></span></button>
+        <button class="chip ghost" id="enableAll">включить всё</button>
+        <button class="chip ghost" id="resetAll">сбросить</button>
+      </div>
+    </div>
+
+    <div id="modList"></div>
+  </div>
+</section>
+
+<!-- ======= 03 NODES ======= -->
+<section id="nodes">
+  <div class="container">
+    <div class="sec-head reveal"><span class="sec-no">03</span><h2>Узлы и сессии</h2></div>
+    <p class="sec-sub reveal">Состояние C2-сети в реальном времени.</p>
+    <div class="stats">
+      <div class="stat reveal"><b id="statWorkers">0</b><span>активных воркера</span></div>
+      <div class="stat reveal"><b>3 910</b><span>локов в кэше</span></div>
+      <div class="stat reveal"><b>99.9%</b><span>uptime mtproto</span></div>
+      <div class="stat reveal"><b>AES-256</b><span>шифрование</span></div>
+    </div>
+    <div class="sess-container" id="sessContainer">
+      <div class="sess reveal">
+        <div class="sess-row">
+          <i class="dot wait" id="sessDot"></i>
+          <div>
+            <div class="sess-name" id="sessName">Синхронизация…</div>
+            <div class="sess-meta" id="sessMeta">ожидание подключения устройства</div>
+          </div>
+          <span class="sess-state" id="sessState">idle</span>
+        </div>
+        <button class="sess-add" id="addDevice">+ подключить аккаунт (ayulite flow)</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======= 04 SETTINGS ======= -->
+<section id="settings">
+  <div class="container">
+    <div class="sec-head reveal"><span class="sec-no">04</span><h2>Настройки</h2></div>
+    <p class="sec-sub reveal">Профиль и системные параметры панели.</p>
+
+    <div class="set-row reveal">
+      <div><b>Активный профиль</b><p>Уровень доступа для бейджей и модулей.</p></div>
+      <div class="seg" id="segProfile">
+        <button data-p="pro" class="on">Pro</button>
+        <button data-p="premium">Premium</button>
+        <button data-p="ultimate">Ultimate</button>
+      </div>
+    </div>
+    <div class="set-row reveal">
+      <div><b>Тактильный отклик</b><p>Вибрация интерфейса (TWA HapticFeedback).</p></div>
+      <label class="sw"><input type="checkbox" id="optHaptics" checked><i></i></label>
+    </div>
+    <div class="set-row reveal">
+      <div><b>Сжатие логов (GZIP)</b><p>Экономия трафика при передаче пакетов.</p></div>
+      <label class="sw"><input type="checkbox" checked><i></i></label>
+    </div>
+    <div class="set-row reveal" style="border-bottom:none">
+      <div><b>Облачная синхронизация</b><p>Бэкап настроек модулей в шифрованное хранилище.</p></div>
+      <label class="sw"><input type="checkbox" checked><i></i></label>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container foot">
+    <span>AYULITE C2 · WEB ENGINE v2.5 · CORE MTPROTO 1.36.0</span>
+    <span>© 2026 · RU</span>
+  </div>
+</footer>
+
+<nav class="bnav" id="bnav">
+  <a href="#nodes">Узлы</a>
+  <a href="#modules">Модули</a>
+  <a href="#pricing">Тарифы</a>
+  <a href="#settings">Настройки</a>
+</nav>
+
+<!-- ======= LOGIN MODAL ======= -->
+<div class="overlay" id="loginModal">
+  <div class="modal">
+    <button class="m-close" data-close aria-label="Закрыть">×</button>
+
+    <!-- Step 0: Phone -->
+    <div id="ls0">
+      <h3>Вход в AyuLite</h3>
+      <p class="m-sub">Выберите страну и введите номер телефона.</p>
+            <div class="cc" id="cc">
+        <button class="cc-btn" id="ccBtn" type="button">
+          <span id="ccFlag">🇷🇺</span><span id="ccName">Россия</span><code id="ccCode">+7</code>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <div class="cc-backdrop" id="ccBackdrop" hidden></div>
+        <div class="cc-list" id="ccList" hidden>
+          <div class="cc-search-box">
+            <div class="cc-search-inner">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <input type="text" class="cc-search-input" id="ccSearchInput" placeholder="Поиск (Россия, +7, US, KZ...)" autocomplete="off">
+              <button class="cc-search-clear" id="ccSearchClear" type="button" aria-label="Очистить">×</button>
+            </div>
+            <button class="cc-done-btn" id="ccDoneBtn" type="button">Готово</button>
+          </div>
+          <div class="cc-items" id="ccItems"></div>
+        </div>
+      </div>
+      <div class="field">
+        <input type="tel" inputmode="numeric" placeholder="(999) 000-00-00" id="phoneInput" autocomplete="tel">
+      </div>
+      <p class="note">Код подтверждения придёт в чат Telegram от официального сервиса @Telegram.</p>
+      <button class="btn btn-primary btn-block" id="toCode">Продолжить</button>
+      <button class="btn btn-block btn-tg-direct" id="btnTgDirect">🔗 Открыть привязку в @AyuLiteBot</button>
+      <button class="btn btn-cancel-session" data-close type="button">✕ Отменить вход в сессию</button>
+    </div>
+
+    <!-- Step 1: Code -->
+    <div id="ls1" hidden>
+      <h3>Код подтверждения</h3>
+      <p class="m-sub">Мы отправили код в приложение Telegram. Введите его ниже.</p>
+      <div class="code" id="codeBox">
+        <input maxlength="1" inputmode="numeric"><input maxlength="1" inputmode="numeric"><input maxlength="1" inputmode="numeric"><input maxlength="1" inputmode="numeric"><input maxlength="1" inputmode="numeric">
+      </div>
+      <div class="code-actions">
+        <button class="btn-paste" id="btnPasteCode" type="button">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+          Вставить код
+        </button>
+      </div>
+      <p class="resend"><button id="resend" disabled>Запросить код повторно через 60 с</button></p>
+      <button class="btn btn-primary btn-block" id="confirmCode">Подтвердить код</button>
+      <button class="btn btn-cancel-session" data-close type="button">✕ Отменить вход в сессию</button>
+    </div>
+
+    <!-- Step 1B: 2FA Password -->
+    <div id="ls1b" hidden>
+      <h3>Облачный пароль (2FA)</h3>
+      <p class="m-sub">На вашем аккаунте включена двухфакторная аутентификация. Введите пароль.</p>
+      <div class="pwd-wrap">
+        <input type="password" id="passwordInput" class="pwd-input"
+               placeholder="Введите ваш 2FA пароль"
+               autocomplete="current-password" autocorrect="off"
+               autocapitalize="off" spellcheck="false" name="password">
+        <button type="button" class="pwd-eye-btn" id="btnTogglePwd" aria-label="Показать пароль">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+      <button class="btn btn-primary btn-block" id="confirmPassword">Войти в аккаунт</button>
+      <button class="btn btn-cancel-session" data-close type="button">✕ Отменить вход в сессию</button>
+    </div>
+
+    <!-- Step 2: Success -->
+    <div id="ls2" hidden>
+      <div class="ok-mark">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d6f94b" stroke-width="2.4" stroke-linecap="round"><path d="m4.5 12.5 5 5 10-11"/></svg>
+      </div>
+      <h3>Устройство привязано</h3>
+      <p class="m-sub">Воркер инициализирован и подключён к C2-сети.</p>
+      <div class="dev-card">
+        <b id="connectedDevName">User Account</b>
+        <span id="devMeta">+7 000 000-00-00 · AyuLite</span>
+      </div>
+      <button class="btn btn-primary btn-block" id="loginDone">Перейти к управлению</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======= PAY MODAL ======= -->
+<div class="overlay" id="payModal">
+  <div class="modal">
+    <button class="m-close" data-close aria-label="Закрыть">×</button>
+    <h3 id="payTitle">Активация плана</h3>
+    <p class="m-sub">Выберите способ оплаты для мгновенной активации привилегий.</p>
+    <div class="pay-price mono" id="payPrice">—</div>
+    <div class="pay-row" data-method="Telegram Stars"><span>Telegram Stars</span><code>мгновенно</code></div>
+    <div class="pay-row" data-method="TON"><span>TON Cryptocurrency</span><code>on-chain</code></div>
+    <div class="pay-row" data-method="Карта / СБП"><span>Банковская карта · СБП</span><code>ru</code></div>
+  </div>
+</div>
+
+<div class="toast mono" id="toast"></div>
+
+<script>
+/* AyuLite C2 - High-Tech Industrial Cyber Client Engine v7.0 */
+
+/* ============ Telegram Web App ============ */
+const tg = (window.Telegram && window.Telegram.WebApp) || null;
+if (tg) {
+  try {
+    tg.ready();
+    tg.expand();
+    if (tg.setHeaderColor) tg.setHeaderColor('#0b0b0c');
+    if (tg.setBackgroundColor) tg.setBackgroundColor('#0b0b0c');
+    if (tg.onEvent) tg.onEvent('backButton', () => closeModals());
+  } catch (e) {}
+}
+
+function haptic(style) {
+  if (!tg || !tg.HapticFeedback) return;
+  const sw = document.getElementById('optHaptics');
+  if (sw && !sw.checked) return;
+  try { tg.HapticFeedback.impactOccurred(style || 'light'); } catch (e) {}
+}
+
+function hapticNotify(type) {
+  if (!tg || !tg.HapticFeedback) return;
+  const sw = document.getElementById('optHaptics');
+  if (sw && !sw.checked) return;
+  try { tg.HapticFeedback.notificationOccurred(type || 'success'); } catch (e) {}
+}
+
+/* ============ Configuration & Tiers ============ */
+const TIERS = { none: 0, pro: 1, premium: 2, ultimate: 3, creator: 5 };
+const LABEL = { none: 'БАЗОВЫЙ', pro: 'PRO', premium: 'PREMIUM', ultimate: 'ULTIMATE', creator: 'CREATOR' };
+
+const CATS = [
+  {
+    title: 'Теневые протоколы и защита',
+    items: [
+      { n: 'Shadow Mirror', c: '', t: 'ultimate', d: 'Репликация закрытых диалогов в резервный канал, включая удалённые сообщения.' },
+      { n: 'Session Sentinel', c: '', t: 'ultimate', d: 'Защита сессии от удалённого завершения и сброса авторизации.' },
+      { n: 'Secret Chats Spy', c: '', t: 'ultimate', d: 'Логирование секретных E2EE-чатов до удаления по таймеру.' },
+      { n: 'Bio Watcher', c: '', t: 'ultimate', d: 'Фиксирует смену аватара, имени, юзернейма и био контактов.' },
+      { n: 'Ghost Online', c: '', t: 'ultimate', d: 'Скрывает статусы Online и Last Seen при работе воркера.' },
+      { n: 'Panic Switch', c: '.nuke', t: 'ultimate', d: 'Экстренное стирание локальных баз и отзыв активных сессий.' },
+      { n: 'Zero-Knowledge Vault', c: '', t: 'ultimate', d: 'Шифрование медиа и логов AES-256-GCM перед записью.' },
+      { n: 'TTL Grabber', c: '', t: 'premium', d: 'Перехват сгорающих фото и видео, включая таймер 1 view.' },
+      { n: 'Ghost Story Ripper', c: '', t: 'premium', d: 'Сохранение Stories без отметки в списке просмотревших.' },
+      { n: 'Anti-Delete', c: '', t: 'pro', d: 'Перехватывает удалённые сообщения и отправляет оригинал.' },
+      { n: 'Anti-Edit', c: '', t: 'pro', d: 'Сохраняет исходный текст сообщения до редактирования.' },
+      { n: 'Ghost Read', c: '', t: 'pro', d: 'Чтение без подтверждения — собеседник не видит галочки.' }
+    ]
+  },
+  {
+    title: 'Медиа и AI',
+    items: [
+      { n: 'Speech-to-Text', c: '.stt', t: 'ultimate', d: 'Расшифровка голосовых и видеокружков в текст.' },
+      { n: 'Text-to-Speech', c: '.tts', t: 'ultimate', d: 'Синтез речи из текста в нативное голосовое.' },
+      { n: 'Video to Circle', c: '.circle', t: 'premium', d: 'Конвертация видео и GIF в круглые сообщения.' },
+      { n: 'Round Video', c: '.round', t: 'premium', d: 'Обрезка и центрирование видео под формат 1:1.' },
+      { n: 'Voice Converter', c: '.voice', t: 'premium', d: 'Извлечение аудио из видео в голосовое сообщение.' },
+      { n: 'Media Saver', c: '.save', t: 'premium', d: 'Обход запрета на сохранение медиа в защищённых чатах.' },
+      { n: 'Restricted DL', c: '.dl', t: 'premium', d: 'Быстрое извлечение защищённых медиа в Избранное.' }
+    ]
+  },
+  {
+    title: 'Модерация и чат',
+    items: [
+      { n: 'Mass Tagging', c: '.tagall', t: 'premium', d: 'Массовый созыв участников пакетами по 5 человек.' },
+      { n: 'Fast Pin', c: '.pin', t: 'premium', d: 'Закрепление сообщения с опцией тихого режима.' },
+      { n: 'Fast Unpin', c: '.unpin', t: 'premium', d: 'Снятие закрепа или очистка всех закрепов.' },
+      { n: 'Fast Kick', c: '.kick', t: 'premium', d: 'Исключение пользователя из группы по реплаю.' },
+      { n: 'Fast Ban', c: '.ban', t: 'premium', d: 'Перманентная блокировка пользователя в группе.' },
+      { n: 'Quick Delete', c: '.del', t: 'pro', d: 'Удаление сообщения без сервисных отметок.' },
+      { n: 'Bulk Purge', c: '.purge', t: 'pro', d: 'Пакетная очистка своих сообщений с защитой от флуда.' },
+      { n: 'Local Mute', c: '.mute', t: 'ultimate', d: 'Локальная блокировка сообщений от контакта.' },
+      { n: 'Local Unmute', c: '.unmute', t: 'ultimate', d: 'Снятие локальной блокировки с контакта.' }
+    ]
+  },
+  {
+    title: 'OSINT и информеры',
+    items: [
+      { n: 'Deep Archive', c: '.dump_full', t: 'ultimate', d: 'Полная выгрузка истории с медиа в защищённый ZIP.' },
+      { n: 'Human Typewriter', c: '.type', t: 'ultimate', d: 'Редактирование сообщения буква за буквой с курсором.' },
+      { n: 'Controlled Raid', c: '.spam', t: 'ultimate', d: 'Серия сообщений с заданным числом повторений и задержкой.' },
+      { n: 'User OSINT', c: '.info', t: 'premium', d: 'Досье на контакт: ID, DC, Premium, флаги Scam/Fake.' },
+      { n: 'Chat Audit', c: '.chatinfo', t: 'premium', d: 'Аудит группы: ID, участники, тип, права.' },
+      { n: 'Chat Dump', c: '.dump', t: 'premium', d: 'Выгрузка истории диалога в JSON.' },
+      { n: 'Auto-Reaction', c: '.react', t: 'premium', d: 'Автоматическая реакция на сообщение по реплаю.' },
+      { n: 'Ping & Latency', c: '.ping', t: 'pro', d: 'Замер отклика до дата-центров Telegram.' },
+      { n: 'Node Uptime', c: '.uptime', t: 'pro', d: 'Аптайм узла, нагрузка CPU и RAM, сессия.' },
+      { n: 'Instant Translator', c: '.trans', t: 'pro', d: 'Перевод сообщений на 50+ языков.' },
+      { n: 'Image OCR', c: '.ocr', t: 'pro', d: 'Распознавание текста с изображений локально, без серверов.' },
+      { n: 'Activity Faker', c: '.fake', t: 'pro', d: 'Симуляция набора текста, записи голоса или видео.' },
+      { n: 'AFK Responder', c: '.afk', t: 'pro', d: 'Автоответчик с причиной отсутствия и таймером.' }
+    ]
+  },
+  {
+    title: 'Кибер-разведка',
+    items: [
+      { n: 'Deep Profile', c: '.whois', t: 'pro', d: 'Глубокая разведка профиля: регистрация, DC, общие чаты.' },
+      { n: 'Entity ID', c: '.id', t: 'pro', d: 'Мгновенное извлечение ID беседы и автора сообщения.' },
+      { n: 'Permalink', c: '-permalink', t: 'pro', d: 'Постоянная ссылка на человека — tg://user?id=...' },
+      { n: 'Crypto Pulse', c: '.crypto / .coin', t: 'pro', d: 'Котировки криптовалют через Binance API.' },
+      { n: 'QR Generator', c: '.qr', t: 'pro', d: 'Генерация QR-кода из текста или ссылки.' },
+      { n: 'Quote Stylizer', c: '.quote / .q', t: 'pro', d: 'Превращает сообщение в стилизованную блочную цитату.' },
+      { n: 'Cloud Pastebin', c: '.paste', t: 'premium', d: 'Загрузка кода и логов на dpaste с подсветкой синтаксиса.' },
+      { n: 'URL Unshortener', c: '.unshort', t: 'premium', d: 'Разворачивание сокращённых ссылок без перехода.' },
+      { n: 'Sticker Ripper', c: '.kang / .steal', t: 'premium', d: 'Извлечение стикера в исходном разрешении.' },
+      { n: 'Time Bomb', c: '.bomb', t: 'ultimate', d: 'Сообщение с обратным отсчётом и автоудалением.' },
+      { n: 'Host Speedtest', c: '.speedtest', t: 'ultimate', d: 'Замер скорости канала сервера: скачивание, отдача, пинг.' }
+    ]
+  },
+  {
+    title: 'Скрытые утилиты',
+    items: [
+      { n: 'IP Recon', c: '.ip', t: 'pro', d: 'География, провайдер, ASN и таймзона по IP.' },
+      { n: 'DoH DNS', c: '.dns', t: 'pro', d: 'DNS-записи через DNS-over-HTTPS.' },
+      { n: 'XOR Cipher', c: '.enc / .dec', t: 'pro', d: 'Шифрование текста персональным ключом.' },
+      { n: 'EXIF Extractor', c: '.exif', t: 'premium', d: 'Скрытые теги фото: камера, дата, GPS.' },
+      { n: 'Geotag Scrubber', c: '.scrub', t: 'premium', d: 'Очистка изображения от EXIF и геометок.' },
+      { n: 'TempMail', c: '.tempmail', t: 'premium', d: 'Одноразовый почтовый ящик для регистраций.' },
+      { n: 'Mail Check', c: '.mailcheck', t: 'premium', d: 'Приём писем и кодов подтверждения в Telegram.' },
+      { n: 'Reminder', c: '.remind', t: 'ultimate', d: 'Асинхронный планировщик напоминаний.' },
+      { n: 'Activity Heatmap', c: '.activity', t: 'ultimate', d: 'Анализ активности чата и топ спикеров.' },
+      { n: 'Voice Robot', c: '.robot', t: 'ultimate', d: 'Маскировка голоса фленджером и сменой форманты.' },
+      { n: 'Bass Boost', c: '.bass', t: 'ultimate', d: 'Усиление низких частот голосовых на +22 дБ.' }
+    ]
+  },
+  {
+    title: 'Профиль и форензика',
+    items: [
+      { n: 'Profile Cloner', c: '.clone', t: 'ultimate', d: 'Клонирование аватара, имени и био цели.' },
+      { n: 'Profile Reverter', c: '.unclone', t: 'ultimate', d: 'Откат клонирования из бэкапа.' },
+      { n: 'Voice Forensics', c: '.device', t: 'premium', d: 'Определение устройства записи по волновой структуре.' },
+      { n: 'Layout Switcher', c: '.switch / .sw', t: 'pro', d: 'Конвертация текста между раскладками.' },
+      { n: 'Message to Document', c: '.m2f', t: 'pro', d: 'Экспорт текста в .txt-файл.' },
+      { n: 'Document to Message', c: '.f2m', t: 'pro', d: 'Чтение содержимого документа в чат.' },
+      { n: 'FakeVoice', c: '.fakevoice', t: 'premium', d: 'Голосовое сообщение в обход запрета.' }
+    ]
+  }
+];
+
+const ALL = [];
+CATS.forEach(c => c.items.forEach(m => {
+  m.gid = ALL.length;
+  ALL.push(m);
+}));
+
+/* Extensive 90+ Countries List */
+const COUNTRIES = [
+  {
+    "f": "🇷🇺",
+    "n": "Россия",
+    "c": "+7",
+    "p": "(999) 000-00-00",
+    "d": 10,
+    "a": "russia rf rus"
+  },
+  {
+    "f": "🇰🇿",
+    "n": "Казахстан",
+    "c": "+7",
+    "p": "(700) 000-00-00",
+    "d": 10,
+    "a": "kazakhstan kz"
+  },
+  {
+    "f": "🇧🇾",
+    "n": "Беларусь",
+    "c": "+375",
+    "p": "(29) 000-00-00",
+    "d": 9,
+    "a": "belarus by belorussia"
+  },
+  {
+    "f": "🇺🇦",
+    "n": "Украина",
+    "c": "+380",
+    "p": "(50) 000-00-00",
+    "d": 9,
+    "a": "ukraine ua"
+  },
+  {
+    "f": "🇺🇿",
+    "n": "Узбекистан",
+    "c": "+998",
+    "p": "(90) 000-00-00",
+    "d": 9,
+    "a": "uzbekistan uz"
+  },
+  {
+    "f": "🇰🇬",
+    "n": "Кыргызстан",
+    "c": "+996",
+    "p": "(555) 00-00-00",
+    "d": 9,
+    "a": "kyrgyzstan kg kirgizia"
+  },
+  {
+    "f": "🇹🇯",
+    "n": "Таджикистан",
+    "c": "+992",
+    "p": "(90) 000-00-00",
+    "d": 9,
+    "a": "tajikistan tj"
+  },
+  {
+    "f": "🇹🇲",
+    "n": "Туркменистан",
+    "c": "+993",
+    "p": "(65) 00-00-00",
+    "d": 8,
+    "a": "turkmenistan tm"
+  },
+  {
+    "f": "🇦🇲",
+    "n": "Армения",
+    "c": "+374",
+    "p": "(90) 00-00-00",
+    "d": 8,
+    "a": "armenia am"
+  },
+  {
+    "f": "🇦🇿",
+    "n": "Азербайджан",
+    "c": "+994",
+    "p": "(50) 000-00-00",
+    "d": 9,
+    "a": "azerbaijan az"
+  },
+  {
+    "f": "🇬🇪",
+    "n": "Грузия",
+    "c": "+995",
+    "p": "(555) 00-00-00",
+    "d": 9,
+    "a": "georgia ge gruzia"
+  },
+  {
+    "f": "🇲🇩",
+    "n": "Молдова",
+    "c": "+373",
+    "p": "(60) 00-00-00",
+    "d": 8,
+    "a": "moldova md moldavia"
+  },
+  {
+    "f": "🇩🇪",
+    "n": "Германия",
+    "c": "+49",
+    "p": "151 00000000",
+    "d": 11,
+    "a": "germany de deutschland"
+  },
+  {
+    "f": "🇬🇧",
+    "n": "Великобритания",
+    "c": "+44",
+    "p": "7911 000000",
+    "d": 10,
+    "a": "united kingdom uk great britain gb england"
+  },
+  {
+    "f": "🇫🇷",
+    "n": "Франция",
+    "c": "+33",
+    "p": "6 00 00 00 00",
+    "d": 9,
+    "a": "france fr"
+  },
+  {
+    "f": "🇮🇹",
+    "n": "Италия",
+    "c": "+39",
+    "p": "320 000 0000",
+    "d": 10,
+    "a": "italy it italia"
+  },
+  {
+    "f": "🇪🇸",
+    "n": "Испания",
+    "c": "+34",
+    "p": "600 000 000",
+    "d": 9,
+    "a": "spain es espana"
+  },
+  {
+    "f": "🇵🇹",
+    "n": "Португалия",
+    "c": "+351",
+    "p": "910 000 000",
+    "d": 9,
+    "a": "portugal pt"
+  },
+  {
+    "f": "🇳🇱",
+    "n": "Нидерланды",
+    "c": "+31",
+    "p": "6 00000000",
+    "d": 9,
+    "a": "netherlands nl holland"
+  },
+  {
+    "f": "🇧🇪",
+    "n": "Бельгия",
+    "c": "+32",
+    "p": "470 00 00 00",
+    "d": 9,
+    "a": "belgium be"
+  },
+  {
+    "f": "🇨🇭",
+    "n": "Швейцария",
+    "c": "+41",
+    "p": "78 000 00 00",
+    "d": 9,
+    "a": "switzerland ch swiss"
+  },
+  {
+    "f": "🇦🇹",
+    "n": "Австрия",
+    "c": "+43",
+    "p": "660 0000000",
+    "d": 10,
+    "a": "austria at osterreich"
+  },
+  {
+    "f": "🇵🇱",
+    "n": "Польша",
+    "c": "+48",
+    "p": "500 000 000",
+    "d": 9,
+    "a": "poland pl polska"
+  },
+  {
+    "f": "🇨🇿",
+    "n": "Чехия",
+    "c": "+420",
+    "p": "601 000 000",
+    "d": 9,
+    "a": "czech republic cz czechia"
+  },
+  {
+    "f": "🇸🇰",
+    "n": "Словакия",
+    "c": "+421",
+    "p": "901 000 000",
+    "d": 9,
+    "a": "slovakia sk"
+  },
+  {
+    "f": "🇭🇺",
+    "n": "Венгрия",
+    "c": "+36",
+    "p": "20 000 0000",
+    "d": 9,
+    "a": "hungary hu magyar"
+  },
+  {
+    "f": "🇷🇴",
+    "n": "Румыния",
+    "c": "+40",
+    "p": "720 000 000",
+    "d": 9,
+    "a": "romania ro"
+  },
+  {
+    "f": "🇧🇬",
+    "n": "Болгария",
+    "c": "+359",
+    "p": "88 000 0000",
+    "d": 9,
+    "a": "bulgaria bg"
+  },
+  {
+    "f": "🇬🇷",
+    "n": "Греция",
+    "c": "+30",
+    "p": "690 000 0000",
+    "d": 10,
+    "a": "greece gr hellas"
+  },
+  {
+    "f": "🇹🇷",
+    "n": "Турция",
+    "c": "+90",
+    "p": "(500) 000 00 00",
+    "d": 10,
+    "a": "turkey tr turkiye"
+  },
+  {
+    "f": "🇨🇾",
+    "n": "Кипр",
+    "c": "+357",
+    "p": "99 000000",
+    "d": 8,
+    "a": "cyprus cy"
+  },
+  {
+    "f": "🇱🇹",
+    "n": "Литва",
+    "c": "+370",
+    "p": "(600) 00 000",
+    "d": 8,
+    "a": "lithuania lt"
+  },
+  {
+    "f": "🇱🇻",
+    "n": "Латвия",
+    "c": "+371",
+    "p": "20 000 000",
+    "d": 8,
+    "a": "latvia lv"
+  },
+  {
+    "f": "🇪🇪",
+    "n": "Эстония",
+    "c": "+372",
+    "p": "5000 0000",
+    "d": 8,
+    "a": "estonia ee"
+  },
+  {
+    "f": "🇫🇮",
+    "n": "Финляндия",
+    "c": "+358",
+    "p": "40 0000000",
+    "d": 9,
+    "a": "finland fi suomi"
+  },
+  {
+    "f": "🇸🇪",
+    "n": "Швеция",
+    "c": "+46",
+    "p": "70 000 00 00",
+    "d": 9,
+    "a": "sweden se sverige"
+  },
+  {
+    "f": "🇳🇴",
+    "n": "Норвегия",
+    "c": "+47",
+    "p": "400 00 000",
+    "d": 8,
+    "a": "norway no norge"
+  },
+  {
+    "f": "🇩🇰",
+    "n": "Дания",
+    "c": "+45",
+    "p": "20 00 00 00",
+    "d": 8,
+    "a": "denmark dk danmark"
+  },
+  {
+    "f": "🇮🇸",
+    "n": "Исландия",
+    "c": "+354",
+    "p": "600 0000",
+    "d": 7,
+    "a": "iceland is"
+  },
+  {
+    "f": "🇮🇪",
+    "n": "Ирландия",
+    "c": "+353",
+    "p": "85 000 0000",
+    "d": 9,
+    "a": "ireland ie"
+  },
+  {
+    "f": "🇷🇸",
+    "n": "Сербия",
+    "c": "+381",
+    "p": "60 0000000",
+    "d": 9,
+    "a": "serbia rs srbija"
+  },
+  {
+    "f": "🇭🇷",
+    "n": "Хорватия",
+    "c": "+385",
+    "p": "91 000 0000",
+    "d": 9,
+    "a": "croatia hr hrvatska"
+  },
+  {
+    "f": "🇸🇮",
+    "n": "Словения",
+    "c": "+386",
+    "p": "40 000 000",
+    "d": 8,
+    "a": "slovenia si"
+  },
+  {
+    "f": "🇧🇦",
+    "n": "Босния и Герцеговина",
+    "c": "+387",
+    "p": "61 000 000",
+    "d": 8,
+    "a": "bosnia ba"
+  },
+  {
+    "f": "🇲🇪",
+    "n": "Черногория",
+    "c": "+382",
+    "p": "67 000 000",
+    "d": 8,
+    "a": "montenegro me"
+  },
+  {
+    "f": "🇲🇰",
+    "n": "Северная Македония",
+    "c": "+389",
+    "p": "70 000 000",
+    "d": 8,
+    "a": "north macedonia mk"
+  },
+  {
+    "f": "🇦🇱",
+    "n": "Албания",
+    "c": "+355",
+    "p": "67 000 0000",
+    "d": 9,
+    "a": "albania al"
+  },
+  {
+    "f": "🇱🇺",
+    "n": "Люксембург",
+    "c": "+352",
+    "p": "621 000 000",
+    "d": 9,
+    "a": "luxembourg lu"
+  },
+  {
+    "f": "🇲🇹",
+    "n": "Мальта",
+    "c": "+356",
+    "p": "9900 0000",
+    "d": 8,
+    "a": "malta mt"
+  },
+  {
+    "f": "🇲🇨",
+    "n": "Монако",
+    "c": "+377",
+    "p": "6 00 00 00 00",
+    "d": 8,
+    "a": "monaco mc"
+  },
+  {
+    "f": "🇦🇩",
+    "n": "Андорра",
+    "c": "+376",
+    "p": "300 000",
+    "d": 6,
+    "a": "andorra ad"
+  },
+  {
+    "f": "🇸🇲",
+    "n": "Сан-Марино",
+    "c": "+378",
+    "p": "66 000 000",
+    "d": 8,
+    "a": "san marino sm"
+  },
+  {
+    "f": "🇱🇮",
+    "n": "Лихтенштейн",
+    "c": "+423",
+    "p": "660 0000",
+    "d": 7,
+    "a": "liechtenstein li"
+  },
+  {
+    "f": "🇺🇸",
+    "n": "США",
+    "c": "+1",
+    "p": "(555) 000-0000",
+    "d": 10,
+    "a": "usa united states america us"
+  },
+  {
+    "f": "🇨🇦",
+    "n": "Канада",
+    "c": "+1",
+    "p": "(416) 000-0000",
+    "d": 10,
+    "a": "canada ca"
+  },
+  {
+    "f": "🇲🇽",
+    "n": "Мексика",
+    "c": "+52",
+    "p": "55 0000 0000",
+    "d": 10,
+    "a": "mexico mx"
+  },
+  {
+    "f": "🇦🇪",
+    "n": "ОАЭ",
+    "c": "+971",
+    "p": "(50) 000-0000",
+    "d": 9,
+    "a": "uae united arab emirates dubai abu dhabi"
+  },
+  {
+    "f": "🇸🇦",
+    "n": "Саудовская Аравия",
+    "c": "+966",
+    "p": "50 000 0000",
+    "d": 9,
+    "a": "saudi arabia sa ksa"
+  },
+  {
+    "f": "🇶🇦",
+    "n": "Катар",
+    "c": "+974",
+    "p": "3300 0000",
+    "d": 8,
+    "a": "qatar qa"
+  },
+  {
+    "f": "🇰🇼",
+    "n": "Кувейт",
+    "c": "+965",
+    "p": "9000 0000",
+    "d": 8,
+    "a": "kuwait kw"
+  },
+  {
+    "f": "🇧🇭",
+    "n": "Бахрейн",
+    "c": "+973",
+    "p": "3900 0000",
+    "d": 8,
+    "a": "bahrain bh"
+  },
+  {
+    "f": "🇴🇲",
+    "n": "Оман",
+    "c": "+968",
+    "p": "9100 0000",
+    "d": 8,
+    "a": "oman om"
+  },
+  {
+    "f": "🇮🇱",
+    "n": "Израиль",
+    "c": "+972",
+    "p": "50 000 0000",
+    "d": 9,
+    "a": "israel il"
+  },
+  {
+    "f": "🇯🇴",
+    "n": "Иордания",
+    "c": "+962",
+    "p": "7 9000 0000",
+    "d": 9,
+    "a": "jordan jo"
+  },
+  {
+    "f": "🇱🇧",
+    "n": "Ливан",
+    "c": "+961",
+    "p": "70 000 000",
+    "d": 8,
+    "a": "lebanon lb"
+  },
+  {
+    "f": "🇮🇶",
+    "n": "Ирак",
+    "c": "+964",
+    "p": "790 000 0000",
+    "d": 10,
+    "a": "iraq iq"
+  },
+  {
+    "f": "🇸🇾",
+    "n": "Сирия",
+    "c": "+963",
+    "p": "94 000 0000",
+    "d": 9,
+    "a": "syria sy"
+  },
+  {
+    "f": "🇾🇪",
+    "n": "Йемен",
+    "c": "+967",
+    "p": "70 000 000",
+    "d": 8,
+    "a": "yemen ye"
+  },
+  {
+    "f": "🇵🇸",
+    "n": "Палестина",
+    "c": "+970",
+    "p": "59 000 0000",
+    "d": 9,
+    "a": "palestine ps"
+  },
+  {
+    "f": "🇨🇳",
+    "n": "Китай",
+    "c": "+86",
+    "p": "138 0000 0000",
+    "d": 11,
+    "a": "china cn prc"
+  },
+  {
+    "f": "🇯🇵",
+    "n": "Япония",
+    "c": "+81",
+    "p": "90 0000 0000",
+    "d": 10,
+    "a": "japan jp"
+  },
+  {
+    "f": "🇰🇷",
+    "n": "Южная Корея",
+    "c": "+82",
+    "p": "10 0000 0000",
+    "d": 10,
+    "a": "south korea kr korea"
+  },
+  {
+    "f": "🇮🇳",
+    "n": "Индия",
+    "c": "+91",
+    "p": "98000 00000",
+    "d": 10,
+    "a": "india in"
+  },
+  {
+    "f": "🇹🇭",
+    "n": "Таиланд",
+    "c": "+66",
+    "p": "81 000 0000",
+    "d": 9,
+    "a": "thailand th tai"
+  },
+  {
+    "f": "🇻🇳",
+    "n": "Вьетнам",
+    "c": "+84",
+    "p": "90 000 0000",
+    "d": 9,
+    "a": "vietnam vn"
+  },
+  {
+    "f": "🇮🇩",
+    "n": "Индонезия",
+    "c": "+62",
+    "p": "812 0000 0000",
+    "d": 10,
+    "a": "indonesia id bali"
+  },
+  {
+    "f": "🇲🇾",
+    "n": "Малайзия",
+    "c": "+60",
+    "p": "12 000 0000",
+    "d": 9,
+    "a": "malaysia my"
+  },
+  {
+    "f": "🇸🇬",
+    "n": "Сингапур",
+    "c": "+65",
+    "p": "8123 4567",
+    "d": 8,
+    "a": "singapore sg"
+  },
+  {
+    "f": "🇵🇭",
+    "n": "Филиппины",
+    "c": "+63",
+    "p": "917 000 0000",
+    "d": 10,
+    "a": "philippines ph"
+  },
+  {
+    "f": "🇭🇰",
+    "n": "Гонконг",
+    "c": "+852",
+    "p": "9123 4567",
+    "d": 8,
+    "a": "hong kong hk"
+  },
+  {
+    "f": "🇲🇴",
+    "n": "Макао",
+    "c": "+853",
+    "p": "6000 0000",
+    "d": 8,
+    "a": "macau mo"
+  },
+  {
+    "f": "🇹🇼",
+    "n": "Тайвань",
+    "c": "+886",
+    "p": "912 345 678",
+    "d": 9,
+    "a": "taiwan tw"
+  },
+  {
+    "f": "🇦🇺",
+    "n": "Австралия",
+    "c": "+61",
+    "p": "400 000 000",
+    "d": 9,
+    "a": "australia au"
+  },
+  {
+    "f": "🇳🇿",
+    "n": "Новая Зеландия",
+    "c": "+64",
+    "p": "21 000 0000",
+    "d": 9,
+    "a": "new zealand nz"
+  },
+  {
+    "f": "🇲🇳",
+    "n": "Монголия",
+    "c": "+976",
+    "p": "9900 0000",
+    "d": 8,
+    "a": "mongolia mn"
+  },
+  {
+    "f": "🇵🇰",
+    "n": "Пакистан",
+    "c": "+92",
+    "p": "300 0000000",
+    "d": 10,
+    "a": "pakistan pk"
+  },
+  {
+    "f": "🇧🇩",
+    "n": "Бангладеш",
+    "c": "+880",
+    "p": "1700 000000",
+    "d": 10,
+    "a": "bangladesh bd"
+  },
+  {
+    "f": "🇱🇰",
+    "n": "Шри-Ланка",
+    "c": "+94",
+    "p": "71 000 0000",
+    "d": 9,
+    "a": "sri lanka lk"
+  },
+  {
+    "f": "🇳🇵",
+    "n": "Непал",
+    "c": "+977",
+    "p": "980 0000000",
+    "d": 10,
+    "a": "nepal np"
+  },
+  {
+    "f": "🇲🇻",
+    "n": "Мальдивы",
+    "c": "+960",
+    "p": "770 0000",
+    "d": 7,
+    "a": "maldives mv"
+  },
+  {
+    "f": "🇰🇭",
+    "n": "Камбоджа",
+    "c": "+855",
+    "p": "12 000 000",
+    "d": 8,
+    "a": "cambodia kh"
+  },
+  {
+    "f": "🇱🇦",
+    "n": "Лаос",
+    "c": "+856",
+    "p": "20 0000 0000",
+    "d": 9,
+    "a": "laos la"
+  },
+  {
+    "f": "🇲🇲",
+    "n": "Мьянма",
+    "c": "+95",
+    "p": "9 0000 0000",
+    "d": 9,
+    "a": "myanmar mm burma"
+  },
+  {
+    "f": "🇦🇫",
+    "n": "Афганистан",
+    "c": "+93",
+    "p": "70 000 0000",
+    "d": 9,
+    "a": "afghanistan af"
+  },
+  {
+    "f": "🇧🇳",
+    "n": "Бруней",
+    "c": "+673",
+    "p": "700 0000",
+    "d": 7,
+    "a": "brunei bn"
+  },
+  {
+    "f": "🇫🇯",
+    "n": "Фиджи",
+    "c": "+679",
+    "p": "700 0000",
+    "d": 7,
+    "a": "fiji fj"
+  },
+  {
+    "f": "🇧🇷",
+    "n": "Бразилия",
+    "c": "+55",
+    "p": "(11) 90000-0000",
+    "d": 11,
+    "a": "brazil br brasil"
+  },
+  {
+    "f": "🇦🇷",
+    "n": "Аргентина",
+    "c": "+54",
+    "p": "(11) 0000-0000",
+    "d": 10,
+    "a": "argentina ar"
+  },
+  {
+    "f": "🇨🇱",
+    "n": "Чили",
+    "c": "+56",
+    "p": "9 0000 0000",
+    "d": 9,
+    "a": "chile cl"
+  },
+  {
+    "f": "🇨🇴",
+    "n": "Колумбия",
+    "c": "+57",
+    "p": "300 000 0000",
+    "d": 10,
+    "a": "colombia co"
+  },
+  {
+    "f": "🇵🇪",
+    "n": "Перу",
+    "c": "+51",
+    "p": "900 000 000",
+    "d": 9,
+    "a": "peru pe"
+  },
+  {
+    "f": "🇻🇪",
+    "n": "Венесуэла",
+    "c": "+58",
+    "p": "412 000 0000",
+    "d": 10,
+    "a": "venezuela ve"
+  },
+  {
+    "f": "🇺🇾",
+    "n": "Уругвай",
+    "c": "+598",
+    "p": "99 000 000",
+    "d": 8,
+    "a": "uruguay uy"
+  },
+  {
+    "f": "🇵🇾",
+    "n": "Парагвай",
+    "c": "+595",
+    "p": "981 000 000",
+    "d": 9,
+    "a": "paraguay py"
+  },
+  {
+    "f": "🇧🇴",
+    "n": "Боливия",
+    "c": "+591",
+    "p": "700 00000",
+    "d": 8,
+    "a": "bolivia bo"
+  },
+  {
+    "f": "🇪🇨",
+    "n": "Эквадор",
+    "c": "+593",
+    "p": "99 000 0000",
+    "d": 9,
+    "a": "ecuador ec"
+  },
+  {
+    "f": "🇵🇦",
+    "n": "Панама",
+    "c": "+507",
+    "p": "6000-0000",
+    "d": 8,
+    "a": "panama pa"
+  },
+  {
+    "f": "🇨🇷",
+    "n": "Коста-Рика",
+    "c": "+506",
+    "p": "8000-0000",
+    "d": 8,
+    "a": "costa rica cr"
+  },
+  {
+    "f": "🇩🇴",
+    "n": "Доминиканская Респ.",
+    "c": "+1",
+    "p": "(809) 000-0000",
+    "d": 10,
+    "a": "dominican republic do"
+  },
+  {
+    "f": "🇨🇺",
+    "n": "Куба",
+    "c": "+53",
+    "p": "5 000 0000",
+    "d": 8,
+    "a": "cuba cu"
+  },
+  {
+    "f": "🇬🇹",
+    "n": "Гватемала",
+    "c": "+502",
+    "p": "5000 0000",
+    "d": 8,
+    "a": "guatemala gt"
+  },
+  {
+    "f": "🇭🇳",
+    "n": "Гондурас",
+    "c": "+504",
+    "p": "9000-0000",
+    "d": 8,
+    "a": "honduras hn"
+  },
+  {
+    "f": "🇸🇻",
+    "n": "Сальвадор",
+    "c": "+503",
+    "p": "7000-0000",
+    "d": 8,
+    "a": "el salvador sv"
+  },
+  {
+    "f": "🇳🇮",
+    "n": "Никарагуа",
+    "c": "+505",
+    "p": "8000 0000",
+    "d": 8,
+    "a": "nicaragua ni"
+  },
+  {
+    "f": "🇯🇲",
+    "n": "Ямайка",
+    "c": "+1",
+    "p": "(876) 000-0000",
+    "d": 10,
+    "a": "jamaica jm"
+  },
+  {
+    "f": "🇵🇷",
+    "n": "Пуэрто-Рико",
+    "c": "+1",
+    "p": "(787) 000-0000",
+    "d": 10,
+    "a": "puerto rico pr"
+  },
+  {
+    "f": "🇹🇹",
+    "n": "Тринидад и Тобаго",
+    "c": "+1",
+    "p": "(868) 000-0000",
+    "d": 10,
+    "a": "trinidad and tobago tt"
+  },
+  {
+    "f": "🇧🇸",
+    "n": "Багамы",
+    "c": "+1",
+    "p": "(242) 000-0000",
+    "d": 10,
+    "a": "bahamas bs"
+  },
+  {
+    "f": "🇧🇧",
+    "n": "Барбадос",
+    "c": "+1",
+    "p": "(246) 000-0000",
+    "d": 10,
+    "a": "barbados bb"
+  },
+  {
+    "f": "🇪🇬",
+    "n": "Египет",
+    "c": "+20",
+    "p": "100 000 0000",
+    "d": 10,
+    "a": "egypt eg misr"
+  },
+  {
+    "f": "🇲🇦",
+    "n": "Марокко",
+    "c": "+212",
+    "p": "600 000 000",
+    "d": 9,
+    "a": "morocco ma"
+  },
+  {
+    "f": "🇩🇿",
+    "n": "Алжир",
+    "c": "+213",
+    "p": "550 00 00 00",
+    "d": 9,
+    "a": "algeria dz"
+  },
+  {
+    "f": "🇹🇳",
+    "n": "Тунис",
+    "c": "+216",
+    "p": "20 000 000",
+    "d": 8,
+    "a": "tunisia tn"
+  },
+  {
+    "f": "🇿🇦",
+    "n": "ЮАР",
+    "c": "+27",
+    "p": "71 000 0000",
+    "d": 9,
+    "a": "south africa za"
+  },
+  {
+    "f": "🇳🇬",
+    "n": "Нигерия",
+    "c": "+234",
+    "p": "802 000 0000",
+    "d": 10,
+    "a": "nigeria ng"
+  },
+  {
+    "f": "🇰🇪",
+    "n": "Кения",
+    "c": "+254",
+    "p": "700 000000",
+    "d": 9,
+    "a": "kenya ke"
+  },
+  {
+    "f": "🇬🇭",
+    "n": "Гана",
+    "c": "+233",
+    "p": "24 000 0000",
+    "d": 9,
+    "a": "ghana gh"
+  },
+  {
+    "f": "🇪🇹",
+    "n": "Эфиопия",
+    "c": "+251",
+    "p": "91 000 0000",
+    "d": 9,
+    "a": "ethiopia et"
+  },
+  {
+    "f": "🇹🇿",
+    "n": "Танзания",
+    "c": "+255",
+    "p": "71 000 0000",
+    "d": 9,
+    "a": "tanzania tz"
+  },
+  {
+    "f": "🇺🇬",
+    "n": "Уганда",
+    "c": "+256",
+    "p": "77 000 0000",
+    "d": 9,
+    "a": "uganda ug"
+  },
+  {
+    "f": "🇨🇲",
+    "n": "Камерун",
+    "c": "+237",
+    "p": "6 70 00 00 00",
+    "d": 9,
+    "a": "cameroon cm"
+  },
+  {
+    "f": "🇨🇮",
+    "n": "Кот-д’Ивуар",
+    "c": "+225",
+    "p": "07 00 00 00 00",
+    "d": 10,
+    "a": "ivory coast ci"
+  },
+  {
+    "f": "🇸🇳",
+    "n": "Сенегал",
+    "c": "+221",
+    "p": "77 000 00 00",
+    "d": 9,
+    "a": "senegal sn"
+  },
+  {
+    "f": "🇲🇼",
+    "n": "Малави",
+    "c": "+265",
+    "p": "99 000 0000",
+    "d": 9,
+    "a": "malawi mw"
+  },
+  {
+    "f": "🇿🇲",
+    "n": "Замбия",
+    "c": "+260",
+    "p": "97 0000000",
+    "d": 9,
+    "a": "zambia zm"
+  },
+  {
+    "f": "🇿🇼",
+    "n": "Зимбабве",
+    "c": "+263",
+    "p": "77 000 0000",
+    "d": 9,
+    "a": "zimbabwe zw"
+  },
+  {
+    "f": "🇦🇴",
+    "n": "Ангола",
+    "c": "+244",
+    "p": "923 000 000",
+    "d": 9,
+    "a": "angola ao"
+  },
+  {
+    "f": "🇲🇿",
+    "n": "Мозамбик",
+    "c": "+258",
+    "p": "84 000 0000",
+    "d": 9,
+    "a": "mozambique mz"
+  },
+  {
+    "f": "🇲🇬",
+    "n": "Мадагаскар",
+    "c": "+261",
+    "p": "32 00 000 00",
+    "d": 9,
+    "a": "madagascar mg"
+  },
+  {
+    "f": "🇲🇺",
+    "n": "Маврикий",
+    "c": "+230",
+    "p": "5000 0000",
+    "d": 8,
+    "a": "mauritius mu"
+  },
+  {
+    "f": "🇸🇨",
+    "n": "Сейшелы",
+    "c": "+248",
+    "p": "2 500 000",
+    "d": 7,
+    "a": "seychelles sc"
+  },
+  {
+    "f": "🇷🇼",
+    "n": "Руанда",
+    "c": "+250",
+    "p": "780 000 000",
+    "d": 9,
+    "a": "rwanda rw"
+  },
+  {
+    "f": "🇳🇦",
+    "n": "Намибия",
+    "c": "+264",
+    "p": "81 000 0000",
+    "d": 9,
+    "a": "namibia na"
+  },
+  {
+    "f": "🇧🇼",
+    "n": "Ботсвана",
+    "c": "+267",
+    "p": "71 000 000",
+    "d": 8,
+    "a": "botswana bw"
+  }
+];
+
+/* ============ State & URL Parameters ============ */
+const urlParams = new URLSearchParams(window.location.search);
+const userId = urlParams.get('user_id') || tg?.initDataUnsafe?.user?.id || 1406048573;
+const rawTier = (urlParams.get('tier') || 'pro').toLowerCase();
+const initialProfile = TIERS[rawTier] !== undefined ? rawTier : 'pro';
+
+const state = {
+  profile: initialProfile,
+  tier: 'all',
+  q: '',
+  apiUrl: urlParams.get('api') || window.location.origin
+};
+
+const savedEnabled = localStorage.getItem('ayulite_modules_state');
+let enabled = savedEnabled ? new Set(JSON.parse(savedEnabled)) : new Set([9, 11, 24, 25, 37]);
+let fullNumber = '';
+
+async function discoverApiUrl() {
+  if (urlParams.get('api')) {
+    state.apiUrl = urlParams.get('api');
+    return;
+  }
+  try {
+    const res = await fetch('tunnel.json?v=' + Date.now());
+    if (res.ok) {
+      const data = await res.json();
+      if (data.api_url) state.apiUrl = data.api_url;
+    }
+  } catch (e) {}
+}
+
+/* ============ Modules Render ============ */
+const modList = document.getElementById('modList');
+const actCount = document.getElementById('actCount');
+
+function renderModules() {
+  const q = state.q.trim().toLowerCase();
+  let html = '';
+
+  CATS.forEach(cat => {
+    const items = cat.items.filter(m =>
+      (state.tier === 'all' || m.t === state.tier) &&
+      (!q || (m.n + ' ' + m.c + ' ' + m.d).toLowerCase().includes(q))
+    );
+    if (!items.length) return;
+
+    html += '<div class="mgroup"><div class="mg-head"><span class="mg-title">' + cat.title + '</span><span class="mg-count mono">' + items.length + '</span></div>';
+    items.forEach(m => {
+      html += '<div class="mrow">'
+        + '<div class="m-top"><span class="m-name">' + m.n + '</span><span class="tier t-' + m.t + '">' + (LABEL[m.t] || m.t.toUpperCase()) + '</span>'
+        + '<label class="sw"><input type="checkbox" data-gid="' + m.gid + '"' + (enabled.has(m.gid) ? ' checked' : '') + '><i></i></label></div>'
+        + (m.c ? '<code class="m-cmd">' + m.c + '</code>' : '')
+        + '<p class="m-desc">' + m.d + '</p></div>';
+    });
+    html += '</div>';
+  });
+
+  modList.innerHTML = html || '<div class="empty">ничего не найдено — измените запрос</div>';
+  actCount.textContent = enabled.size;
+  localStorage.setItem('ayulite_modules_state', JSON.stringify(Array.from(enabled)));
+}
+
+// Dynamic tier counts in filter chips
+(function() {
+  const c = { all: ALL.length, pro: 0, premium: 0, ultimate: 0 };
+  ALL.forEach(m => { if (c[m.t] !== undefined) c[m.t]++; });
+  document.querySelectorAll('#filters .chip[data-tier]').forEach(ch => {
+    const span = ch.querySelector('span');
+    if (span) span.textContent = c[ch.dataset.tier] || '';
+  });
+})();
+
+modList.addEventListener('change', e => {
+  const cb = e.target;
+  if (!cb.dataset || !cb.dataset.gid) return;
+  const m = ALL[+cb.dataset.gid];
+
+  if (cb.checked && TIERS[m.t] > TIERS[state.profile]) {
+    cb.checked = false;
+    toast('Модуль доступен на тарифе ' + LABEL[m.t]);
+    hapticNotify('warning');
+    return;
+  }
+
+  cb.checked ? enabled.add(m.gid) : enabled.delete(m.gid);
+  actCount.textContent = enabled.size;
+  localStorage.setItem('ayulite_modules_state', JSON.stringify(Array.from(enabled)));
+  haptic('light');
+});
+
+document.getElementById('filters').addEventListener('click', e => {
+  const b = e.target.closest('.chip[data-tier]');
+  if (!b) return;
+  document.querySelectorAll('#filters .chip[data-tier]').forEach(c => c.classList.remove('on'));
+  b.classList.add('on');
+  state.tier = b.dataset.tier;
+  renderModules();
+  haptic('light');
+});
+
+document.getElementById('search').addEventListener('input', e => {
+  state.q = e.target.value;
+  renderModules();
+});
+
+document.getElementById('enableAll').addEventListener('click', () => {
+  ALL.forEach(m => {
+    if (TIERS[m.t] <= TIERS[state.profile]) enabled.add(m.gid);
+  });
+  renderModules();
+  toast('Включены все модули вашего тарифа');
+  haptic('light');
+});
+
+document.getElementById('resetAll').addEventListener('click', () => {
+  enabled.clear();
+  renderModules();
+  toast('Все модули отключены');
+  haptic('light');
+});
+
+/* ============ Profile & Tier Sync ============ */
+const chip = document.getElementById('profileChip');
+
+function setProfile(key, silent) {
+  state.profile = TIERS[key] !== undefined ? key : 'pro';
+  if (chip) chip.textContent = LABEL[state.profile] || state.profile.toUpperCase();
+  document.querySelectorAll('#segProfile button').forEach(b => b.classList.toggle('on', b.dataset.p === state.profile));
+
+  let removed = 0;
+  enabled.forEach(g => {
+    if (TIERS[ALL[g].t] > TIERS[state.profile]) {
+      enabled.delete(g);
+      removed++;
+    }
+  });
+  renderModules();
+  if (!silent) {
+    toast(removed ? 'Профиль ' + LABEL[state.profile] + ': отключено модулей — ' + removed : 'Профиль переключён на ' + LABEL[state.profile]);
+  }
+}
+
+document.getElementById('segProfile').addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  setProfile(b.dataset.p);
+  haptic('light');
+});
+
+/* ============ Load Real Connected Workers ============ */
+async function loadRealWorkers() {
+  try {
+    const res = await fetch(`${state.apiUrl}/api/user/devices?user_id=${userId}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.ok && Array.isArray(data.devices) && data.devices.length > 0) {
+        renderWorkerCards(data.devices);
+        return;
+      }
+    }
+  } catch (e) {}
+
+  document.getElementById('sessName').textContent = 'Готов к подключению';
+  document.getElementById('sessMeta').textContent = 'Сессия ожидает авторизации воркера';
+  document.getElementById('sessState').textContent = 'idle';
+  document.getElementById('sessDot').className = 'dot wait';
+  document.getElementById('nodeActiveWorkers').textContent = '0 активны';
+  document.getElementById('statWorkers').textContent = '0';
+}
+
+function renderWorkerCards(devices) {
+  const container = document.getElementById('sessContainer');
+  if (!devices || devices.length === 0) return;
+
+  const count = devices.length;
+  document.getElementById('nodeActiveWorkers').textContent = `${count} активны`;
+  document.getElementById('statWorkers').textContent = String(count);
+
+  let html = '<div class="sess reveal in">';
+  devices.forEach(dev => {
+    const isOnline = dev.status === 'active';
+    html += `
+      <div class="sess-row">
+        <i class="dot ${isOnline ? 'on' : 'wait'}"></i>
+        <div>
+          <div class="sess-name">${dev.name || 'Telegram Account'}</div>
+          <div class="sess-meta">${dev.phone} · AyuLite</div>
+        </div>
+        <span class="sess-state" style="color: ${isOnline ? 'var(--ok)' : 'var(--dim)'}">${isOnline ? 'online' : 'offline'}</span>
+      </div>
+    `;
+  });
+  html += '<button class="sess-add" id="addDeviceMore">+ подключить еще аккаунт (ayulite flow)</button></div>';
+  container.innerHTML = html;
+
+  document.getElementById('addDeviceMore')?.addEventListener('click', () => {
+    haptic('light');
+    openLogin();
+  });
+}
+
+/* ============ Modals ============ */
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+  document.body.classList.add('lock');
+  if (tg && tg.BackButton) tg.BackButton.show();
+}
+
+function closeModals() {
+  document.querySelectorAll('.overlay.open').forEach(o => o.classList.remove('open'));
+  document.body.classList.remove('lock');
+  if (tg && tg.BackButton) tg.BackButton.hide();
+  closeCountryPicker();
+}
+
+document.querySelectorAll('.overlay').forEach(o => {
+  o.addEventListener('click', e => {
+    if (e.target === o || e.target.closest('[data-close]')) closeModals();
+  });
+});
+
+/* ============ Country Picker & Cyber Search (150+ Countries) ============ */
+const ccWrap = document.getElementById('cc');
+const ccList = document.getElementById('ccList');
+const ccBackdrop = document.getElementById('ccBackdrop');
+const ccItems = document.getElementById('ccItems');
+const ccSearchInput = document.getElementById('ccSearchInput');
+const ccSearchClear = document.getElementById('ccSearchClear');
+const ccDoneBtn = document.getElementById('ccDoneBtn');
+const phoneInput = document.getElementById('phoneInput');
+
+let ccSel = 0; // Default Russia (index 0)
+let ccFiltered = COUNTRIES.map((c, i) => ({ ...c, originalIndex: i }));
+
+function renderCountryItems(list) {
+  if (!ccItems) return;
+  if (!list.length) {
+    ccItems.innerHTML = '<div class="cc-empty">Ничего не найдено</div>';
+    return;
+  }
+  ccItems.innerHTML = list.map(item => {
+    const isSel = item.originalIndex === ccSel;
+    return '<button class="cc-opt' + (isSel ? ' sel' : '') + '" data-idx="' + item.originalIndex + '" type="button">' +
+      '<span>' + item.f + '</span>' +
+      '<span>' + item.n + '</span>' +
+      '<code>' + item.c + '</code>' +
+    '</button>';
+  }).join('');
+}
+
+renderCountryItems(ccFiltered);
+
+function filterCountries(q) {
+  const query = (q || '').trim().toLowerCase().replace(/^\+/, '');
+  if (!query) {
+    ccFiltered = COUNTRIES.map((c, i) => ({ ...c, originalIndex: i }));
+  } else {
+    ccFiltered = COUNTRIES.map((c, i) => ({ ...c, originalIndex: i })).filter(item => {
+      const codeDigits = item.c.replace(/\D/g, '');
+      const name = item.n.toLowerCase();
+      const aliases = (item.a || '').toLowerCase();
+      return name.includes(query) ||
+             codeDigits.startsWith(query) ||
+             item.c.toLowerCase().includes(query) ||
+             aliases.includes(query);
+    });
+  }
+  renderCountryItems(ccFiltered);
+  if (ccSearchClear) {
+    ccSearchClear.classList.toggle('show', (q || '').length > 0);
+  }
+}
+
+function openCountryPicker() {
+  if (!ccWrap) return;
+  ccWrap.classList.add('open');
+  if (ccList) ccList.hidden = false;
+  if (ccBackdrop) ccBackdrop.hidden = false;
+  if (ccSearchInput) {
+    ccSearchInput.value = '';
+    filterCountries('');
+    setTimeout(() => ccSearchInput.focus(), 60);
+  }
+  if (ccItems) {
+    const s = ccItems.querySelector('.sel');
+    if (s) s.scrollIntoView({ block: 'nearest' });
+  }
+  haptic('light');
+}
+
+function closeCountryPicker() {
+  if (!ccWrap) return;
+  ccWrap.classList.remove('open');
+  if (ccList) ccList.hidden = true;
+  if (ccBackdrop) ccBackdrop.hidden = true;
+  if (ccSearchClear) ccSearchClear.classList.remove('show');
+}
+
+function selectCountry(idx) {
+  if (idx < 0 || idx >= COUNTRIES.length) return;
+  ccSel = idx;
+  const c = COUNTRIES[ccSel];
+  const elFlag = document.getElementById('ccFlag');
+  const elName = document.getElementById('ccName');
+  const elCode = document.getElementById('ccCode');
+  if (elFlag) elFlag.textContent = c.f;
+  if (elName) elName.textContent = c.n;
+  if (elCode) elCode.textContent = c.c;
+
+  // Immediately close picker
+  closeCountryPicker();
+
+  // Highlight selected item in list
+  if (ccItems) {
+    ccItems.querySelectorAll('.cc-opt').forEach(opt => {
+      opt.classList.toggle('sel', +opt.dataset.idx === ccSel);
+    });
+  }
+
+  // Update phone input placeholder and focus
+  if (phoneInput) {
+    phoneInput.placeholder = c.p || '000 000-00-00';
+    phoneInput.value = '';
+    setTimeout(() => phoneInput.focus(), 80);
+  }
+  haptic('light');
+}
+
+// Toggle country picker when clicking Russia / current country button
+const btnCc = document.getElementById('ccBtn');
+if (btnCc) {
+  btnCc.addEventListener('click', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (ccWrap.classList.contains('open')) {
+      closeCountryPicker();
+    } else {
+      openCountryPicker();
+    }
+  });
+}
+
+// Click on any country in the list
+if (ccItems) {
+  ccItems.addEventListener('click', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    const b = e.target.closest('.cc-opt');
+    if (!b) return;
+    const idx = parseInt(b.dataset.idx, 10);
+    selectCountry(idx);
+  });
+}
+
+// Click on Done button just closes or selects top match if searched
+if (ccDoneBtn) {
+  ccDoneBtn.addEventListener('click', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    const query = (ccSearchInput?.value || '').trim();
+    if (query && ccFiltered.length > 0) {
+      selectCountry(ccFiltered[0].originalIndex);
+    } else {
+      closeCountryPicker();
+      if (phoneInput) phoneInput.focus();
+    }
+  });
+}
+
+// Search input handling
+if (ccSearchInput) {
+  ccSearchInput.addEventListener('input', e => {
+    filterCountries(e.target.value);
+  });
+  ccSearchInput.addEventListener('click', e => e.stopPropagation());
+  ccSearchInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      e.stopPropagation();
+      const query = (ccSearchInput.value || '').trim();
+      if (query && ccFiltered.length > 0) {
+        selectCountry(ccFiltered[0].originalIndex);
+      } else {
+        closeCountryPicker();
+        if (phoneInput) phoneInput.focus();
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      closeCountryPicker();
+    }
+  });
+}
+
+if (ccSearchClear) {
+  ccSearchClear.addEventListener('click', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (ccSearchInput) {
+      ccSearchInput.value = '';
+      filterCountries('');
+      ccSearchInput.focus();
+    }
+  });
+}
+
+// Backdrop or click outside closes picker
+if (ccBackdrop) {
+  ccBackdrop.addEventListener('click', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    closeCountryPicker();
+  });
+}
+
+document.addEventListener('click', e => {
+  if (ccWrap && ccWrap.classList.contains('open') && !e.target.closest('.cc')) {
+    closeCountryPicker();
+  }
+});
+
+/* ============ Universal Country Phone Masking ============ */
+function formatByMask(digits, maskPattern, maxDigits) {
+  if (!maskPattern) return digits;
+  const targetDigits = maxDigits ? digits.slice(0, maxDigits) : digits;
+  const res = [];
+  let dIdx = 0;
+  const dLen = targetDigits.length;
+
+  for (let i = 0; i < maskPattern.length; i++) {
+    const ch = maskPattern[i];
+    if (/\d/.test(ch)) {
+      if (dIdx < dLen) {
+        res.push(targetDigits[dIdx++]);
+      } else {
+        break;
+      }
+    } else {
+      if (dIdx < dLen) {
+        res.push(ch);
+      } else {
+        break;
+      }
+    }
+  }
+
+  if (dIdx < dLen) {
+    res.push(' ' + targetDigits.slice(dIdx));
+  }
+  return res.join('');
+}
+
+phoneInput.addEventListener('input', (e) => {
+  const c = COUNTRIES[ccSel] || COUNTRIES[0];
+  let raw = e.target.value.replace(/\D/g, '');
+
+  // If user pasted or typed the country code, strip it cleanly
+  const codeDigits = c.c.replace(/\D/g, '');
+  if (c.c === '+7') {
+    if (raw.startsWith('7') || raw.startsWith('8')) raw = raw.slice(1);
+  } else if (raw.startsWith(codeDigits)) {
+    raw = raw.slice(codeDigits.length);
+  }
+
+  // Format using country mask
+  e.target.value = formatByMask(raw, c.p, c.d);
+});
+
+/* ============ Login Flow (Real Backend API) ============ */
+const steps = ['ls0', 'ls1', 'ls1b', 'ls2'];
+function showStep(step) {
+  const steps = ['ls0', 'ls1', 'ls1b', 'ls2'];
+  const targetId = typeof step === 'number' ? steps[step] : step;
+
+  steps.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.hidden = (id !== targetId);
+  });
+
+  // RAF + Timeout for robust mobile & WebApp autofocus
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      if (targetId === 'ls0') {
+        document.getElementById('phoneInput')?.focus();
+      } else if (targetId === 'ls1') {
+        const first = document.querySelector('#codeBox input');
+        if (first) first.focus();
+      } else if (targetId === 'ls1b') {
+        const p = document.getElementById('passwordInput');
+        if (p) {
+          p.focus();
+          try { p.click(); } catch (e) {}
+        }
+      }
+    }, 80);
+  });
+}
+
+let resendInt = null;
+function startResend() {
+  const btn = document.getElementById('resend');
+  let t = 60;
+  clearInterval(resendInt);
+  btn.disabled = true;
+  btn.textContent = 'Запросить код повторно через ' + t + ' с';
+  resendInt = setInterval(() => {
+    t--;
+    if (t <= 0) {
+      clearInterval(resendInt);
+      btn.disabled = false;
+      btn.textContent = 'Запросить новый код';
+    } else {
+      btn.textContent = 'Запросить код повторно через ' + t + ' с';
+    }
+  }, 1000);
+}
+
+function openLogin() {
+  showStep('ls0');
+  openModal('loginModal');
+  setTimeout(() => phoneInput.focus(), 120);
+}
+
+document.getElementById('heroAdd')?.addEventListener('click', () => { openLogin(); haptic('light'); });
+document.getElementById('hdrAddBtn')?.addEventListener('click', () => { openLogin(); haptic('light'); });
+document.getElementById('addDevice')?.addEventListener('click', () => { openLogin(); haptic('light'); });
+
+// Step 0: Send Code
+document.getElementById('toCode').addEventListener('click', async () => {
+  const c = COUNTRIES[ccSel] || COUNTRIES[0];
+  const prefix = c.c || '+7';
+  let digits = phoneInput.value.replace(/\D/g, '');
+
+  const codeDigits = prefix.replace(/\D/g, '');
+  if (prefix === '+7') {
+    if (digits.startsWith('7') || digits.startsWith('8')) digits = digits.slice(1);
+  } else if (digits.startsWith(codeDigits)) {
+    digits = digits.slice(codeDigits.length);
+  }
+
+  if (digits.length < 5) {
+    toast('Проверьте номер телефона');
+    hapticNotify('warning');
+    return;
+  }
+
+  fullNumber = prefix + digits;
+  const btn = document.getElementById('toCode');
+  btn.disabled = true;
+  btn.textContent = 'Отправка кода…';
+  haptic('light');
+
+  try {
+    const res = await fetch(`${state.apiUrl}/api/auth/send_code`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId, phone: fullNumber })
+    });
+    const data = await res.json();
+
+    if (data.ok) {
+      hapticNotify('success');
+      showStep('ls1');
+      startResend();
+      toast('Код отправлен в Telegram');
+      setTimeout(() => { const f = document.querySelector('#codeBox input'); f && f.focus(); }, 120);
+    } else {
+      hapticNotify('error');
+      toast(data.error || 'Ошибка отправки кода');
+    }
+  } catch (err) {
+    hapticNotify('error');
+    toast('Ошибка связи с сервером');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Продолжить';
+  }
+});
+
+// Direct Telegram Bot Button
+document.getElementById('btnTgDirect')?.addEventListener('click', () => {
+  haptic('light');
+  const digits = phoneInput.value.replace(/\D/g, '');
+  const c = COUNTRIES[ccSel] || COUNTRIES[0];
+  const prefix = c.c || '+7';
+  const phone = digits ? `${prefix}${digits}` : '';
+  const botUrl = phone ? `https://t.me/AyuLiteBot?start=auth_${phone}` : `https://t.me/AyuLiteBot?start=login`;
+  if (tg?.openTelegramLink) tg.openTelegramLink(botUrl);
+  else window.open(botUrl, '_blank');
+});
+
+document.getElementById('resend').addEventListener('click', () => {
+  startResend();
+  document.getElementById('toCode').click();
+  haptic('light');
+});
+
+// 5-Digit Code Inputs
+const codeInputs = [...document.querySelectorAll('#codeBox input')];
+const confirmBtn = document.getElementById('confirmCode');
+const btnPasteCode = document.getElementById('btnPasteCode');
+
+function fillCodeDigits(text) {
+  const digits = (text || '').replace(/\D/g, '').slice(0, codeInputs.length);
+  if (!digits) {
+    toast('В буфере нет цифр кода');
+    hapticNotify('warning');
+    return;
+  }
+  digits.split('').forEach((d, i) => {
+    if (codeInputs[i]) codeInputs[i].value = d;
+  });
+  haptic('light');
+  if (digits.length === codeInputs.length) {
+    confirmBtn.click();
+  } else {
+    const nextIdx = Math.min(digits.length, codeInputs.length - 1);
+    codeInputs[nextIdx]?.focus();
+  }
+}
+
+async function pasteCodeFromClipboard() {
+  let text = '';
+  try {
+    if (navigator.clipboard && navigator.clipboard.readText) {
+      text = await navigator.clipboard.readText();
+    }
+  } catch (err) {
+    console.warn('Clipboard read error:', err);
+  }
+
+  if (!text) {
+    text = prompt('Вставьте код подтверждения из Telegram:') || '';
+  }
+
+  if (text) {
+    fillCodeDigits(text);
+  }
+}
+
+if (btnPasteCode) {
+  btnPasteCode.addEventListener('click', (e) => {
+    e.preventDefault();
+    pasteCodeFromClipboard();
+  });
+}
+
+codeInputs.forEach((inp, idx) => {
+  inp.addEventListener('input', () => {
+    inp.value = inp.value.replace(/\D/g, '').slice(-1);
+    if (inp.value && codeInputs[idx + 1]) codeInputs[idx + 1].focus();
+    const fullCode = codeInputs.map(i => i.value).join('');
+    if (fullCode.length === codeInputs.length) {
+      confirmBtn.click();
+    }
+    haptic('light');
+  });
+
+  inp.addEventListener('paste', e => {
+    e.preventDefault();
+    const pasted = (e.clipboardData || window.clipboardData)?.getData('text') || '';
+    fillCodeDigits(pasted);
+  });
+
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Backspace' && !inp.value && codeInputs[idx - 1]) {
+      codeInputs[idx - 1].focus();
+      e.preventDefault();
+    }
+  });
+});
+
+// Step 1: Verify Code
+confirmBtn.addEventListener('click', async () => {
+  const code = codeInputs.map(i => i.value).join('');
+  if (code.length < 4) {
+    toast('Введите полный код');
+    hapticNotify('warning');
+    return;
+  }
+
+  confirmBtn.disabled = true;
+  confirmBtn.textContent = 'Проверка кода…';
+  haptic('light');
+
+  try {
+    const res = await fetch(`${state.apiUrl}/api/auth/verify_code`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId, code: code })
+    });
+    const data = await res.json();
+
+    if (data.ok) {
+      if (data.need_password) {
+        hapticNotify('warning');
+        showStep('ls1b');
+        toast('Требуется облачный пароль 2FA');
+        setTimeout(() => document.getElementById('passwordInput')?.focus(), 120);
+      } else {
+        handleAuthSuccess(data.account);
+      }
+    } else {
+      hapticNotify('error');
+      toast(data.error || 'Неверный код подтверждения');
+    }
+  } catch (err) {
+    hapticNotify('error');
+    toast('Ошибка соединения');
+  } finally {
+    confirmBtn.disabled = false;
+    confirmBtn.textContent = 'Подтвердить код';
+  }
+});
+
+/* ============ Глаз: единственный канонический обработчик показа пароля ============ */
+const pwdInput = document.getElementById('passwordInput');
+const btnTogglePwd = document.getElementById('btnTogglePwd');
+const pwdWrap = document.querySelector('.pwd-wrap');
+
+const EYE_ON  = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+const EYE_OFF = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+
+function setPwdVisible(visible) {
+  if (!pwdInput) return;
+
+  // 1) Нативное переключение type
+  pwdInput.type = visible ? 'text' : 'password';
+
+  // 2) Снятие CSS-маскировки webkitTextSecurity через inline-стиль
+  try {
+    pwdInput.style.webkitTextSecurity = visible ? 'none' : 'disc';
+  } catch (e) {}
+
+  // 3) Класс для совместимости
+  pwdInput.classList.toggle('show-text', visible);
+
+  // 4) Иконка и состояние кнопки
+  if (btnTogglePwd) {
+    btnTogglePwd.classList.toggle('active', visible);
+    btnTogglePwd.innerHTML = visible ? EYE_OFF : EYE_ON;
+    btnTogglePwd.setAttribute('aria-label', visible ? 'Скрыть пароль' : 'Показать пароль');
+  }
+
+  // 5) Возврат фокуса и каретки в конец
+  setTimeout(() => {
+    pwdInput.focus();
+    try {
+      const l = pwdInput.value.length;
+      pwdInput.setSelectionRange(l, l);
+    } catch (e) {}
+  }, 10);
+}
+
+if (btnTogglePwd && pwdInput) {
+  btnTogglePwd.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setPwdVisible(pwdInput.type !== 'text');
+    haptic('light');
+  });
+}
+
+if (pwdWrap && pwdInput) {
+  pwdWrap.addEventListener('click', (e) => {
+    if (e.target !== btnTogglePwd && !btnTogglePwd?.contains(e.target)) {
+      pwdInput.focus();
+    }
+  });
+}
+
+if (pwdInput) {
+  pwdInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      document.getElementById('confirmPassword')?.click();
+    }
+  });
+}
+
+// Explicit direct cancel buttons
+document.querySelectorAll('.btn-cancel-session').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    closeModals();
+    haptic('light');
+  });
+});
+
+// Step 1B: Verify 2FA Password
+document.getElementById('confirmPassword')?.addEventListener('click', async () => {
+  const pwd = document.getElementById('passwordInput').value;
+  if (!pwd) {
+    toast('Введите облачный пароль');
+    hapticNotify('warning');
+    return;
+  }
+
+  const btn = document.getElementById('confirmPassword');
+  btn.disabled = true;
+  btn.textContent = 'Авторизация…';
+  haptic('light');
+
+  try {
+    const res = await fetch(`${state.apiUrl}/api/auth/verify_password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId, password: pwd })
+    });
+    const data = await res.json();
+
+    if (data.ok) {
+      handleAuthSuccess(data.account);
+    } else {
+      hapticNotify('error');
+      toast(data.error || 'Неверный 2FA пароль');
+    }
+  } catch (err) {
+    hapticNotify('error');
+    toast('Ошибка соединения');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Войти в аккаунт';
+  }
+});
+
+function handleAuthSuccess(account) {
+  hapticNotify('success');
+  showStep('ls2');
+  document.getElementById('connectedDevName').textContent = account?.name || 'User Account';
+  document.getElementById('devMeta').textContent = `${account?.phone || fullNumber} · AyuLite`;
+  loadRealWorkers();
+}
+
+document.getElementById('loginDone').addEventListener('click', () => {
+  closeModals();
+  loadRealWorkers();
+  codeInputs.forEach(i => i.value = '');
+  toast('Устройство привязано к C2-сети');
+  haptic('light');
+});
+
+/* ============ Pay Flow ============ */
+let curPlan = { name: '', key: 'pro', price: '' };
+
+document.querySelectorAll('[data-plan]').forEach(b => {
+  b.addEventListener('click', () => {
+    curPlan = { name: b.dataset.plan, key: b.dataset.key, price: b.dataset.price };
+    document.getElementById('payTitle').textContent = 'Активация · ' + curPlan.name;
+    document.getElementById('payPrice').textContent = curPlan.price;
+    openModal('payModal');
+    haptic('light');
+  });
+});
+
+document.querySelectorAll('.pay-row').forEach(r => {
+  r.addEventListener('click', () => {
+    closeModals();
+    hapticNotify('success');
+    toast('Запрос на оплату сформирован (' + r.dataset.method + ')');
+  });
+});
+
+/* ============ Toast ============ */
+let toastT = null;
+function toast(msg) {
+  const t = document.getElementById('toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastT);
+  toastT = setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+/* ============ Bottom Nav & Scrollspy ============ */
+const secIO = new IntersectionObserver(es => es.forEach(x => {
+  if (x.isIntersecting) {
+    document.querySelectorAll('#bnav a').forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + x.target.id));
+  }
+}), { rootMargin: '-30% 0px -50% 0px' });
+
+['nodes', 'modules', 'pricing', 'settings'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) secIO.observe(el);
+});
+
+document.querySelectorAll('#bnav a').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    haptic('light');
+    const targetId = btn.getAttribute('href').replace('#', '');
+    const targetEl = document.getElementById(targetId);
+    if (targetEl) targetEl.scrollIntoView({ behavior: 'smooth' });
+  });
+});
+
+/* ============ Reveal ============ */
+const io = new IntersectionObserver(es => es.forEach(x => {
+  if (x.isIntersecting) {
+    x.target.classList.add('in');
+    io.unobserve(x.target);
+  }
+}), { threshold: .06 });
+
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+/* ============ Misc ============ */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModals();
+  if (e.key === '/' && !/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) {
+    e.preventDefault();
+    document.getElementById('search').focus();
+  }
+});
+
+/* ============ Startup ============ */
+(async function init() {
+  await discoverApiUrl();
+  setProfile(initialProfile, true);
+  await loadRealWorkers();
+})();
+
+</script>
+</body>
+</html>

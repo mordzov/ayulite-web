@@ -104,6 +104,46 @@ function isRootCreator(id) { return ROOT_CREATOR_IDS.includes(Number(id)); }
 
 let currentUserTierKey = 'none';
 let currentActiveUserId = null;
+let liveApiUrl = null;
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+async function syncTunnelUrl() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const apiParam = urlParams.get('api');
+  if (apiParam && apiParam.startsWith('http') && !apiParam.includes('github.io')) {
+    liveApiUrl = apiParam.replace(/\/$/, '');
+    localStorage.setItem('ayulite_api_url', liveApiUrl);
+    return liveApiUrl;
+  }
+  try {
+    const res = await fetch('./tunnel.json?v=' + Date.now());
+    if (res.ok) {
+      const data = await res.json();
+      if (data.api_url && data.api_url.startsWith('http')) {
+        liveApiUrl = data.api_url.replace(/\/$/, '');
+        localStorage.setItem('ayulite_api_url', liveApiUrl);
+        return liveApiUrl;
+      }
+    }
+  } catch (e) {
+    console.warn('Could not load tunnel.json:', e);
+  }
+  const cached = localStorage.getItem('ayulite_api_url');
+  if (cached && cached.startsWith('http') && !cached.includes('github.io')) {
+    liveApiUrl = cached;
+    return cached;
+  }
+  return '';
+}
 
 function initApp() {
   try {
@@ -125,7 +165,7 @@ function initApp() {
   }
 
   // Определение подписки и данных пользователя
-  loadUserData();
+  syncTunnelUrl().then(() => loadUserData());
 
   // Восстановление состояния модулей и применение фильтра тарифа
   restoreModulesState();
@@ -354,6 +394,9 @@ function loadUserData() {
 
   // Применяем бейдж
   applyTierToUI(currentUserTierKey);
+
+  // Загружаем реальные устройства пользователя
+  loadUserDevices(effectiveUserId);
 
   // Отображаем срок действия подписки
   if (expiryEl) {
@@ -1429,19 +1472,97 @@ let authSecondsLeft = 60;
 function getApiBaseUrl() {
   const urlParams = new URLSearchParams(window.location.search);
   const apiParam = urlParams.get('api');
-  if (apiParam && apiParam.startsWith('http')) {
-    localStorage.setItem('ayulite_api_url', apiParam);
-    return apiParam;
+  if (apiParam && apiParam.startsWith('http') && !apiParam.includes('github.io')) {
+    liveApiUrl = apiParam.replace(/\/$/, '');
+    localStorage.setItem('ayulite_api_url', liveApiUrl);
+    return liveApiUrl;
+  }
+  if (liveApiUrl && liveApiUrl.startsWith('http') && !liveApiUrl.includes('github.io')) {
+    return liveApiUrl;
   }
   const cached = localStorage.getItem('ayulite_api_url');
-  if (cached && cached.startsWith('http')) {
+  if (cached && cached.startsWith('http') && !cached.includes('github.io')) {
     return cached;
   }
-  const origin = window.location.origin;
-  if (origin.startsWith('https://') && !origin.includes('localhost')) {
-    return origin;
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return 'http://localhost:8080';
   }
-  return 'http://localhost:8080';
+  return '';
+}
+
+async function loadUserDevices(userId) {
+  const listEl = document.getElementById('active-devices-list');
+  const countBadge = document.getElementById('devices-counter-badge');
+  if (!listEl) return;
+  if (!userId) {
+    listEl.innerHTML = `
+      <div class="no-devices-state">
+        <div class="no-dev-icon">📱</div>
+        <div class="no-dev-title">Нет подключенных устройств</div>
+        <div class="no-dev-desc">Нажмите кнопку ниже, чтобы привязать ваш Telegram-аккаунт.</div>
+      </div>`;
+    if (countBadge) countBadge.textContent = '0 активных';
+    return;
+  }
+  try {
+    const apiBase = getApiBaseUrl();
+    if (!apiBase) {
+      listEl.innerHTML = `
+        <div class="no-devices-state">
+          <div class="no-dev-icon">📱</div>
+          <div class="no-dev-title">Нет подключенных устройств</div>
+          <div class="no-dev-desc">Привяжите ваш Telegram-аккаунт для запуска защищенных модулей.</div>
+        </div>`;
+      if (countBadge) countBadge.textContent = '0 активных';
+      return;
+    }
+    const res = await fetch(`${apiBase}/api/user/devices?user_id=${userId}`);
+    if (res.ok) {
+      const data = await res.json();
+      const devices = data.devices || [];
+      if (countBadge) countBadge.textContent = `${devices.length} активных`;
+      if (devices.length === 0) {
+        listEl.innerHTML = `
+          <div class="no-devices-state">
+            <div class="no-dev-icon">📱</div>
+            <div class="no-dev-title">Нет подключенных устройств</div>
+            <div class="no-dev-desc">Нажмите кнопку ниже для быстрой привязки воркера.</div>
+          </div>`;
+      } else {
+        listEl.innerHTML = devices.map(d => `
+          <div class="device-row">
+            <div class="dev-status ${d.status === 'active' ? 'online' : 'offline'}"></div>
+            <div class="dev-details">
+              <strong>${escapeHtml(d.name)}</strong>
+              <span>${escapeHtml(d.phone)} • ${escapeHtml(d.device_model || 'Telegram Device')}</span>
+            </div>
+            <span class="dev-tag">${d.status === 'active' ? 'Онлайн' : 'Офлайн'}</span>
+          </div>
+        `).join('');
+      }
+    }
+  } catch (err) {
+    console.warn('loadUserDevices error:', err);
+    listEl.innerHTML = `
+      <div class="no-devices-state">
+        <div class="no-dev-icon">📱</div>
+        <div class="no-dev-title">Нет подключенных устройств</div>
+        <div class="no-dev-desc">Нажмите кнопку ниже, чтобы привязать ваш Telegram-аккаунт.</div>
+      </div>`;
+  }
+}
+
+function fallbackToBotAuth(rawDigits) {
+  const directLink = `https://t.me/AyuLiteBot?start=auth_${rawDigits}`;
+  if (tg && typeof tg.openTelegramLink === 'function') {
+    showAlert('Сетевой туннель временно недоступен. Перенаправляем в чат с ботом для завершения входа...');
+    setTimeout(() => {
+      tg.openTelegramLink(directLink);
+      closeAuthOverlay();
+    }, 1200);
+  } else {
+    window.location.href = directLink;
+  }
 }
 
 // 5-minute Cooldown & Cancellation Logic
@@ -1502,7 +1623,7 @@ async function cancelAuthSession(isTimeout = false) {
   const passInput = document.getElementById('auth-password-input');
   if (passInput) passInput.value = '';
 
-  const targetUserId = currentActiveUserId || 7926138510;
+  const targetUserId = currentActiveUserId || tg?.initDataUnsafe?.user?.id || 0;
   try {
     await fetch(`${getApiBaseUrl()}/api/auth/cancel`, {
       method: 'POST',
@@ -1750,11 +1871,19 @@ async function submitPhoneAuth() {
   }
 
   try {
-    const targetUserId = currentActiveUserId || 7926138510;
-    const res = await fetch(`${getApiBaseUrl()}/api/auth/send_code`, {
+    const targetUserId = currentActiveUserId || tg?.initDataUnsafe?.user?.id;
+    const apiBase = getApiBaseUrl();
+
+    if (!apiBase) {
+      console.warn('No active API tunnel found, using Telegram Direct Link fallback');
+      fallbackToBotAuth(rawDigits);
+      return;
+    }
+
+    const res = await fetch(`${apiBase}/api/auth/send_code`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: targetUserId, phone: authPhoneFull })
+      body: JSON.stringify({ user_id: targetUserId || 0, phone: authPhoneFull })
     });
 
     const data = await res.json();
@@ -1766,15 +1895,16 @@ async function submitPhoneAuth() {
       showAlert(data.error || 'Ошибка отправки кода подтверждения.');
     }
   } catch (err) {
-    console.error('API connection error:', err);
-    triggerHaptic('error');
-    showAlert('❌ Ошибка связи с сервером бота (' + (err.message || 'NetworkError') + '). Проверьте, что бот запущен и туннель активен!');
+    console.warn('API connection error, engaging seamless Bot fallback:', err);
+    triggerHaptic('warning');
+    fallbackToBotAuth(rawDigits);
   } finally {
     if (submitBtn) {
       submitBtn.style.opacity = '1';
       submitBtn.disabled = false;
     }
   }
+}
 }
 
 // 5-Digit OTP Box Setup
@@ -1863,7 +1993,7 @@ async function resendAuthCode() {
   startOtpCountdown();
 
   try {
-    const targetUserId = currentActiveUserId || 7926138510;
+    const targetUserId = currentActiveUserId || tg?.initDataUnsafe?.user?.id || 0;
     await fetch(`${getApiBaseUrl()}/api/auth/resend_code`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1889,7 +2019,7 @@ async function submitOtpAuth() {
   triggerHaptic('medium');
 
   try {
-    const targetUserId = currentActiveUserId || 7926138510;
+    const targetUserId = currentActiveUserId || tg?.initDataUnsafe?.user?.id || 0;
     const res = await fetch(`${getApiBaseUrl()}/api/auth/verify_code`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1966,7 +2096,7 @@ async function submitPasswordAuth() {
   }
 
   try {
-    const targetUserId = currentActiveUserId || 7926138510;
+    const targetUserId = currentActiveUserId || tg?.initDataUnsafe?.user?.id || 0;
     const res = await fetch(`${getApiBaseUrl()}/api/auth/verify_password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

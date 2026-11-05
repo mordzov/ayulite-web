@@ -6,7 +6,7 @@
   <title>AyuLite C2</title>
   <!-- Telegram Web App SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link rel="stylesheet" href="style.css?v=4.0">
+  <link rel="stylesheet" href="style.css?v=4.5">
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1366,23 +1366,16 @@
           </div>
         </div>
 
-        <div class="active-devices-card">
-          <h4>Подключенные сессии</h4>
-          <div class="device-row">
-            <div class="dev-status online"></div>
-            <div class="dev-details">
-              <strong>.koreyec</strong>
-              <span>+7 951 172-24-33 • ID: 7926138510</span>
-            </div>
-            <span class="dev-tag">Личный</span>
+                <div class="active-devices-card">
+          <div class="active-devices-header">
+            <h4>Подключенные сессии</h4>
+            <span class="badge-status-counter" id="devices-counter-badge">Синхронизация...</span>
           </div>
-          <div class="device-row">
-            <div class="dev-status online"></div>
-            <div class="dev-details">
-              <strong>3 года +880</strong>
-              <span>+880 1312-186739 • ID: 7280233686</span>
+          <div id="active-devices-list" class="active-devices-list">
+            <div class="devices-loading-state">
+              <div class="spinner-small"></div>
+              <span>Загрузка подключенных устройств...</span>
             </div>
-            <span class="dev-tag">Воркер</span>
           </div>
           <button class="btn btn-gradient" style="margin-top: 14px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="openAuthOverlay()">
             <span>➕</span> Подключить устройство (AyuLite Flow)
@@ -1680,6 +1673,6 @@
 
   </div>
 
-  <script src="app.js?v=4.0"></script>
+  <script src="app.js?v=4.5"></script>
 </body>
 </html>

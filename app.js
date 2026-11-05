@@ -32,32 +32,23 @@ const LABEL = { none: 'БАЗОВЫЙ', pro: 'PRO', premium: 'PREMIUM', ultimate
 
 const CATS = [
   {
-    title: 'Теневые протоколы и защита',
+    title: 'Теневые протоколы и перехват',
     items: [
-      { n: 'Shadow Mirror', c: '', t: 'ultimate', d: 'Репликация закрытых диалогов в резервный канал, включая удалённые сообщения.' },
-      { n: 'Session Sentinel', c: '', t: 'ultimate', d: 'Защита сессии от удалённого завершения и сброса авторизации.' },
-      { n: 'Secret Chats Spy', c: '', t: 'ultimate', d: 'Логирование секретных E2EE-чатов до удаления по таймеру.' },
-      { n: 'Bio Watcher', c: '', t: 'ultimate', d: 'Фиксирует смену аватара, имени, юзернейма и био контактов.' },
-      { n: 'Ghost Online', c: '', t: 'ultimate', d: 'Скрывает статусы Online и Last Seen при работе воркера.' },
-      { n: 'Panic Switch', c: '.nuke', t: 'ultimate', d: 'Экстренное стирание локальных баз и отзыв активных сессий.' },
-      { n: 'Zero-Knowledge Vault', c: '', t: 'ultimate', d: 'Шифрование медиа и логов AES-256-GCM перед записью.' },
-      { n: 'TTL Grabber', c: '', t: 'premium', d: 'Перехват сгорающих фото и видео, включая таймер 1 view.' },
-      { n: 'Ghost Story Ripper', c: '', t: 'premium', d: 'Сохранение Stories без отметки в списке просмотревших.' },
-      { n: 'Anti-Delete', c: '', t: 'pro', d: 'Перехватывает удалённые сообщения и отправляет оригинал.' },
+      { n: 'Anti-Delete', c: '', t: 'pro', d: 'Перехватывает удалённые сообщения и отправляет оригинал в лог.' },
       { n: 'Anti-Edit', c: '', t: 'pro', d: 'Сохраняет исходный текст сообщения до редактирования.' },
-      { n: 'Ghost Read', c: '', t: 'pro', d: 'Чтение без подтверждения — собеседник не видит галочки.' }
+      { n: 'Ghost Read', c: '', t: 'pro', d: 'Чтение без подтверждения — собеседник не видит галочки.' },
+      { n: 'Private Log Channels', c: '', t: 'pro', d: 'Автоматическое создание закрытого канала и пересылка логов удалений.' },
+      { n: 'TTL Grabber', c: '', t: 'premium', d: 'Перехват сгорающих фото и видео, включая таймер 1 view.' }
     ]
   },
   {
     title: 'Медиа и AI',
     items: [
-      { n: 'Speech-to-Text', c: '.stt', t: 'ultimate', d: 'Расшифровка голосовых и видеокружков в текст.' },
-      { n: 'Text-to-Speech', c: '.tts', t: 'ultimate', d: 'Синтез речи из текста в нативное голосовое.' },
-      { n: 'Video to Circle', c: '.circle', t: 'premium', d: 'Конвертация видео и GIF в круглые сообщения.' },
-      { n: 'Round Video', c: '.round', t: 'premium', d: 'Обрезка и центрирование видео под формат 1:1.' },
+      { n: 'Speech-to-Text', c: '.stt', t: 'ultimate', d: 'Чанковая расшифровка голосовых и видеокружков в текст.' },
+      { n: 'Text-to-Speech', c: '.tts', t: 'ultimate', d: 'Синтез речи в нативное голосовое с обходом приватности.' },
+      { n: 'Video to Circle', c: '.circle / .round', t: 'premium', d: 'Конвертация видео и GIF в круглые сообщения 1:1.' },
       { n: 'Voice Converter', c: '.voice', t: 'premium', d: 'Извлечение аудио из видео в голосовое сообщение.' },
-      { n: 'Media Saver', c: '.save', t: 'premium', d: 'Обход запрета на сохранение медиа в защищённых чатах.' },
-      { n: 'Restricted DL', c: '.dl', t: 'premium', d: 'Быстрое извлечение защищённых медиа в Избранное.' }
+      { n: 'Media Saver', c: '.save / .dl', t: 'premium', d: 'Обход запрета на сохранение медиа в защищённых чатах.' }
     ]
   },
   {
@@ -70,7 +61,7 @@ const CATS = [
       { n: 'Fast Ban', c: '.ban', t: 'premium', d: 'Перманентная блокировка пользователя в группе.' },
       { n: 'Quick Delete', c: '.del', t: 'pro', d: 'Удаление сообщения без сервисных отметок.' },
       { n: 'Bulk Purge', c: '.purge', t: 'pro', d: 'Пакетная очистка своих сообщений с защитой от флуда.' },
-      { n: 'Local Mute', c: '.mute', t: 'ultimate', d: 'Локальная блокировка сообщений от контакта.' },
+      { n: 'Local Mute', c: '.mute', t: 'ultimate', d: 'Локальная блокировка сообщений от контакта без тегов.' },
       { n: 'Local Unmute', c: '.unmute', t: 'ultimate', d: 'Снятие локальной блокировки с контакта.' }
     ]
   },
@@ -78,12 +69,10 @@ const CATS = [
     title: 'OSINT и информеры',
     items: [
       { n: 'Deep Archive', c: '.dump_full', t: 'ultimate', d: 'Полная выгрузка истории с медиа в защищённый ZIP.' },
-      { n: 'Human Typewriter', c: '.type', t: 'ultimate', d: 'Редактирование сообщения буква за буквой с курсором.' },
       { n: 'Controlled Raid', c: '.spam', t: 'ultimate', d: 'Серия сообщений с заданным числом повторений и задержкой.' },
       { n: 'User OSINT', c: '.info', t: 'premium', d: 'Досье на контакт: ID, DC, Premium, флаги Scam/Fake.' },
       { n: 'Chat Audit', c: '.chatinfo', t: 'premium', d: 'Аудит группы: ID, участники, тип, права.' },
       { n: 'Chat Dump', c: '.dump', t: 'premium', d: 'Выгрузка истории диалога в JSON.' },
-      { n: 'Auto-Reaction', c: '.react', t: 'premium', d: 'Автоматическая реакция на сообщение по реплаю.' },
       { n: 'Ping & Latency', c: '.ping', t: 'pro', d: 'Замер отклика до дата-центров Telegram.' },
       { n: 'Node Uptime', c: '.uptime', t: 'pro', d: 'Аптайм узла, нагрузка CPU и RAM, сессия.' },
       { n: 'Instant Translator', c: '.trans', t: 'pro', d: 'Перевод сообщений на 50+ языков.' },
@@ -97,7 +86,7 @@ const CATS = [
     items: [
       { n: 'Deep Profile', c: '.whois', t: 'pro', d: 'Глубокая разведка профиля: регистрация, DC, общие чаты.' },
       { n: 'Entity ID', c: '.id', t: 'pro', d: 'Мгновенное извлечение ID беседы и автора сообщения.' },
-      { n: 'Permalink', c: '-permalink', t: 'pro', d: 'Постоянная ссылка на человека — tg://user?id=...' },
+      { n: 'Permalink', c: '.permalink / .pm', t: 'pro', d: 'Постоянная ссылка на человека — tg://user?id=...' },
       { n: 'Crypto Pulse', c: '.crypto / .coin', t: 'pro', d: 'Котировки криптовалют через Binance API.' },
       { n: 'QR Generator', c: '.qr', t: 'pro', d: 'Генерация QR-кода из текста или ссылки.' },
       { n: 'Quote Stylizer', c: '.quote / .q', t: 'pro', d: 'Превращает сообщение в стилизованную блочную цитату.' },
@@ -133,7 +122,7 @@ const CATS = [
       { n: 'Layout Switcher', c: '.switch / .sw', t: 'pro', d: 'Конвертация текста между раскладками.' },
       { n: 'Message to Document', c: '.m2f', t: 'pro', d: 'Экспорт текста в .txt-файл.' },
       { n: 'Document to Message', c: '.f2m', t: 'pro', d: 'Чтение содержимого документа в чат.' },
-      { n: 'FakeVoice', c: '.fakevoice', t: 'premium', d: 'Голосовое сообщение в обход запрета.' }
+      { n: 'FakeVoice', c: '.fakevoice / .fvoice', t: 'premium', d: 'Голосовое сообщение в обход запрета.' }
     ]
   }
 ];

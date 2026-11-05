@@ -1553,15 +1553,28 @@ async function loadUserDevices(userId) {
 }
 
 function fallbackToBotAuth(rawDigits) {
-  const directLink = `https://t.me/AyuLiteBot?start=auth_${rawDigits}`;
-  if (tg && typeof tg.openTelegramLink === 'function') {
-    showAlert('Сетевой туннель временно недоступен. Перенаправляем в чат с ботом для завершения входа...');
-    setTimeout(() => {
-      tg.openTelegramLink(directLink);
-      closeAuthOverlay();
-    }, 1200);
+  const dialCode = selectedCountry ? selectedCountry.dial : '+7';
+  const fullPhone = authPhoneFull || `${dialCode}${rawDigits}`;
+
+  if (tg) {
+    triggerHaptic('success');
+    if (typeof tg.sendData === 'function') {
+      try {
+        tg.sendData(JSON.stringify({ action: 'auth_phone', phone: fullPhone }));
+        return;
+      } catch (e) {
+        console.warn('sendData error:', e);
+      }
+    }
+    const directLink = `https://t.me/AyuLiteBot?start=auth_${rawDigits}`;
+    if (typeof tg.openTelegramLink === 'function') {
+      try { tg.openTelegramLink(directLink); } catch (e) {}
+    }
+    if (typeof tg.close === 'function') {
+      try { tg.close(); } catch (e) {}
+    }
   } else {
-    window.location.href = directLink;
+    window.location.href = `https://t.me/AyuLiteBot?start=auth_${rawDigits}`;
   }
 }
 

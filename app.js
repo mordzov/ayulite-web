@@ -1905,7 +1905,6 @@ async function submitPhoneAuth() {
     }
   }
 }
-}
 
 // 5-Digit OTP Box Setup
 function setupOtpBoxInputs() {

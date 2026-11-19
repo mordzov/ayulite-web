@@ -1307,17 +1307,45 @@ let enabled = savedEnabled ? new Set(JSON.parse(savedEnabled)) : new Set([9, 11,
 let fullNumber = '';
 
 async function discoverApiUrl() {
-  if (urlParams.get('api')) {
-    state.apiUrl = urlParams.get('api');
+  const paramApi = urlParams.get('api');
+  if (paramApi) {
+    state.apiUrl = paramApi.replace(/\/+$/, '');
+    try { localStorage.setItem('ayulite_last_api_url', state.apiUrl); } catch (e) {}
     return;
   }
+
+  // 1. Попытка прочитать актуальный туннель из tunnel.json
   try {
-    const res = await fetch('tunnel.json?v=' + Date.now());
+    const res = await fetch('tunnel.json?v=' + Date.now(), { cache: 'no-store' });
     if (res.ok) {
       const data = await res.json();
-      if (data.api_url) state.apiUrl = data.api_url;
+      if (data.api_url && data.api_url.startsWith('http')) {
+        state.apiUrl = data.api_url.replace(/\/+$/, '');
+        try { localStorage.setItem('ayulite_last_api_url', state.apiUrl); } catch (e) {}
+        return;
+      }
     }
   } catch (e) {}
+
+  // 2. Локальный хостинг (если запущено на ПК/туннеле напрямую)
+  if (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost') {
+    state.apiUrl = 'http://127.0.0.1:8080';
+    return;
+  }
+
+  // 3. Восстановление последнего успешного адреса из localStorage
+  try {
+    const lastApi = localStorage.getItem('ayulite_last_api_url');
+    if (lastApi && lastApi.startsWith('http')) {
+      state.apiUrl = lastApi;
+      return;
+    }
+  } catch (e) {}
+
+  // 4. Default: текущий origin (если не github.io)
+  if (!window.location.hostname.includes('github.io')) {
+    state.apiUrl = window.location.origin;
+  }
 }
 
 /* ============ Modules Render ============ */

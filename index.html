@@ -177,6 +177,255 @@
   </div>
 </section>
 
+<!-- ======= 05 TELEGRAM EXPERT PRO ======= -->
+<section id="expert">
+  <div class="container">
+    <div class="sec-head reveal"><span class="sec-no">05</span><h2>Telegram Expert PRO</h2></div>
+    <p class="sec-sub reveal">Продвинутые модули парсинга, массовой рассылки и продвижения сетей аккаунтов (Архитектура Telegram Expert).</p>
+
+    <div class="plans" style="grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); gap: 16px;">
+      
+      <!-- Card 1: Scraper -->
+      <article class="plan reveal" style="border-color: rgba(214,249,75,.25);">
+        <div class="tag">PARSER</div>
+        <div class="plan-name">Парсер целевой аудитории</div>
+        <p style="font-size: 13.5px; color: var(--mut); margin: 10px 0 14px;">Сбор участников, комментаторов и активных пользователей из любых открытых и закрытых чатов с фильтрацией ботов.</p>
+        <div style="background: rgba(0,0,0,.35); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line); font-family: var(--mono); font-size: 12px; color: var(--acc); margin-bottom: 14px;">
+          .scrape @target_chat 500
+        </div>
+        <ul style="margin: 0 0 16px;">
+          <li>Фильтрация: Онлайн, Недавно, Скрытые</li>
+          <li>Экспорт базы в .txt и .json файлы</li>
+        </ul>
+      </article>
+
+      <!-- Card 2: Spintax Mailer -->
+      <article class="plan reveal" style="border-color: rgba(91,224,122,.25);">
+        <div class="tag" style="background: var(--ok);">BROADCASTER</div>
+        <div class="plan-name">Spintax Рассыльщик</div>
+        <p style="font-size: 13.5px; color: var(--mut); margin: 10px 0 14px;">Массовая отправка сообщений по собранным базам с рандомизацией текста через шаблоны и авто-задержками.</p>
+        <div style="background: rgba(0,0,0,.35); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line); font-family: var(--mono); font-size: 12px; color: var(--ok); margin-bottom: 14px;">
+          .broadcast {Привет|Хай} {бро|друг}!
+        </div>
+        <ul style="margin: 0 0 16px;">
+          <li>Рандомизация {вариант1|вариант2}</li>
+          <li>Защита от спамблока (рандомные паузы)</li>
+        </ul>
+      </article>
+
+      <!-- Card 3: Inviter -->
+      <article class="plan reveal" style="border-color: rgba(75,214,249,.25);">
+        <div class="tag" style="background: #4bd6f9;">INVITER</div>
+        <div class="plan-name">Массовый инвайтер</div>
+        <p style="font-size: 13.5px; color: var(--mut); margin: 10px 0 14px;">Быстрое наполнение групп целевой аудиторией по списку юзернеймов с умным обходом приватности.</p>
+        <div style="background: rgba(0,0,0,.35); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line); font-family: var(--mono); font-size: 12px; color: #4bd6f9; margin-bottom: 14px;">
+          .invite @my_group
+        </div>
+        <ul style="margin: 0 0 16px;">
+          <li>Авто-скип приватных пользователей</li>
+          <li>Авто-ожидание при FloodWait</li>
+        </ul>
+      </article>
+
+      <!-- Card 4: Cloner -->
+      <article class="plan reveal" style="border-color: rgba(224,91,224,.25);">
+        <div class="tag" style="background: #e05be0;">CLONER</div>
+        <div class="plan-name">Клонер каналов</div>
+        <p style="font-size: 13.5px; color: var(--mut); margin: 10px 0 14px;">Репликация контента с канала-донора в ваш канал: тексты, фото, видео и документы в один клик.</p>
+        <div style="background: rgba(0,0,0,.35); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line); font-family: var(--mono); font-size: 12px; color: #e05be0; margin-bottom: 14px;">
+          .clonechan @donor @target 50
+        </div>
+        <ul style="margin: 0 0 16px;">
+          <li>Хронологический порядок публикаций</li>
+          <li>Поддержка всех типов медиафайлов</li>
+        </ul>
+      </article>
+
+      <!-- Card 5: Spamblock Audit -->
+      <article class="plan reveal" style="border-color: rgba(249,168,75,.25);">
+        <div class="tag" style="background: #f9a84b;">AUDIT</div>
+        <div class="plan-name">Чекер спамблока</div>
+        <p style="font-size: 13.5px; color: var(--mut); margin: 10px 0 14px;">Мгновенная проверка аккаунтов через официального @SpamBot на вечные и временные ограничения.</p>
+        <div style="background: rgba(0,0,0,.35); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line); font-family: var(--mono); font-size: 12px; color: #f9a84b; margin-bottom: 14px;">
+          .spamblock
+        </div>
+        <ul style="margin: 0 0 16px;">
+          <li>Диагностика ограничений отправки в ЛС</li>
+          <li>Сроки автоматического снятия мутов</li>
+        </ul>
+      </article>
+
+      <!-- Card 6: Reactions Booster -->
+      <article class="plan reveal" style="border-color: rgba(249,75,122,.25);">
+        <div class="tag" style="background: #f94b7a;">BOOSTER</div>
+        <div class="plan-name">Накрутка реакций</div>
+        <p style="font-size: 13.5px; color: var(--mut); margin: 10px 0 14px;">Массовая установка реакций 👍, 🔥, ❤️, ⚡️ на посты в каналах и чатах для создания видимости активности.</p>
+        <div style="background: rgba(0,0,0,.35); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line); font-family: var(--mono); font-size: 12px; color: #f94b7a; margin-bottom: 14px;">
+          .react 🔥
+        </div>
+        <ul style="margin: 0 0 16px;">
+          <li>Поддержка любых официальных эмодзи</li>
+          <li>Мгновенный отклик по реплаю</li>
+        </ul>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ======= 06 AYUVAULT ======= -->
+<section id="vault">
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="sec-no">06</span>
+      <h2>AyuVault</h2>
+    </div>
+    <p class="sec-sub reveal">Персональное хранилище удаленных сообщений и медиафайлов. Все перехваченные данные надежно изолированы внутри вашего аккаунта.</p>
+
+    <!-- Карточка статуса Telegram Форума -->
+    <div class="vault-forum-card reveal" id="vaultForumCard">
+      <div class="vfc-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <div class="vfc-body">
+        <div class="vfc-title" id="vaultForumTitle">Телеграм-сейф (Супергруппа)</div>
+        <div class="vfc-sub" id="vaultForumSub">Синхронизация с Telegram...</div>
+      </div>
+      <div class="vfc-actions">
+        <a class="btn btn-sm btn-primary" id="btnOpenTgForum" href="#" target="_blank" style="display:none;">🚀 Войти в Telegram</a>
+        <button class="btn btn-sm" id="btnSyncTgForum">⚡️ Создать Сейф</button>
+      </div>
+    </div>
+
+    <!-- Статистика категорий файлов -->
+    <div class="stats reveal" style="margin-top:16px;">
+      <div class="stat"><b id="vStatTotal">0</b><span>всего удалено</span></div>
+      <div class="stat"><b id="vStatPhoto">0</b><span>фото</span></div>
+      <div class="stat"><b id="vStatVoice">0</b><span>голосовых</span></div>
+      <div class="stat"><b id="vStatVideo">0</b><span>видео / кружки</span></div>
+      <div class="stat"><b id="vStatTtl">0</b><span>сгорающих TTL</span></div>
+    </div>
+
+    <!-- Контейнер Хаба Сейфа -->
+    <div class="vault-hub reveal" id="vaultHub">
+      
+      <!-- ВИД 1: СПИСОК ЧАТОВ -->
+      <div class="vault-chats-view" id="vaultChatsView">
+        <div class="vault-tabs" id="vaultScopeTabs">
+          <button class="chip on" data-scope="dm">Лички <span id="vBadgeDm">0</span></button>
+          <button class="chip" data-scope="groups">Группы <span id="vBadgeGroups">0</span></button>
+          <button class="chip" data-scope="channels">Каналы <span id="vBadgeChannels">0</span></button>
+        </div>
+
+        <div class="vault-chat-list" id="vaultChatList">
+          <div class="v-empty">Загрузка перехваченных переписок...</div>
+        </div>
+      </div>
+
+      <!-- ВИД 2: ДЕТАЛИ ДИАЛОГА С КАТЕГОРИЯМИ И МЕДИА -->
+      <div class="vault-detail-view" id="vaultDetailView" style="display:none;">
+        <div class="vd-header">
+          <button class="btn btn-sm" id="btnBackToChats">← Все диалоги</button>
+          <div class="vd-info">
+            <b id="vdTitle">Имя собеседника</b>
+            <span id="vdMeta">ID: 123456789</span>
+          </div>
+          <button class="btn btn-sm" id="btnOpenFakeshotModal" style="background:linear-gradient(135deg, #7839ee, #a855f7); border:none; color:#fff; font-weight:600; margin-left:auto;">📸 Fakeshot Pro</button>
+        </div>
+
+        <!-- Live 'Рентген' профиля собеседника -->
+        <div class="dossier-bar" id="vaultDossierBar">
+          <div class="dossier-header">
+            <span>📡 Рентген профиля (Live Dossier)</span>
+            <span id="dossierStatus" style="font-size:10px; color:#4bd6f9;">● ONLINE SYNC</span>
+          </div>
+          <div class="dossier-chips" id="dossierChips">
+            <span class="dossier-chip highlight">Загрузка данных MTProto...</span>
+          </div>
+        </div>
+
+        <!-- Action Faker: Непрерывная имитация активности -->
+        <div class="action-faker-bar" id="vaultActionFakerBar">
+          <span class="faker-label">⚡ Фейкер активности:</span>
+          <button class="faker-chip" data-action="typing">⌨️ Печатает...</button>
+          <button class="faker-chip" data-action="record-audio">🎙 Запись войса</button>
+          <button class="faker-chip" data-action="record-round">📹 Съемка кружка</button>
+          <button class="faker-chip" data-action="upload-document">📁 Загрузка файла</button>
+          <button class="faker-chip stop" data-action="cancel">⏹ Стоп</button>
+        </div>
+
+        <!-- Фильтры по типам сообщений и удалений -->
+        <div class="vault-filter-chips" id="vaultFilterChips">
+          <button class="vchip on" data-filter="all">Все</button>
+          <button class="vchip" data-filter="deleted">🗑 Удаленки</button>
+          <button class="vchip" data-filter="edited">✏️ Правки</button>
+          <button class="vchip" data-filter="ttl">⏳ Сгорающие</button>
+          <button class="vchip" data-filter="photo">🖼 Фото</button>
+          <button class="vchip" data-filter="video">🎥 Видео</button>
+          <button class="vchip" data-filter="voice">🎙 Войс</button>
+          <button class="vchip" data-filter="video_note">📹 Кружки</button>
+          <button class="vchip" data-filter="text">💬 Текст</button>
+        </div>
+
+        <div class="vault-messages-feed" id="vaultMessagesFeed">
+          <div class="v-empty">Загрузка перехваченных сообщений...</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ======= 07 MEDIA SNATCHER (ОБХОД NOFORWARDS) ======= -->
+<section id="snatcher">
+  <div class="container">
+    <div class="sec-head reveal"><span class="sec-no">07</span><h2>Media Snatcher (Обход noforwards)</h2></div>
+    <p class="sec-sub reveal">Прямая выгрузка закрытого контента в 1 клик без ссылок и пересылок в ваше «Избранное».</p>
+
+    <div class="plan reveal" style="border-color: rgba(75, 214, 249, 0.3); background: rgba(18, 20, 24, 0.7); padding: 20px; border-radius: 12px; margin-top: 15px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <span class="tag" style="background: #4bd6f9; color: #000; font-weight: bold;">ZERO-CLICK RIPPER</span>
+        <button class="chip ghost" id="btnRefreshSnatcherChannels" style="font-size: 11px; padding: 4px 10px;">🔄 Загрузить каналы</button>
+      </div>
+
+      <div style="margin-bottom: 15px;">
+        <label style="display: block; font-size: 12px; color: var(--mut); margin-bottom: 6px;">Выберите закрытый канал или группу:</label>
+        <select id="snatcherChannelSelect" style="width: 100%; padding: 10px 12px; background: rgba(0,0,0,0.5); border: 1px solid var(--line); border-radius: 8px; color: #fff; font-size: 13.5px; outline: none;">
+          <option value="">Нажмите «Загрузить каналы»...</option>
+        </select>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+        <div>
+          <label style="display: block; font-size: 12px; color: var(--mut); margin-bottom: 6px;">Количество постов:</label>
+          <select id="snatcherCountSelect" style="width: 100%; padding: 9px 12px; background: rgba(0,0,0,0.5); border: 1px solid var(--line); border-radius: 8px; color: #fff; font-size: 13px; outline: none;">
+            <option value="5">Последние 5 постов</option>
+            <option value="10" selected>Последние 10 постов</option>
+            <option value="20">Последние 20 постов</option>
+            <option value="50">Последние 50 постов (макс.)</option>
+          </select>
+        </div>
+        <div>
+          <label style="display: block; font-size: 12px; color: var(--mut); margin-bottom: 6px;">Куда отправить:</label>
+          <input type="text" value="«Избранное» (Saved Messages)" disabled style="width: 100%; padding: 9px 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--line); border-radius: 8px; color: var(--ok); font-size: 13px;">
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-block" id="btnStartSnatch" style="background: #4bd6f9; color: #07080a; font-weight: bold; padding: 12px; border-radius: 8px; font-size: 14px; cursor: pointer;">
+        ⚡ Выгрузить защищенный контент
+      </button>
+
+      <div id="snatcherStatusBox" style="display: none; margin-top: 14px; padding: 12px; background: rgba(0,0,0,0.4); border-radius: 8px; border: 1px solid var(--line); font-size: 12.5px;">
+        <div id="snatcherStatusText" style="color: var(--mut); margin-bottom: 6px;">Ожидание...</div>
+        <div style="background: rgba(255,255,255,0.08); height: 6px; border-radius: 3px; overflow: hidden;">
+          <div id="snatcherProgressBar" style="width: 0%; height: 100%; background: #4bd6f9; transition: width 0.3s;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <footer>
   <div class="container foot">
     <span>AYULITE C2 · WEB ENGINE v2.5 · CORE MTPROTO 1.36.0</span>
@@ -185,9 +434,12 @@
 </footer>
 
 <nav class="bnav" id="bnav">
+  <a href="#vault" style="color:var(--acc); font-weight:700;">Сейф 🔥</a>
+  <a href="#snatcher" style="color:#4bd6f9; font-weight:700;">Snatcher 📦</a>
   <a href="#nodes">Узлы</a>
   <a href="#modules">Модули</a>
   <a href="#pricing">Тарифы</a>
+  <a href="#expert">Expert</a>
   <a href="#settings">Настройки</a>
 </nav>
 
@@ -288,6 +540,51 @@
     <div class="pay-row" data-method="Telegram Stars"><span>Telegram Stars</span><code>мгновенно</code></div>
     <div class="pay-row" data-method="TON"><span>TON Cryptocurrency</span><code>on-chain</code></div>
     <div class="pay-row" data-method="Карта / СБП"><span>Банковская карта · СБП</span><code>ru</code></div>
+  </div>
+</div>
+
+<!-- ======= FAKESHOT PRO MODAL (iOS 18 Telegram Edition) ======= -->
+<div class="fakeshot-modal" id="fakeshotModal" style="display:none;">
+  <div class="fakeshot-card">
+    <div class="fakeshot-header">
+      <h3 style="margin:0; font-size:16px; color:#c084fc; display:flex; align-items:center; gap:6px;">
+        <span>📸 Fakeshot Pro</span>
+        <span style="font-size:10px; background:rgba(168,85,247,0.2); border:1px solid #a855f7; padding:2px 6px; border-radius:4px; color:#e9d5ff;">iOS 18</span>
+      </h3>
+      <button class="m-close" id="btnCloseFakeshot" style="background:none; border:none; color:#fff; font-size:22px; cursor:pointer;">×</button>
+    </div>
+    <p style="font-size:12px; color:var(--mut); margin:0 0 14px 0;">Генерация гиперреалистичного скриншота без Dynamic Island шторки с оранжевой капсулой ⚡ TELEGRAM.</p>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+      <div>
+        <label style="font-size:11px; color:var(--mut); display:block; margin-bottom:4px;">Время (ЧЧ:ММ):</label>
+        <input type="text" id="fakeTimeInput" value="13:02" style="width:100%; padding:7px 10px; background:rgba(0,0,0,0.5); border:1px solid var(--line); border-radius:6px; color:#fff; font-size:12.5px;">
+      </div>
+      <div>
+        <label style="font-size:11px; color:var(--mut); display:block; margin-bottom:4px;">Батарея (%):</label>
+        <input type="number" id="fakeBatteryInput" value="44" min="1" max="100" style="width:100%; padding:7px 10px; background:rgba(0,0,0,0.5); border:1px solid var(--line); border-radius:6px; color:#fff; font-size:12.5px;">
+      </div>
+    </div>
+
+    <div style="margin-bottom:12px;">
+      <label style="font-size:11px; color:var(--mut); display:block; margin-bottom:4px;">Название чата:</label>
+      <input type="text" id="fakeTitleInput" value="Избранное" style="width:100%; padding:7px 10px; background:rgba(0,0,0,0.5); border:1px solid var(--line); border-radius:6px; color:#fff; font-size:12.5px;">
+    </div>
+
+    <div style="margin-bottom:14px; display:flex; align-items:center; gap:8px;">
+      <input type="checkbox" id="fakeSendToSaved" style="cursor:pointer;">
+      <label for="fakeSendToSaved" style="font-size:12px; color:#ddd; cursor:pointer;">Дублировать в «Избранное» (Saved Messages)</label>
+    </div>
+
+    <button class="btn btn-primary btn-block" id="btnGenerateFakeshot" style="background:linear-gradient(135deg, #7839ee, #a855f7); border:none; padding:10px; font-weight:700;">🚀 Сгенерировать скриншот iOS 18</button>
+
+    <div class="fakeshot-preview-wrap" id="fakeshotPreviewWrap" style="display:none;">
+      <img id="fakeshotImg" class="fakeshot-preview-img" src="" alt="Fakeshot Preview">
+    </div>
+
+    <div id="fakeshotDownloadWrap" style="display:none; margin-top:12px;">
+      <a id="btnDownloadFakeshot" class="btn btn-sm btn-block" href="" download="telegram_ios18.png" style="text-align:center; display:block; padding:8px; background:#4bd6f9; color:#000; font-weight:700; text-decoration:none;">📥 Скачать в оригинальном разрешении (1170x2532)</a>
+    </div>
   </div>
 </div>
 

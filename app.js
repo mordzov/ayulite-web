@@ -1,7 +1,7 @@
 /**
- * AyuLite C2 — Master WebApp Controller (v8.5)
- * Pure staff-level asynchronous reactive frontend with zero artificial dependencies.
- * Full synchronization between Telegram client UI, SQLite Vault, and MTProto C2 engine.
+ * AyuLite C2 — Master WebApp Controller (v8.6)
+ * High-performance async frontend with dynamic Tunnel/API routing,
+ * Telegram Haptic feedback, auto-failover, and full SQLite Vault synchronization.
  */
 
 (function () {
@@ -12,6 +12,7 @@
     userId: 7926138510,
     authToken: '',
     tier: 'CREATOR',
+    apiUrl: '',
     activeTab: 'feed',
     activeFilter: 'all',
     searchQuery: '',
@@ -79,7 +80,47 @@
     }, 2500);
   }
 
-  // Resilient API Fetch Helper with Auto-Auth Headers
+  // Resolve backend API URL (handles GitHub Pages proxy to local tunnel)
+  async function resolveApiUrl() {
+    const q = new URLSearchParams(window.location.search);
+    const apiParam = q.get('api');
+
+    // 1. Explicit ?api= parameter in WebApp URL
+    if (apiParam && apiParam.startsWith('http')) {
+      state.apiUrl = apiParam.replace(/\/$/, '');
+      console.log('[API] Resolved via URL query param:', state.apiUrl);
+      return;
+    }
+
+    // 2. Direct localhost / loopback execution
+    const host = window.location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0') {
+      state.apiUrl = window.location.origin;
+      console.log('[API] Resolved via local origin:', state.apiUrl);
+      return;
+    }
+
+    // 3. Hosted on GitHub Pages: load tunnel.json
+    try {
+      const res = await fetch('tunnel.json?v=' + Date.now());
+      if (res.ok) {
+        const data = await res.json();
+        if (data.api_url) {
+          state.apiUrl = data.api_url.replace(/\/$/, '');
+          console.log('[API] Resolved via tunnel.json:', state.apiUrl);
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('[API] Could not fetch tunnel.json:', e);
+    }
+
+    // 4. Default fallback to origin
+    state.apiUrl = window.location.origin;
+    console.log('[API] Fallback to origin:', state.apiUrl);
+  }
+
+  // Resilient API Fetch Helper with CORS & Auth Headers
   async function api(path, options = {}) {
     const headers = options.headers || {};
     if (state.authToken) {
@@ -91,15 +132,18 @@
     }
     options.headers = headers;
 
+    const base = state.apiUrl || window.location.origin;
+    const fullUrl = path.startsWith('http') ? path : `${base}${path}`;
+
     try {
-      const res = await fetch(path, options);
+      const res = await fetch(fullUrl, options);
       if (!res.ok) {
         const errJson = await res.json().catch(() => ({}));
         throw new Error(errJson.message || `HTTP ${res.status}`);
       }
       return await res.json();
     } catch (e) {
-      console.warn(`[API] Error on ${path}:`, e);
+      console.warn(`[API] Error on ${fullUrl}:`, e);
       throw e;
     }
   }
@@ -129,9 +173,17 @@
       state.userId = window.Telegram.WebApp.initDataUnsafe.user.id;
     }
 
+    // Owner ID defaults to CREATOR
+    if (state.userId === 7926138510 || state.userId === 6249211286) {
+      state.tier = 'CREATOR';
+    }
+
     // Update Header Badges
     const badge = document.getElementById('userTierBadge');
     if (badge) badge.textContent = state.tier;
+
+    // Resolve Backend API & Tunnel
+    await resolveApiUrl();
 
     // Setup UI Handlers
     setupTabs();
@@ -468,18 +520,34 @@
     }
   }
 
-  // Load Accumulated Feed Events from SQLite via API
-  async function loadFeed() {
+  // Load Accumulated Feed Events from SQLite via API (with auto-retry on connect)
+  async function loadFeed(retryCount = 0) {
     try {
       const res = await api(`/api/feed/${state.userId}?limit=150`);
       if (res && res.items) {
         state.feedEvents = res.items;
+        setOnlineStatus(true);
       }
       updateFilterCounters();
       renderFeed();
     } catch (e) {
       console.warn('[Feed] Error loading feed:', e);
       renderFeed();
+      if (retryCount < 4) {
+        setTimeout(() => loadFeed(retryCount + 1), 2500);
+      }
+    }
+  }
+
+  function setOnlineStatus(isOnline) {
+    const dot = document.querySelector('.status-dot');
+    const txt = document.getElementById('headerStatusText');
+    if (dot) {
+      dot.style.background = isOnline ? 'var(--emerald)' : 'var(--rose)';
+      dot.style.boxShadow = isOnline ? '0 0 8px var(--emerald)' : 'none';
+    }
+    if (txt) {
+      txt.textContent = isOnline ? 'Live' : 'Offline';
     }
   }
 
@@ -597,11 +665,13 @@
     });
   }
 
-  // Load Initial State & Live Counters
-  async function loadState() {
+  // Load Initial State & Live Counters (with auto-retry)
+  async function loadState(retryCount = 0) {
     try {
       const data = await api(`/api/state/${state.userId}`);
       if (!data) return;
+
+      setOnlineStatus(true);
 
       // Update Operator VIP Card
       if (data.account) {
@@ -870,9 +940,16 @@
       try { state.ws.close(); } catch (_) {}
     }
 
-    const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const base = state.apiUrl || window.location.origin;
+    let wsProto = base.startsWith('https') ? 'wss:' : 'ws:';
+    let wsHost = base.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    if (!wsHost) {
+      wsProto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      wsHost = window.location.host;
+    }
+
     const authParam = state.authToken ? `?auth=${state.authToken}` : '';
-    const wsUrl = `${proto}//${window.location.host}/ws/${state.userId}${authParam}`;
+    const wsUrl = `${wsProto}//${wsHost}/ws/${state.userId}${authParam}`;
 
     try {
       state.ws = new WebSocket(wsUrl);
@@ -882,10 +959,7 @@
     }
 
     state.ws.onopen = () => {
-      const dot = document.querySelector('.status-dot');
-      const txt = document.getElementById('headerStatusText');
-      if (dot) dot.style.background = 'var(--emerald)';
-      if (txt) txt.textContent = 'Live';
+      setOnlineStatus(true);
     };
 
     state.ws.onmessage = (event) => {
@@ -896,10 +970,10 @@
     };
 
     state.ws.onclose = () => {
-      const dot = document.querySelector('.status-dot');
-      const txt = document.getElementById('headerStatusText');
-      if (dot) dot.style.background = 'var(--rose)';
-      if (txt) txt.textContent = 'Offline';
+      // If HTTP API works, don't show offline just because WS disconnected
+      if (!state.feedEvents.length) {
+        setOnlineStatus(false);
+      }
       scheduleReconnect();
     };
 

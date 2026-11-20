@@ -3,287 +3,410 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-  <meta name="theme-color" content="#07080a">
+  <meta name="theme-color" content="#07080b">
   <title>AyuLite C2 — Master Console</title>
   
   <!-- Telegram WebApp SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link rel="stylesheet" href="style.css?v=8.0">
+  <link rel="stylesheet" href="style.css?v=8.5">
 </head>
 <body>
 
-  <!-- Top Sticky Header -->
-  <header class="app-header">
-    <div class="brand-wrap">
-      <div class="brand-logo">
-        <span>AYULITE</span>
-        <span class="brand-badge">C2 CORE</span>
+  <!-- App Shell Container: Desktop Centered (600px) & Mobile Responsive -->
+  <div class="app-shell">
+
+    <!-- Top Sticky Header -->
+    <header class="app-header">
+      <div class="brand-wrap">
+        <div class="brand-logo">
+          <span>AYULITE</span>
+          <span class="brand-badge">C2 CORE</span>
+        </div>
       </div>
-    </div>
-    <div class="header-status">
-      <div class="live-indicator">
-        <span class="status-dot"></span>
-        <span id="headerStatusText">Live</span>
+      <div class="header-status">
+        <div class="live-indicator">
+          <span class="status-dot"></span>
+          <span id="headerStatusText">Live</span>
+        </div>
+        <div class="tier-pill" id="userTierBadge">CREATOR</div>
       </div>
-      <div class="tier-pill" id="userTierBadge">ULTIMATE</div>
-    </div>
-  </header>
+    </header>
 
-  <!-- =========================================================================
-       VIEW 1: ЛЕНТА АКТИВНОСТИ (ACTIVITY FEED)
-       ========================================================================= -->
-  <main class="view-container active" id="view-feed">
-    <!-- Search Bar -->
-    <div class="search-bar">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-muted); flex-shrink: 0;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-      <input type="text" class="search-input" id="feedSearchInput" placeholder="Поиск по сообщениям или именам...">
-    </div>
-
-    <!-- Filter Pills -->
-    <div class="filter-pills">
-      <button class="pill-btn active" data-filter="all">Все перехваты</button>
-      <button class="pill-btn" data-filter="deleted">🗑 Удаленные</button>
-      <button class="pill-btn" data-filter="edited">✏️ Правки</button>
-      <button class="pill-btn" data-filter="ttl">🔥 Сгорающие (TTL)</button>
-      <button class="pill-btn" data-filter="reactions">⚡️ Реакции</button>
-    </div>
-
-    <!-- Live Intercept List -->
-    <div id="feedList">
-      <!-- Injected dynamically via app.js -->
-      <div style="text-align: center; padding: 40px 16px; color: var(--text-muted);">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 8px; opacity: 0.5;"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
-        <p>Слушатель MTProto ожидает входящие события...</p>
+    <!-- =========================================================================
+         VIEW 1: ЛЕНТА АКТИВНОСТИ (ACTIVITY FEED)
+         ========================================================================= -->
+    <main class="view-container active" id="view-feed">
+      <!-- Search Bar -->
+      <div class="search-bar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-muted); flex-shrink: 0;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" class="search-input" id="feedSearchInput" placeholder="Поиск по сообщениям, именам или ID...">
+        <button id="feedSearchClear" style="display: none; background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 2px;">✕</button>
       </div>
-    </div>
-  </main>
 
-  <!-- =========================================================================
-       VIEW 2: СЕЙФ ДИАЛОГОВ (VAULT CHATS)
-       ========================================================================= -->
-  <main class="view-container" id="view-vault">
-    <div class="group-title">Перехваченные диалоги</div>
-    <div class="inset-card" id="vaultChatsCard">
-      <div style="text-align: center; padding: 36px 16px; color: var(--text-muted);" id="vaultChatsPlaceholder">
-        Загрузка диалогов Сейфа...
+      <!-- Filter Pills with Dynamic Counters -->
+      <div class="filter-pills">
+        <button class="pill-btn active" data-filter="all">Все перехваты <span class="pill-count" id="countFilterAll">0</span></button>
+        <button class="pill-btn" data-filter="deleted">🗑 Удаленные <span class="pill-count" id="countFilterDel">0</span></button>
+        <button class="pill-btn" data-filter="edited">✏️ Правки <span class="pill-count" id="countFilterEd">0</span></button>
+        <button class="pill-btn" data-filter="ttl">🔥 Сгорающие (TTL) <span class="pill-count" id="countFilterTtl">0</span></button>
+        <button class="pill-btn" data-filter="reactions">⚡️ Реакции <span class="pill-count" id="countFilterRx">0</span></button>
       </div>
-      <div id="vaultChatsList"></div>
-    </div>
 
-    <div id="vaultConversationWrap" style="display: none;">
-      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
-        <button class="btn-secondary" id="btnBackToChats" style="padding: 6px 12px; font-size: 12px;">← Все диалоги</button>
-        <span style="font-size: 12.5px; font-weight: 600;" id="activeChatTitle">Диалог</span>
+      <!-- Live Intercept List -->
+      <div id="feedList">
+        <div style="text-align: center; padding: 48px 16px; color: var(--text-muted);">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 8px; opacity: 0.6;"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+          <p>Синхронизация Сейфа и ленты перехватов...</p>
+        </div>
       </div>
-      <div class="inset-card" style="padding: 14px;" id="vaultMessagesStream"></div>
-    </div>
-  </main>
+    </main>
 
-  <!-- =========================================================================
-       VIEW 3: СТЕЛС & ЗАЩИТА (STEALTH & TRIGGERS)
-       ========================================================================= -->
-  <main class="view-container" id="view-stealth">
-    <div class="group-title">Скрытность и Перехват</div>
-    <div class="inset-card">
-      <div class="inset-row">
-        <div class="row-left">
-          <div class="row-icon purple">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
-          </div>
-          <div class="row-info">
-            <div class="row-title">Режим Призрака (Ghost Read)</div>
-            <div class="row-desc">Чтение сообщений без снятия галочек прочтения</div>
+    <!-- =========================================================================
+         VIEW 2: СЕЙФ ДИАЛОГОВ (VAULT CHATS & FORUM SYNC)
+         ========================================================================= -->
+    <main class="view-container" id="view-vault">
+      <!-- Forum Destination Banner -->
+      <div class="vault-forum-banner" id="vaultForumBanner">
+        <div class="banner-left">
+          <div class="banner-icon">🛡</div>
+          <div>
+            <div class="banner-title" id="vaultForumTitle">AyuVault • Супергруппа Сейфа</div>
+            <div class="banner-sub" id="vaultForumId">ID: -1003787224480 • Ветви активны</div>
           </div>
         </div>
-        <label class="switch">
-          <input type="checkbox" id="switchGhostRead">
-          <span class="slider"></span>
-        </label>
+        <a href="https://t.me/+X7xNf2vEIY9jODNi" target="_blank" class="tier-pill" id="vaultForumLink" style="text-decoration: none; color: var(--accent); background: var(--accent-soft);">Открыть в TG →</a>
       </div>
 
-      <div class="inset-row">
-        <div class="row-left">
-          <div class="row-icon red">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+      <div class="group-title" style="display: flex; justify-content: space-between; align-items: center;">
+        <span>Перехваченные диалоги</span>
+        <span style="font-size: 11.5px; color: var(--text-muted);" id="vaultChatsTotalCount">0 диалогов</span>
+      </div>
+
+      <div class="inset-card" id="vaultChatsCard">
+        <div style="text-align: center; padding: 36px 16px; color: var(--text-muted);" id="vaultChatsPlaceholder">
+          Загрузка диалогов Сейфа...
+        </div>
+        <div id="vaultChatsList"></div>
+      </div>
+
+      <div id="vaultConversationWrap" style="display: none;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+          <button class="btn-secondary" id="btnBackToChats" style="padding: 6px 12px; font-size: 12px;">← Все диалоги</button>
+          <span style="font-size: 13px; font-weight: 600;" id="activeChatTitle">Диалог</span>
+        </div>
+        <div class="inset-card" style="padding: 14px;" id="vaultMessagesStream"></div>
+      </div>
+    </main>
+
+    <!-- =========================================================================
+         VIEW 3: СТЕЛС & ЗАЩИТА (EXPANDED STEALTH SUITE)
+         ========================================================================= -->
+    <main class="view-container" id="view-stealth">
+      
+      <!-- Section 1: Скрытность и Мониторинг -->
+      <div class="group-title">Скрытность и Присутствие</div>
+      <div class="inset-card">
+        
+        <div class="inset-row">
+          <div class="row-left">
+            <div class="row-icon purple">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+            </div>
+            <div class="row-info">
+              <div class="row-title">Режим Призрака (Ghost Read)</div>
+              <div class="row-desc">Чтение входящих без снятия галочек прочтения</div>
+            </div>
           </div>
-          <div class="row-info">
-            <div class="row-title">Анти-Удаление (Anti-Delete)</div>
-            <div class="row-desc">Мгновенная фиксация удаленных сообщений в Сейф</div>
+          <label class="switch">
+            <input type="checkbox" id="switchGhostRead">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="inset-row">
+          <div class="row-left">
+            <div class="row-icon sky">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+            </div>
+            <div class="row-info">
+              <div class="row-title">Заморозка статуса («Всегда оффлайн»)</div>
+              <div class="row-desc">Блокировка отправки онлайна. В профиле «был(а) недавно»</div>
+            </div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="switchStealthAlways">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="inset-row">
+          <div class="row-left">
+            <div class="row-icon green">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"></path><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path><path d="M2 2l7.586 7.586"></path><circle cx="11" cy="11" r="2"></circle></svg>
+            </div>
+            <div class="row-info">
+              <div class="row-title">Скрытие набора текста (Silent Typing)</div>
+              <div class="row-desc">Полное подавление статуса «печатает…» в диалогах</div>
+            </div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="switchStealthTyping">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="inset-row">
+          <div class="row-left">
+            <div class="row-icon amber">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path></svg>
+            </div>
+            <div class="row-info">
+              <div class="row-title">Скрытое Ухо (Silent Ear)</div>
+              <div class="row-desc">Прослушивание ГС и видео-кружков без снятия зеленой точки</div>
+            </div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="switchSilentEar" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+      </div>
+
+      <!-- Section 2: Активный Перехват -->
+      <div class="group-title">Активный Перехват (Ловушки)</div>
+      <div class="inset-card">
+        
+        <div class="inset-row">
+          <div class="row-left">
+            <div class="row-icon red">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            </div>
+            <div class="row-info">
+              <div class="row-title">Анти-Удаление (Anti-Delete)</div>
+              <div class="row-desc">Мгновенная фиксация удаленных сообщений в Сейф</div>
+            </div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="switchAntiDelete" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="inset-row">
+          <div class="row-left">
+            <div class="row-icon amber">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+            </div>
+            <div class="row-info">
+              <div class="row-title">Анти-Правка (Anti-Edit)</div>
+              <div class="row-desc">Сохранение исходного текста до изменения</div>
+            </div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="switchAntiEdit" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="inset-row">
+          <div class="row-left">
+            <div class="row-icon sky">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            </div>
+            <div class="row-info">
+              <div class="row-title">TTL Sniper (1-View Перехват)</div>
+              <div class="row-desc">Сгорающие фото, видео и одноразовые голосовые</div>
+            </div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="switchAutoTtl" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="inset-row">
+          <div class="row-left">
+            <div class="row-icon green">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
+            </div>
+            <div class="row-info">
+              <div class="row-title">Трекер Реакций (Reaction Spy)</div>
+              <div class="row-desc">Фиксация поставленных и снятых смайлов в ЛС</div>
+            </div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="switchReactionSpy" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+      </div>
+
+      <!-- Section 3: Защита и Маршрутизация -->
+      <div class="group-title">Защита и Маршрутизация</div>
+      <div class="inset-card">
+        
+        <div class="inset-row">
+          <div class="row-left">
+            <div class="row-icon purple">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            </div>
+            <div class="row-info">
+              <div class="row-title">Pure Bot Delivery (Стелс)</div>
+              <div class="row-desc">Отправка отчетов строго через бота, аккаунт в безопасности</div>
+            </div>
+          </div>
+          <span class="tier-pill" style="color: var(--emerald);">АКТИВНО</span>
+        </div>
+
+        <div class="inset-row">
+          <div class="row-left">
+            <div class="row-icon red">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+            </div>
+            <div class="row-info">
+              <div class="row-title">Защита от звонков (Silent VoIP Guard)</div>
+              <div class="row-desc">Тихий сброс входящих звонков без звукового сигнала</div>
+            </div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="switchVoipGuard" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div style="padding: 12px 16px;">
+          <button class="btn-primary" id="btnSyncVaultForum">🔄 Перепривязать ветки супергруппы-сейфа</button>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- =========================================================================
+         VIEW 4: ФЕРМА АККАУНТОВ (FARM & MULTI-SESSION)
+         ========================================================================= -->
+    <main class="view-container" id="view-farm">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+        <span class="group-title" style="margin: 0;">Подключенные сессии</span>
+        <button class="btn-secondary" id="btnAddSessionOpen" style="padding: 6px 12px; font-size: 12px;">+ Добавить</button>
+      </div>
+
+      <div id="farmAccountsList">
+        <!-- Injected via app.js -->
+      </div>
+    </main>
+
+    <!-- =========================================================================
+         VIEW 5: ЦЕНТР ОПЕРАТОРА (VIP OPERATOR HUB)
+         ========================================================================= -->
+    <main class="view-container" id="view-system">
+      
+      <!-- Operator VIP Card -->
+      <div class="operator-card">
+        <div class="operator-badge-strip">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div class="operator-avatar" id="opAvatar">K</div>
+            <div>
+              <div style="font-size: 16px; font-weight: 700; color: #fff;" id="opName">.koreye</div>
+              <div style="font-size: 12px; color: var(--text-muted);" id="opUsername">@koreyskiynoob</div>
+            </div>
+          </div>
+          <span class="tier-pill" id="opTierBadge">CREATOR</span>
+        </div>
+        
+        <div style="font-size: 11.5px; color: var(--text-secondary); line-height: 1.6; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px; margin-top: 6px;">
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: var(--text-muted);">Воркер MTProto:</span>
+            <span style="color: var(--emerald); font-weight: 600;" id="opWorkerStatus">● ONLINE (AyuLite v2.5)</span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: var(--text-muted);">Привязанный Сейф:</span>
+            <span style="color: var(--text-primary); font-family: var(--font-mono);" id="opSafeChannel">AyuVault (-1003787224480)</span>
           </div>
         </div>
-        <label class="switch">
-          <input type="checkbox" id="switchAntiDelete" checked>
-          <span class="slider"></span>
-        </label>
       </div>
 
-      <div class="inset-row">
-        <div class="row-left">
-          <div class="row-icon amber">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-          </div>
-          <div class="row-info">
-            <div class="row-title">Анти-Правка (Anti-Edit)</div>
-            <div class="row-desc">Сохранение исходного текста до изменения</div>
-          </div>
+      <!-- Live Counters 4-Grid -->
+      <div class="group-title">Эффективность Сейфа</div>
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-val" id="statDeletedCount" style="color: var(--rose);">0</div>
+          <div class="metric-lbl">🗑 Удалений зафиксировано</div>
         </div>
-        <label class="switch">
-          <input type="checkbox" id="switchAntiEdit" checked>
-          <span class="slider"></span>
-        </label>
-      </div>
-
-      <div class="inset-row">
-        <div class="row-left">
-          <div class="row-icon sky">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-          </div>
-          <div class="row-info">
-            <div class="row-title">TTL Sniper (1-View Перехват)</div>
-            <div class="row-desc">Сгорающие фото, видео и 1-view голосовые</div>
-          </div>
+        <div class="metric-card">
+          <div class="metric-val" id="statEditedCount" style="color: var(--amber);">0</div>
+          <div class="metric-lbl">✏️ Правок отслежено</div>
         </div>
-        <label class="switch">
-          <input type="checkbox" id="switchAutoTtl" checked>
-          <span class="slider"></span>
-        </label>
-      </div>
-
-      <div class="inset-row">
-        <div class="row-left">
-          <div class="row-icon green">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
-          </div>
-          <div class="row-info">
-            <div class="row-title">Трекер Реакций (Reaction Spy)</div>
-            <div class="row-desc">Фиксация поставленных и снятых смайлов в ЛС</div>
-          </div>
+        <div class="metric-card">
+          <div class="metric-val" id="statTtlCount" style="color: var(--sky);">0</div>
+          <div class="metric-lbl">🔥 TTL медиа спасено</div>
         </div>
-        <label class="switch">
-          <input type="checkbox" id="switchReactionSpy" checked>
-          <span class="slider"></span>
-        </label>
-      </div>
-    </div>
-
-    <div class="group-title">Маршрутизация Сейфа</div>
-    <div class="inset-card">
-      <div class="inset-row">
-        <div class="row-left">
-          <div class="row-icon purple">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-          </div>
-          <div class="row-info">
-            <div class="row-title">Pure Bot Delivery (Стелс)</div>
-            <div class="row-desc">Отправка отчетов строго через бота, аккаунт в безопасности</div>
-          </div>
+        <div class="metric-card">
+          <div class="metric-val" id="statReactionsCount" style="color: var(--emerald);">0</div>
+          <div class="metric-lbl">⚡️ Реакций записано</div>
         </div>
-        <span class="tier-pill" style="color: var(--emerald);">АКТИВНО</span>
-      </div>
-      <div style="padding: 12px 16px;">
-        <button class="btn-primary" id="btnSyncVaultForum">🔄 Перепривязать ветки супергруппы-сейфа</button>
-      </div>
-    </div>
-  </main>
-
-  <!-- =========================================================================
-       VIEW 4: ФЕРМА АККАУНТОВ (FARM & MULTI-SESSION)
-       ========================================================================= -->
-  <main class="view-container" id="view-farm">
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-      <span class="group-title" style="margin: 0;">Подключенные сессии</span>
-      <button class="btn-secondary" id="btnAddSessionOpen" style="padding: 6px 12px; font-size: 12px;">+ Добавить</button>
-    </div>
-
-    <div id="farmAccountsList">
-      <!-- Injected via app.js -->
-    </div>
-  </main>
-
-  <!-- =========================================================================
-       VIEW 5: СИСТЕМА & ИНСТРУМЕНТЫ (SYSTEM & COCKPIT)
-       ========================================================================= -->
-  <main class="view-container" id="view-system">
-    <div class="group-title">Статус Системы</div>
-    <div class="inset-card">
-      <div class="inset-row">
-        <div class="row-left">
-          <div class="row-icon green">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-          </div>
-          <div class="row-info">
-            <div class="row-title">Владелец C2 Console</div>
-            <div class="row-desc" id="systemOwnerText">ID: 7926138510</div>
-          </div>
-        </div>
-        <span class="tier-pill" id="systemTierBadge">ULTIMATE</span>
       </div>
 
-      <div class="inset-row">
-        <div class="row-left">
-          <div class="row-icon sky">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
-          </div>
-          <div class="row-info">
-            <div class="row-title">База Данных SQLite WAL</div>
-            <div class="row-desc" id="systemDbText">c2_database.db</div>
-          </div>
-        </div>
-        <span style="font-size: 12px; color: var(--emerald); font-weight: 600;">ACTIVE</span>
-      </div>
-    </div>
+      <!-- Operator Actions & Tools -->
+      <div class="group-title">Инструменты и Автоматизация</div>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        
+        <button class="btn-secondary" id="btnOpenFakeshotModal">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+          📸 Студия фейк-скриншотов iOS 18
+        </button>
 
-    <div class="group-title">Быстрые Действия</div>
-    <div style="display: flex; flex-direction: column; gap: 8px;">
-      <button class="btn-secondary" id="btnOpenFakeshotModal">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-        📸 Студия фейк-скриншотов iOS 18
+        <button class="btn-secondary" id="btnSyncForumTopicsDirect">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+          ⚡️ Быстрая синхронизация топиков Сейфа
+        </button>
+
+        <button class="btn-secondary" id="btnClearCacheBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+          🧹 Очистить временный кэш сессии
+        </button>
+
+        <button class="btn-secondary danger" id="btnPanicFreeze">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 22 22 22 12 2"></polygon><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+          🚨 Panic Sleep (Заморозка активности)
+        </button>
+
+      </div>
+    </main>
+
+    <!-- Bottom Navigation Dock -->
+    <nav class="bottom-dock">
+      <button class="dock-btn active" data-tab="feed">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+        <span>Лента</span>
       </button>
 
-      <button class="btn-secondary" id="btnCopyTunnelUrl">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
-        🌐 Скопировать защищенную ссылку WebApp
+      <button class="dock-btn" data-tab="vault">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+        <span>Сейф</span>
       </button>
 
-      <button class="btn-secondary danger" id="btnClearCacheBtn">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-        🧹 Очистить старый кэш медиа (>7 дней)
+      <button class="dock-btn" data-tab="stealth">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+        <span>Стелс</span>
       </button>
-    </div>
-  </main>
+
+      <button class="dock-btn" data-tab="farm">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+        <span>Ферма</span>
+      </button>
+
+      <button class="dock-btn" data-tab="system">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        <span>Система</span>
+      </button>
+    </nav>
+
+  </div><!-- /.app-shell -->
 
   <!-- =========================================================================
-       BOTTOM NAVIGATION DOCK
-       ========================================================================= -->
-  <nav class="bottom-dock">
-    <button class="dock-btn active" data-tab="feed">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-      <span>Лента</span>
-    </button>
-
-    <button class="dock-btn" data-tab="vault">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-      <span>Сейф</span>
-    </button>
-
-    <button class="dock-btn" data-tab="stealth">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-      <span>Стелс</span>
-    </button>
-
-    <button class="dock-btn" data-tab="farm">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
-      <span>Ферма</span>
-    </button>
-
-    <button class="dock-btn" data-tab="system">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-      <span>Система</span>
-    </button>
-  </nav>
-
-  <!-- =========================================================================
-       MODAL: ДОБАВИТЬ СЕССИЮ
+       MODAL: ПОДКЛЮЧИТЬ СЕССИЮ
        ========================================================================= -->
   <div class="modal-overlay" id="addSessionModal">
     <div class="bottom-sheet">
@@ -304,12 +427,58 @@
     </div>
   </div>
 
-  <!-- Toast Element -->
+  <!-- =========================================================================
+       MODAL: FAKESHOT STUDIO (IOS 18)
+       ========================================================================= -->
+  <div class="modal-overlay" id="fakeshotModal">
+    <div class="bottom-sheet" style="max-height: 85vh; overflow-y: auto;">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <span class="sheet-title">📸 iOS 18 Fakeshot Studio</span>
+        <button class="btn-close" id="btnCloseFakeshot">✕</button>
+      </div>
+      
+      <div style="margin-bottom: 10px;">
+        <label style="font-size: 11.5px; color: var(--text-muted); display: block; margin-bottom: 4px;">Имя собеседника / Заголовок:</label>
+        <input type="text" id="fakeTitle" class="search-input" value="Павел Дуров" style="background: var(--bg-card);">
+      </div>
+
+      <div style="margin-bottom: 10px;">
+        <label style="font-size: 11.5px; color: var(--text-muted); display: block; margin-bottom: 4px;">Статус / Подзаголовок:</label>
+        <input type="text" id="fakeSubtitle" class="search-input" value="был(а) недавно" style="background: var(--bg-card);">
+      </div>
+
+      <div style="margin-bottom: 10px;">
+        <label style="font-size: 11.5px; color: var(--text-muted); display: block; margin-bottom: 4px;">Текст сообщения:</label>
+        <textarea id="fakeMessageText" class="search-input" style="height: 70px; resize: none; background: var(--bg-card); padding: 8px 10px;">Привет, всё готово к запуску.</textarea>
+      </div>
+
+      <div style="display: flex; gap: 8px; margin-bottom: 14px;">
+        <div style="flex: 1;">
+          <label style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px;">Время (ЧЧ:ММ):</label>
+          <input type="text" id="fakeTime" class="search-input" value="14:28" style="background: var(--bg-card); text-align: center;">
+        </div>
+        <div style="flex: 1;">
+          <label style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px;">Батарея %:</label>
+          <input type="number" id="fakeBattery" class="search-input" value="86" min="1" max="100" style="background: var(--bg-card); text-align: center;">
+        </div>
+      </div>
+
+      <button class="btn-primary" id="btnGenerateFakeshot" style="margin-bottom: 12px;">Сгенерировать iOS 18 скриншот</button>
+
+      <div id="fakeshotResultWrap" style="display: none; text-align: center; padding-top: 10px; border-top: 1px solid var(--border-subtle);">
+        <img id="fakeshotPreviewImg" style="width: 100%; border-radius: var(--radius-md); box-shadow: 0 4px 20px rgba(0,0,0,0.5); margin-bottom: 10px;" alt="Preview">
+        <a id="btnDownloadFakeshot" class="btn-secondary" style="display: inline-block; text-decoration: none;" download="fakeshot_ios18.png">⬇️ Скачать изображение</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Box -->
   <div class="toast-box" id="globalToast">
     <span id="toastIcon">⚡️</span>
     <span id="toastText">Событие выполнено</span>
   </div>
 
-  <script src="app.js?v=8.0"></script>
+  <script src="app.js?v=8.5"></script>
 </body>
 </html>

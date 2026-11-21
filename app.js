@@ -83,17 +83,29 @@
   // Active health-check for C2 backend
   async function testApiReachable(url) {
     if (!url || !url.startsWith('http')) return false;
+    const base = url.replace(/\/$/, '');
     try {
       const ctrl = new AbortController();
-      const tid = setTimeout(() => ctrl.abort(), 3000);
-      const testUrl = `${url.replace(/\/$/, '')}/api/state/${state.userId}`;
-      const res = await fetch(testUrl, {
+      const tid = setTimeout(() => ctrl.abort(), 3500);
+      const res = await fetch(`${base}/api/ping`, {
         method: 'GET',
-        headers: { 'X-User-Token': state.authToken || '', 'X-User-Id': String(state.userId) },
         signal: ctrl.signal
       });
       clearTimeout(tid);
-      return res.status === 200 || res.status === 401 || res.status === 403;
+      if (res.status === 200 || res.status === 401 || res.status === 403) return true;
+    } catch (_) {}
+
+    try {
+      const ctrl2 = new AbortController();
+      const tid2 = setTimeout(() => ctrl2.abort(), 2500);
+      const testUrl2 = `${base}/api/state/${state.userId}`;
+      const res2 = await fetch(testUrl2, {
+        method: 'GET',
+        headers: { 'X-User-Token': state.authToken || '', 'X-User-Id': String(state.userId) },
+        signal: ctrl2.signal
+      });
+      clearTimeout(tid2);
+      return res2.status === 200 || res2.status === 401 || res2.status === 403;
     } catch (_) {
       return false;
     }

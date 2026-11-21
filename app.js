@@ -191,6 +191,9 @@
       return await res.json();
     } catch (e) {
       console.warn(`[API] Error on ${fullUrl}:`, e);
+      setOnlineStatus(false);
+      // Background retry resolving tunnel URL
+      resolveApiUrl().catch(() => {});
       throw e;
     }
   }
@@ -274,7 +277,10 @@
             renderFeed();
           }
         }
-      } catch (_) {}
+      } catch (_) {
+        setOnlineStatus(false);
+        resolveApiUrl().catch(() => {});
+      }
     }, 4000);
   }
 
@@ -1211,7 +1217,10 @@
       try {
         const data = JSON.parse(event.data);
         handleIncomingEvent(data);
-      } catch (_) {}
+      } catch (_) {
+        setOnlineStatus(false);
+        resolveApiUrl().catch(() => {});
+      }
     };
 
     state.ws.onclose = () => {

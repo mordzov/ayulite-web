@@ -441,7 +441,7 @@
         <button class="btn-close" id="btnCloseFakeshot">✕</button>
       </div>
 
-      <!-- Собеседник и статус -->
+      <!-- Собеседник, статус и аватар -->
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
         <div>
           <label style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px;">Имя собеседника:</label>
@@ -450,6 +450,21 @@
         <div>
           <label style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px;">Статус в шапке:</label>
           <input type="text" id="fakeSubtitle" class="search-input" value="в сети" style="background: var(--bg-card);">
+        </div>
+      </div>
+
+      <!-- Выбор аватарки собеседника -->
+      <div style="margin-bottom: 10px;">
+        <label style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px;">Аватарка собеседника:</label>
+        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+          <button type="button" class="btn-secondary fake-av-btn active" data-preset="durov" style="padding: 3px 8px; font-size: 11px;">👤 Дуров</button>
+          <button type="button" class="btn-secondary fake-av-btn" data-preset="support" style="padding: 3px 8px; font-size: 11px;">🛡 Поддержка</button>
+          <button type="button" class="btn-secondary fake-av-btn" data-preset="girl" style="padding: 3px 8px; font-size: 11px;">👧 Девушка</button>
+          <label class="btn-secondary" style="padding: 3px 8px; font-size: 11px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+            📁 Своё фото
+            <input type="file" id="fakeAvatarUpload" accept="image/*" style="display: none;">
+          </label>
+          <span id="fakeAvatarLabel" style="font-size: 10.5px; color: var(--text-muted);">Дуров (по умолчанию)</span>
         </div>
       </div>
 

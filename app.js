@@ -247,6 +247,7 @@
       if (document.hidden || !state.apiUrl) return;
       try {
         const feedData = await api(`/api/feed/${state.userId}?limit=30`);
+        setOnlineStatus(true);
         if (feedData && feedData.items && feedData.items.length) {
           const existingIds = new Set(state.feedEvents.map(x => x.id));
           let hasNew = false;
@@ -1202,10 +1203,6 @@
     };
 
     state.ws.onclose = () => {
-      // If HTTP API works, don't show offline just because WS disconnected
-      if (!state.feedEvents.length) {
-        setOnlineStatus(false);
-      }
       scheduleReconnect();
     };
 

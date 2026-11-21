@@ -36,11 +36,31 @@
          VIEW 1: ЛЕНТА АКТИВНОСТИ (ACTIVITY FEED)
          ========================================================================= -->
     <main class="view-container active" id="view-feed">
+      <!-- Pull to Refresh Indicator (Feature 2) -->
+      <div class="ptr-box" id="ptrFeed">
+        <span class="ptr-icon">↓</span>
+        <span class="ptr-label">Потяните для обновления</span>
+      </div>
+
+      <!-- Favourite Contacts Bar (Feature 42) -->
+      <div class="fav-contacts-section" id="favContactsSection">
+        <div class="fav-contacts-scroll" id="favContactsScroll">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
       <!-- Search Bar -->
       <div class="search-bar">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-muted); flex-shrink: 0;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-        <input type="text" class="search-input" id="feedSearchInput" placeholder="Поиск по сообщениям, именам или ID...">
+        <input type="text" class="search-input" id="feedSearchInput" placeholder="Поиск по тексту, именам, ID или chat_id...">
         <button id="feedSearchClear" style="display: none; background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 2px;">✕</button>
+      </div>
+
+      <!-- Search History Chips (Feature 9) -->
+      <div class="search-history-row" id="searchHistoryRow" style="display: none;">
+        <span class="history-label">История:</span>
+        <div class="history-chips" id="searchHistoryChips"></div>
+        <button class="history-clear-btn" id="btnClearSearchHistory" title="Очистить историю">✕</button>
       </div>
 
       <!-- Filter Pills with Dynamic Counters -->
@@ -50,6 +70,36 @@
         <button class="pill-btn" data-filter="edited">✏️ Правки <span class="pill-count" id="countFilterEd">0</span></button>
         <button class="pill-btn" data-filter="ttl">🔥 Сгорающие (TTL) <span class="pill-count" id="countFilterTtl">0</span></button>
         <button class="pill-btn" data-filter="reactions">⚡️ Реакции <span class="pill-count" id="countFilterRx">0</span></button>
+        <button class="pill-btn" data-filter="archived">📦 Архив <span class="pill-count" id="countFilterArchived">0</span></button>
+      </div>
+
+      <!-- Sub-Filters: Media Type & Tool Buttons (Features 10, 11, 14, 15, 16) -->
+      <div class="sub-filter-bar">
+        <div class="media-type-chips">
+          <button class="media-chip active" data-media="all">Все типы</button>
+          <button class="media-chip" data-media="photo">🖼 Фото</button>
+          <button class="media-chip" data-media="voice">🎤 Голос</button>
+          <button class="media-chip" data-media="video_note">🔵 Кружки</button>
+          <button class="media-chip" data-media="video">🎬 Видео</button>
+          <button class="media-chip" data-media="document">📄 Файлы</button>
+        </div>
+        <div class="feed-tool-btns">
+          <button class="tool-btn" id="btnToggleDateGrouping">📅 По дням</button>
+          <button class="tool-btn" id="btnToggleDateRange">🗓 Даты</button>
+          <button class="tool-btn" id="btnFindDuplicates">🔍 Дубликаты</button>
+          <button class="tool-btn" id="btnArchiveFeedToday">📦 В архив</button>
+          <button class="tool-btn" id="btnStartSlideshow">▶️ Слайдшоу</button>
+        </div>
+      </div>
+
+      <!-- Expandable Date Range Picker -->
+      <div class="date-range-bar" id="dateRangeBar" style="display: none;">
+        <span style="font-size: 11px; color: var(--text-muted);">С:</span>
+        <input type="date" id="dateFilterFrom" class="date-input">
+        <span style="font-size: 11px; color: var(--text-muted);">По:</span>
+        <input type="date" id="dateFilterTo" class="date-input">
+        <button class="btn-secondary" id="btnApplyDateFilter" style="padding: 3px 8px; font-size: 11px;">Применить</button>
+        <button class="btn-secondary" id="btnResetDateFilter" style="padding: 3px 8px; font-size: 11px;">Сбросить</button>
       </div>
 
       <!-- Live Intercept List -->
@@ -536,12 +586,52 @@
   </div>
 
   <!-- =========================================================================
-       MODAL: FULLSCREEN MEDIA LIGHTBOX
+       MODAL: FULLSCREEN MEDIA LIGHTBOX & SLIDESHOW (Feature 8 & 11)
        ========================================================================= -->
-  <div class="modal-overlay" id="mediaLightboxModal" style="display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.92); z-index: 9999;">
-    <div style="position: relative; max-width: 94vw; max-height: 94vh; text-align: center;">
-      <button class="btn-close" id="btnCloseLightbox" style="position: absolute; top: -40px; right: 0; font-size: 24px; color: #fff; background: none; border: none; cursor: pointer;">✕</button>
-      <img id="lightboxImg" src="" style="max-width: 90vw; max-height: 85vh; border-radius: 8px; box-shadow: 0 8px 30px rgba(0,0,0,0.8); object-fit: contain;" alt="Enlarged media">
+  <div class="lightbox-overlay" id="mediaLightboxModal" style="display: none;">
+    <div class="lightbox-top-bar">
+      <div class="lightbox-info">
+        <span id="lightboxSenderName" style="font-weight: 600; color: #fff;">Медиа</span>
+        <span id="lightboxTime" style="font-size: 11px; color: var(--text-muted); margin-left: 8px;"></span>
+      </div>
+      <div class="lightbox-actions">
+        <button class="lb-btn" id="lbSlideshowBtn" title="Слайдшоу">▶️ Слайдшоу</button>
+        <a class="lb-btn" id="lbDownloadBtn" download="media.jpg" style="text-decoration: none;" title="Скачать">⬇️</a>
+        <button class="lb-btn close" id="btnCloseLightbox">✕</button>
+      </div>
+    </div>
+    <div class="lightbox-content">
+      <button class="lb-nav-btn prev" id="lbPrevBtn">‹</button>
+      <div class="lightbox-img-wrap" id="lbMediaWrap">
+        <img id="lightboxImg" src="" alt="Enlarged media">
+      </div>
+      <button class="lb-nav-btn next" id="lbNextBtn">›</button>
+    </div>
+    <div class="lightbox-footer" id="lightboxCaption"></div>
+  </div>
+
+  <!-- =========================================================================
+       MODAL: CONTACT TAG ASSIGNMENT (Feature 12)
+       ========================================================================= -->
+  <div class="modal-overlay" id="tagAssignModal" style="display: none;">
+    <div class="bottom-sheet" style="max-height: 50vh;">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <span class="sheet-title">Тег контакта</span>
+        <button class="btn-close" id="btnCloseTagModal">✕</button>
+      </div>
+      <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;" id="tagModalContactName">Контакт</div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px;">
+        <button type="button" class="preset-tag-btn" data-tag="VIP" data-color="purple">🟣 VIP</button>
+        <button type="button" class="preset-tag-btn" data-tag="Работа" data-color="sky">🔵 Работа</button>
+        <button type="button" class="preset-tag-btn" data-tag="Опасный" data-color="rose">🔴 Опасный</button>
+        <button type="button" class="preset-tag-btn" data-tag="Семья" data-color="green">🟢 Семья</button>
+        <button type="button" class="preset-tag-btn" data-tag="none" data-color="none">⚪ Снять тег</button>
+      </div>
+      <div style="display: flex; gap: 6px;">
+        <input type="text" id="inputCustomTag" class="search-input" placeholder="Свой тег..." style="flex: 1;">
+        <button class="btn-primary" id="btnSaveCustomTag" style="padding: 6px 14px; font-size: 12px;">Сохранить</button>
+      </div>
     </div>
   </div>
 

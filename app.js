@@ -15,8 +15,21 @@
     apiUrl: '',
     activeTab: 'feed',
     activeFilter: 'all',
+    activeMediaFilter: 'all',
+    activeContactFilter: null,
     searchQuery: '',
+    dateFilterFrom: null,
+    dateFilterTo: null,
+    groupByDays: false,
+    showDuplicatesOnly: false,
     feedEvents: [],
+    archivedEvents: JSON.parse(localStorage.getItem('ayulite_archived_events') || '[]'),
+    searchHistory: JSON.parse(localStorage.getItem('ayulite_search_history') || '[]'),
+    contactTags: JSON.parse(localStorage.getItem('ayulite_contact_tags') || '{}'),
+    favouriteContacts: JSON.parse(localStorage.getItem('ayulite_fav_contacts') || '[]'),
+    lightboxMediaList: [],
+    lightboxCurrentIdx: 0,
+    slideshowTimer: null,
     vaultChats: [],
     activeChatId: null,
     farmAccounts: [],
@@ -316,7 +329,7 @@
     }
   }
 
-  // Filter Pills & Search Input in Feed
+  // Filter Pills, Media Chips, Search History & Feed Tools
   function setupFilters() {
     const pills = document.querySelectorAll('.pill-btn');
     pills.forEach(p => {
@@ -329,6 +342,18 @@
       });
     });
 
+    // Media Filter Chips (Feature 11)
+    const mediaChips = document.querySelectorAll('.media-chip');
+    mediaChips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        haptic('selection');
+        mediaChips.forEach(x => x.classList.remove('active'));
+        chip.classList.add('active');
+        state.activeMediaFilter = chip.dataset.media;
+        renderFeed();
+      });
+    });
+
     const sInput = document.getElementById('feedSearchInput');
     const sClear = document.getElementById('feedSearchClear');
     if (sInput) {
@@ -336,6 +361,12 @@
         state.searchQuery = e.target.value.toLowerCase().trim();
         if (sClear) sClear.style.display = state.searchQuery ? 'block' : 'none';
         renderFeed();
+      });
+
+      sInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && state.searchQuery) {
+          saveSearchQuery(state.searchQuery);
+        }
       });
     }
 
@@ -347,7 +378,153 @@
         renderFeed();
       });
     }
+
+    // Search History UI (Feature 9)
+    renderSearchHistory();
+    const btnClearHistory = document.getElementById('btnClearSearchHistory');
+    if (btnClearHistory) {
+      btnClearHistory.addEventListener('click', () => {
+        state.searchHistory = [];
+        localStorage.removeItem('ayulite_search_history');
+        renderSearchHistory();
+        haptic('light');
+      });
+    }
+
+    // Date Range Picker (Feature 10)
+    const btnToggleRange = document.getElementById('btnToggleDateRange');
+    const rangeBar = document.getElementById('dateRangeBar');
+    if (btnToggleRange && rangeBar) {
+      btnToggleRange.addEventListener('click', () => {
+        const isHidden = rangeBar.style.display === 'none';
+        rangeBar.style.display = isHidden ? 'flex' : 'none';
+        btnToggleRange.classList.toggle('active', isHidden);
+        haptic('light');
+      });
+    }
+
+    const btnApplyDate = document.getElementById('btnApplyDateFilter');
+    if (btnApplyDate) {
+      btnApplyDate.addEventListener('click', () => {
+        const dFrom = document.getElementById('dateFilterFrom')?.value;
+        const dTo = document.getElementById('dateFilterTo')?.value;
+        state.dateFilterFrom = dFrom || null;
+        state.dateFilterTo = dTo || null;
+        showToast(dFrom || dTo ? `Фильтр дат: ${dFrom || '...'} — ${dTo || '...'}` : 'Фильтр сброшен');
+        renderFeed();
+        haptic('medium');
+      });
+    }
+
+    const btnResetDate = document.getElementById('btnResetDateFilter');
+    if (btnResetDate) {
+      btnResetDate.addEventListener('click', () => {
+        state.dateFilterFrom = null;
+        state.dateFilterTo = null;
+        const inFrom = document.getElementById('dateFilterFrom');
+        const inTo = document.getElementById('dateFilterTo');
+        if (inFrom) inFrom.value = '';
+        if (inTo) inTo.value = '';
+        renderFeed();
+        haptic('light');
+      });
+    }
+
+    // Toggle Grouping By Days (Feature 15)
+    const btnDayGroup = document.getElementById('btnToggleDateGrouping');
+    if (btnDayGroup) {
+      btnDayGroup.addEventListener('click', () => {
+        state.groupByDays = !state.groupByDays;
+        btnDayGroup.classList.toggle('active', state.groupByDays);
+        btnDayGroup.textContent = state.groupByDays ? '📅 По дням: ВКЛ' : '📅 По дням';
+        renderFeed();
+        haptic('selection');
+      });
+    }
+
+    // Find Duplicates (Feature 16)
+    const btnFindDups = document.getElementById('btnFindDuplicates');
+    if (btnFindDups) {
+      btnFindDups.addEventListener('click', () => {
+        state.showDuplicatesOnly = !state.showDuplicatesOnly;
+        btnFindDups.classList.toggle('active', state.showDuplicatesOnly);
+        btnFindDups.textContent = state.showDuplicatesOnly ? '⚠️ Только дубли' : '🔍 Дубликаты';
+        renderFeed();
+        haptic('selection');
+      });
+    }
+
+    // Archive Feed to Today (Feature 14)
+    const btnArchive = document.getElementById('btnArchiveFeedToday');
+    if (btnArchive) {
+      btnArchive.addEventListener('click', () => {
+        if (!state.feedEvents.length) {
+          showToast('Лента уже пуста', 'ℹ️');
+          return;
+        }
+        state.archivedEvents = state.archivedEvents.concat(state.feedEvents);
+        state.feedEvents = [];
+        localStorage.setItem('ayulite_archived_events', JSON.stringify(state.archivedEvents));
+        updateFilterCounters();
+        renderFeed();
+        showToast('📦 Все события перенесены в архив', '✓');
+        haptic('success');
+      });
+    }
+
+    // Start Slideshow (Feature 11)
+    const btnSlide = document.getElementById('btnStartSlideshow');
+    if (btnSlide) {
+      btnSlide.addEventListener('click', () => {
+        const firstPhoto = state.feedEvents.find(x => (x.media_type || '').toLowerCase() === 'photo');
+        if (firstPhoto) {
+          const base = state.apiUrl || window.location.origin;
+          let mUrl = firstPhoto.media_url || `/api/vault/media/${firstPhoto.session_id}/${firstPhoto.msg_id}`;
+          const full = `${mUrl}${mUrl.includes('?') ? '&' : '?'}auth=${encodeURIComponent(state.authToken || '')}&user_id=${state.userId}`;
+          window.openMediaLightbox(full, firstPhoto.sender_name, firstPhoto.time, firstPhoto.text);
+          setTimeout(() => toggleSlideshow(), 300);
+        } else {
+          showToast('Нет фото в текущей ленте для слайдшоу', '📷');
+        }
+      });
+    }
+
+    // Setup Pull-to-refresh
+    setupPullToRefresh();
   }
+
+  function saveSearchQuery(query) {
+    if (!query) return;
+    state.searchHistory = [query, ...state.searchHistory.filter(x => x !== query)].slice(0, 10);
+    localStorage.setItem('ayulite_search_history', JSON.stringify(state.searchHistory));
+    renderSearchHistory();
+  }
+
+  function renderSearchHistory() {
+    const row = document.getElementById('searchHistoryRow');
+    const container = document.getElementById('searchHistoryChips');
+    if (!row || !container) return;
+    if (!state.searchHistory.length) {
+      row.style.display = 'none';
+      return;
+    }
+    row.style.display = 'flex';
+    container.innerHTML = state.searchHistory.map(q => `
+      <span class="history-chip" onclick="window.applySearchQuery('${escapeHtml(q)}')">
+        ${escapeHtml(q)}
+      </span>
+    `).join('');
+  }
+
+  window.applySearchQuery = function(q) {
+    const sInput = document.getElementById('feedSearchInput');
+    const sClear = document.getElementById('feedSearchClear');
+    if (sInput) sInput.value = q;
+    if (sClear) sClear.style.display = 'block';
+    state.searchQuery = q.toLowerCase().trim();
+    renderFeed();
+    haptic('selection');
+  };
 
   // Switches in Stealth & Protection Tab
   function setupSwitches() {
@@ -773,43 +950,125 @@
     const cEd = document.getElementById('countFilterEd');
     const cTtl = document.getElementById('countFilterTtl');
     const cRx = document.getElementById('countFilterRx');
+    const cArch = document.getElementById('countFilterArchived');
 
     if (cAll) cAll.textContent = all;
     if (cDel) cDel.textContent = del;
     if (cEd) cEd.textContent = ed;
     if (cTtl) cTtl.textContent = ttl;
     if (cRx) cRx.textContent = rx;
+    if (cArch) cArch.textContent = state.archivedEvents.length;
+
+    renderFavContactsBar();
   }
 
-  // Render Feed Intercept Cards
+  // Render Feed Intercept Cards with All Wave 2 Automation Features
   function renderFeed() {
     const list = document.getElementById('feedList');
     if (!list) return;
 
-    let items = state.feedEvents;
-    if (state.activeFilter !== 'all') {
+    let items = state.activeFilter === 'archived' ? state.archivedEvents : state.feedEvents;
+
+    // 1. Filter by event type
+    if (state.activeFilter !== 'all' && state.activeFilter !== 'archived') {
       items = items.filter(x => x.type === state.activeFilter);
     }
+
+    // 2. Filter by media type (Feature 11)
+    if (state.activeMediaFilter !== 'all') {
+      items = items.filter(x => (x.media_type || '').toLowerCase() === state.activeMediaFilter);
+    }
+
+    // 3. Filter by favourite / specific contact (Feature 42)
+    if (state.activeContactFilter) {
+      items = items.filter(x => x.sender_id === state.activeContactFilter);
+    }
+
+    // 4. Filter by date range (Feature 10)
+    if (state.dateFilterFrom || state.dateFilterTo) {
+      items = items.filter(x => {
+        const tStr = x.time || '';
+        // Match dates like 2026-11-20 or 20.11.2026
+        let itemDate = null;
+        const dMatch = tStr.match(/(\d{4})-(\d{2})-(\d{2})/) || tStr.match(/(\d{2})\.(\d{2})\.(\d{4})/);
+        if (dMatch) {
+          itemDate = dMatch[1].length === 4 ? `${dMatch[1]}-${dMatch[2]}-${dMatch[3]}` : `${dMatch[3]}-${dMatch[2]}-${dMatch[1]}`;
+        }
+        if (!itemDate) return true;
+        if (state.dateFilterFrom && itemDate < state.dateFilterFrom) return false;
+        if (state.dateFilterTo && itemDate > state.dateFilterTo) return false;
+        return true;
+      });
+    }
+
+    // 5. Search query matching text, names, IDs, chat_ids (Feature 12)
     if (state.searchQuery) {
-      items = items.filter(x => 
-        (x.sender_name && x.sender_name.toLowerCase().includes(state.searchQuery)) ||
-        (x.text && x.text.toLowerCase().includes(state.searchQuery)) ||
-        (x.chat_title && x.chat_title.toLowerCase().includes(state.searchQuery)) ||
-        (x.old_text && x.old_text.toLowerCase().includes(state.searchQuery)) ||
-        (x.new_text && x.new_text.toLowerCase().includes(state.searchQuery))
-      );
+      const q = state.searchQuery;
+      const isDigits = /^\d+$/.test(q);
+      items = items.filter(x => {
+        if (isDigits) {
+          if (String(x.sender_id) === q || String(x.chat_id) === q || String(x.msg_id) === q) return true;
+        }
+        return (
+          (x.sender_name && x.sender_name.toLowerCase().includes(q)) ||
+          (x.text && x.text.toLowerCase().includes(q)) ||
+          (x.chat_title && x.chat_title.toLowerCase().includes(q)) ||
+          (x.old_text && x.old_text.toLowerCase().includes(q)) ||
+          (x.new_text && x.new_text.toLowerCase().includes(q))
+        );
+      });
+    }
+
+    // 6. Duplicate detection (Feature 16)
+    const textCounts = {};
+    items.forEach(it => {
+      const key = (it.text || it.media_path || '').trim();
+      if (key && key.length > 4) {
+        textCounts[key] = (textCounts[key] || 0) + 1;
+      }
+    });
+
+    if (state.showDuplicatesOnly) {
+      items = items.filter(it => {
+        const key = (it.text || it.media_path || '').trim();
+        return key && textCounts[key] > 1;
+      });
     }
 
     if (!items.length) {
       list.innerHTML = `
         <div style="text-align: center; padding: 48px 16px; color: var(--text-muted);">
-          <p>Нет перехваченных событий по выбранному фильтру.</p>
+          <p>Нет перехваченных событий по выбранным фильтрам.</p>
         </div>
       `;
       return;
     }
 
-    list.innerHTML = items.map(it => {
+    // 7. Render with Day Grouping if enabled (Feature 15)
+    let lastDay = null;
+    let htmlOutput = '';
+
+    items.forEach((it, idx) => {
+      // Day separator
+      if (state.groupByDays) {
+        let dayLabel = 'СЕГОДНЯ';
+        const tStr = it.time || '';
+        if (tStr.includes('.')) {
+          const parts = tStr.split('|');
+          dayLabel = parts.length > 1 ? parts[1].trim() : parts[0].trim();
+        }
+        if (dayLabel !== lastDay) {
+          lastDay = dayLabel;
+          htmlOutput += `
+            <div class="day-separator">
+              <div class="day-separator-line"></div>
+              <span class="day-separator-text">🗓 ${escapeHtml(dayLabel)}</span>
+              <div class="day-separator-line"></div>
+            </div>
+          `;
+        }
+      }
+
       let badgeClass = 'deleted';
       let badgeText = 'УДАЛЕНО';
       let contentHtml = '';
@@ -840,6 +1099,20 @@
         contentHtml = `<div class="feed-quote">${escapeHtml(txt)}</div>`;
       }
 
+      // Check duplicate
+      const dupKey = (it.text || it.media_path || '').trim();
+      const isDup = dupKey && textCounts[dupKey] > 1;
+      const dupBadge = isDup ? `<span class="duplicate-badge">⚠️ Дубликат (x${textCounts[dupKey]})</span>` : '';
+
+      // Contact Tag (Feature 12)
+      const contactTag = state.contactTags[it.sender_id];
+      const tagBadge = contactTag ? `<span class="contact-tag-badge tag-${contactTag.color}">${escapeHtml(contactTag.tag)}</span>` : '';
+      const isFav = state.favouriteContacts.some(x => x.uid === it.sender_id);
+
+      // Copy text data (Feature 6 - Screenshot 3)
+      const rawCopyText = (it.new_text || it.text || it.old_text || '').replace(/'/g, "\\'");
+
+      // Media Rendering
       let mediaHtml = '';
       if (it.media_url || (it.session_id && it.msg_id && it.media_type)) {
         const base = state.apiUrl || window.location.origin;
@@ -849,32 +1122,69 @@
         const mType = (it.media_type || '').toLowerCase();
 
         if (mType === 'photo' || it.type === 'ttl' || mType === 'sticker') {
+          // Photo Lightbox (Feature 8)
           mediaHtml = `
             <div class="feed-media-wrap" style="margin: 8px 0; max-width: 100%;">
-              <img src="${fullMediaUrl}" class="feed-media-img" onclick="event.stopPropagation(); window.openMediaLightbox('${fullMediaUrl}')" loading="lazy" alt="Media" style="max-width: 100%; max-height: 260px; border-radius: 8px; border: 1px solid var(--border-subtle); object-fit: cover; cursor: pointer; display: block;" onerror="this.parentElement.style.display='none'">
+              <img src="${fullMediaUrl}" class="feed-media-img" onclick="event.stopPropagation(); window.openMediaLightbox('${fullMediaUrl}', '${escapeHtml(it.sender_name || '')}', '${escapeHtml(it.time || '')}', '${escapeHtml(it.text || '')}')" loading="lazy" alt="Media" style="max-width: 100%; max-height: 260px; border-radius: 8px; border: 1px solid var(--border-subtle); object-fit: cover; cursor: pointer; display: block;" onerror="this.parentElement.style.display='none'">
             </div>
           `;
-        } else if (mType === 'video' || mType === 'video_note') {
+        } else if (mType === 'video_note') {
+          // Circular Video Note Player (Feature 7)
+          mediaHtml = `
+            <div class="video-note-box" onclick="event.stopPropagation(); window.toggleVideoNote(this)">
+              <span class="video-note-badge">🔵 КРУЖОК</span>
+              <video src="${fullMediaUrl}" class="video-note-elem" loop playsinline preload="metadata"></video>
+            </div>
+            <!-- Transcript for video note (Feature 10) -->
+            <div class="transcript-wrap" onclick="event.stopPropagation()">
+              <button type="button" class="transcript-toggle-btn" onclick="window.toggleTranscript(this)">📝 Расшифровка (Silent Ear)</button>
+              <div class="transcript-body" style="display: none;">${escapeHtml(it.text || 'Кружок перехвачен и расшифрован')}</div>
+            </div>
+          `;
+        } else if (mType === 'video') {
           mediaHtml = `
             <div class="feed-media-wrap" style="margin: 8px 0; max-width: 100%;">
               <video src="${fullMediaUrl}" controls class="feed-media-video" preload="metadata" style="max-width: 100%; max-height: 260px; border-radius: 8px; background: #000;" onclick="event.stopPropagation()"></video>
             </div>
           `;
         } else if (mType === 'voice') {
+          // Custom Waveform Voice Player (Feature 6)
+          const barsHtml = Array.from({ length: 24 }).map((_, bIdx) => {
+            const h = 7 + Math.sin(bIdx * 0.7) * 7 + (bIdx % 3) * 3;
+            return `<div class="voice-bar" style="height: ${Math.round(h)}px;"></div>`;
+          }).join('');
+
           mediaHtml = `
-            <div class="feed-media-wrap" style="margin: 8px 0;">
-              <audio src="${fullMediaUrl}" controls class="feed-media-audio" preload="metadata" style="width: 100%; height: 38px;" onclick="event.stopPropagation()"></audio>
+            <div class="custom-voice-player" onclick="event.stopPropagation()">
+              <button type="button" class="voice-play-btn" onclick="window.toggleVoicePlayback(this, '${fullMediaUrl}')">▶</button>
+              <div class="voice-waveform-wrap" onclick="window.seekVoicePlayback(event, this)">
+                <div class="voice-waveform-bars">${barsHtml}</div>
+                <div class="voice-time-row">
+                  <span class="voice-curr-time">0:00</span>
+                  <span class="voice-total-time">0:14</span>
+                </div>
+              </div>
+              <button type="button" class="voice-speed-btn" onclick="window.toggleVoiceSpeed(this)">1x</button>
+            </div>
+            <!-- Voice Transcript Accordion (Feature 10) -->
+            <div class="transcript-wrap" onclick="event.stopPropagation()">
+              <button type="button" class="transcript-toggle-btn" onclick="window.toggleTranscript(this)">📝 Расшифровка (Silent Ear)</button>
+              <div class="transcript-body" style="display: none;">${escapeHtml(it.text || 'Голосовое сообщение распознано Silent Ear движком')}</div>
             </div>
           `;
         }
       }
 
-      return `
+      htmlOutput += `
         <article class="feed-item" data-cid="${it.chat_id || 0}">
           <div class="feed-item-head">
             <div class="sender-badge">
               <div class="avatar-initials">${(it.sender_name || 'U').charAt(0).toUpperCase()}</div>
               <span class="sender-name">${escapeHtml(it.sender_name || 'Собеседник')}</span>
+              ${tagBadge}
+              ${dupBadge}
+              <button type="button" class="btn-assign-tag" onclick="event.stopPropagation(); window.openTagModal(${it.sender_id || 0}, '${escapeHtml(it.sender_name || '')}')" title="Назначить тег">🏷</button>
+              <button type="button" class="btn-assign-tag" onclick="event.stopPropagation(); window.toggleFavContact(${it.sender_id || 0}, '${escapeHtml(it.sender_name || '')}')" title="Избранный контакт">${isFav ? '★' : '☆'}</button>
             </div>
             <span class="type-tag ${badgeClass}">${badgeText}</span>
           </div>
@@ -882,11 +1192,17 @@
           ${mediaHtml}
           <div class="feed-footer">
             <span style="font-weight: 500; color: var(--text-secondary);">${escapeHtml(it.chat_title || 'Диалог')}</span>
-            <span>${escapeHtml(it.time || '')}</span>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <!-- Copy Text Button (Feature 6 - Screenshot 3) -->
+              <button type="button" class="btn-copy-card" onclick="event.stopPropagation(); window.copyCardText('${rawCopyText}')" title="Скопировать текст перехвата">📋 Скопировать</button>
+              <span>${escapeHtml(it.time || '')}</span>
+            </div>
           </div>
         </article>
       `;
-    }).join('');
+    });
+
+    list.innerHTML = htmlOutput;
 
     // Clicking feed card switches to Vault view for that chat
     list.querySelectorAll('.feed-item').forEach(card => {
@@ -1291,27 +1607,410 @@
     }
   }
 
-  // Fullscreen Media Lightbox Helper
-  window.openMediaLightbox = function(url) {
-    const modal = document.getElementById('mediaLightboxModal');
-    const img = document.getElementById('lightboxImg');
-    if (modal && img) {
-      img.src = url;
-      modal.style.display = 'flex';
+  // ==========================================================================
+  // Wave 2 Helpers: Audio, Video Notes, Lightbox, Copy, Tags, Pull-to-refresh
+  // ==========================================================================
+
+  // Feature 6: In-feed Audio Waveform Player
+  window.toggleVoicePlayback = function(btn, audioUrl) {
+    let audio = btn._audio;
+    if (!audio) {
+      audio = new Audio(audioUrl);
+      btn._audio = audio;
+      const playerBox = btn.closest('.custom-voice-player');
+      const timeElem = playerBox.querySelector('.voice-curr-time');
+      const totalElem = playerBox.querySelector('.voice-total-time');
+      const bars = playerBox.querySelectorAll('.voice-bar');
+
+      audio.addEventListener('timeupdate', () => {
+        if (!audio.duration) return;
+        const prog = audio.currentTime / audio.duration;
+        const playedCount = Math.floor(prog * bars.length);
+        bars.forEach((b, idx) => {
+          if (idx <= playedCount) b.classList.add('played');
+          else b.classList.remove('played');
+        });
+        const mins = Math.floor(audio.currentTime / 60);
+        const secs = Math.floor(audio.currentTime % 60);
+        timeElem.textContent = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+      });
+
+      audio.addEventListener('loadedmetadata', () => {
+        const mins = Math.floor(audio.duration / 60);
+        const secs = Math.floor(audio.duration % 60);
+        totalElem.textContent = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+      });
+
+      audio.addEventListener('ended', () => {
+        btn.textContent = '▶';
+        bars.forEach(b => b.classList.remove('played'));
+        timeElem.textContent = '0:00';
+      });
+    }
+
+    if (audio.paused) {
+      document.querySelectorAll('audio, video').forEach(el => { if (el !== audio) el.pause(); });
+      audio.play().catch(() => {});
+      btn.textContent = '⏸';
+      haptic('light');
+    } else {
+      audio.pause();
+      btn.textContent = '▶';
       haptic('light');
     }
   };
 
-  const btnCloseLb = document.getElementById('btnCloseLightbox');
-  const modalLb = document.getElementById('mediaLightboxModal');
-  if (btnCloseLb && modalLb) {
-    btnCloseLb.addEventListener('click', () => {
-      modalLb.style.display = 'none';
-    });
-    modalLb.addEventListener('click', (e) => {
-      if (e.target === modalLb) {
-        modalLb.style.display = 'none';
+  window.toggleVoiceSpeed = function(btn) {
+    const playerBox = btn.closest('.custom-voice-player');
+    const playBtn = playerBox.querySelector('.voice-play-btn');
+    const audio = playBtn ? playBtn._audio : null;
+    const speeds = [1, 1.5, 2];
+    let curr = parseFloat(btn.textContent) || 1;
+    let nextIdx = (speeds.indexOf(curr) + 1) % speeds.length;
+    let nextSpeed = speeds[nextIdx];
+    btn.textContent = `${nextSpeed}x`;
+    if (audio) audio.playbackRate = nextSpeed;
+    haptic('selection');
+  };
+
+  window.seekVoicePlayback = function(e, wrap) {
+    const playerBox = wrap.closest('.custom-voice-player');
+    const playBtn = playerBox.querySelector('.voice-play-btn');
+    const audio = playBtn ? playBtn._audio : null;
+    if (!audio || !audio.duration) return;
+    const rect = wrap.getBoundingClientRect();
+    const pos = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    audio.currentTime = pos * audio.duration;
+    haptic('light');
+  };
+
+  // Feature 7: Circular Video Note Player
+  window.toggleVideoNote = function(box) {
+    const vid = box.querySelector('video');
+    if (!vid) return;
+    if (vid.paused) {
+      document.querySelectorAll('audio, video').forEach(el => { if (el !== vid) el.pause(); });
+      vid.play().catch(() => {});
+      haptic('light');
+    } else {
+      vid.pause();
+      haptic('light');
+    }
+  };
+
+  // Feature 10: Voice Transcript Toggle
+  window.toggleTranscript = function(btn) {
+    const wrap = btn.closest('.transcript-wrap');
+    const body = wrap.querySelector('.transcript-body');
+    if (!body) return;
+    const isHidden = body.style.display === 'none';
+    body.style.display = isHidden ? 'block' : 'none';
+    btn.textContent = isHidden ? '🔼 Скрыть расшифровку' : '📝 Расшифровка (Silent Ear)';
+    haptic('light');
+  };
+
+  // Feature 6 (Screenshot 3): Copy Card Text
+  window.copyCardText = function(text) {
+    if (!text) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('✓ Текст скопирован в буфер', '📋');
+        haptic('medium');
+      }).catch(() => fallbackCopy(text));
+    } else {
+      fallbackCopy(text);
+    }
+  };
+
+  function fallbackCopy(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('✓ Текст скопирован в буфер', '📋');
+    haptic('medium');
+  }
+
+  // Feature 8 & 11: Lightbox & Slideshow
+  window.openMediaLightbox = function(url, senderName = 'Медиа', time = '', caption = '') {
+    const modal = document.getElementById('mediaLightboxModal');
+    const img = document.getElementById('lightboxImg');
+    const sName = document.getElementById('lightboxSenderName');
+    const sTime = document.getElementById('lightboxTime');
+    const sCap = document.getElementById('lightboxCaption');
+    const dlBtn = document.getElementById('lbDownloadBtn');
+
+    // Build photo list from current active feed
+    const items = state.activeFilter === 'archived' ? state.archivedEvents : state.feedEvents;
+    const photoList = [];
+    items.forEach(it => {
+      const mType = (it.media_type || '').toLowerCase();
+      if (mType === 'photo' || it.type === 'ttl' || mType === 'sticker') {
+        const base = state.apiUrl || window.location.origin;
+        let rawMUrl = it.media_url || `/api/vault/media/${it.session_id}/${it.msg_id}`;
+        let mUrl = rawMUrl.startsWith('http') ? rawMUrl : `${base}${rawMUrl.startsWith('/') ? '' : '/'}${rawMUrl}`;
+        const full = `${mUrl}${mUrl.includes('?') ? '&' : '?'}auth=${encodeURIComponent(state.authToken || '')}&user_id=${state.userId}`;
+        photoList.push({
+          url: full,
+          sender: it.sender_name || 'Собеседник',
+          time: it.time || '',
+          caption: it.text || ''
+        });
       }
+    });
+
+    state.lightboxMediaList = photoList.length ? photoList : [{ url, sender: senderName, time, caption }];
+    state.lightboxCurrentIdx = Math.max(0, state.lightboxMediaList.findIndex(x => x.url === url));
+
+    function updateView() {
+      const cur = state.lightboxMediaList[state.lightboxCurrentIdx] || { url, sender: senderName, time, caption };
+      img.src = cur.url;
+      if (sName) sName.textContent = cur.sender;
+      if (sTime) sTime.textContent = cur.time;
+      if (sCap) sCap.textContent = cur.caption;
+      if (dlBtn) dlBtn.href = cur.url;
+    }
+
+    updateView();
+    modal.style.display = 'flex';
+    haptic('medium');
+  };
+
+  window.closeMediaLightbox = function() {
+    const modal = document.getElementById('mediaLightboxModal');
+    if (modal) modal.style.display = 'none';
+    if (state.slideshowTimer) {
+      clearInterval(state.slideshowTimer);
+      state.slideshowTimer = null;
+      const sBtn = document.getElementById('lbSlideshowBtn');
+      if (sBtn) sBtn.textContent = '▶️ Слайдшоу';
+    }
+    haptic('light');
+  };
+
+  function toggleSlideshow() {
+    const sBtn = document.getElementById('lbSlideshowBtn');
+    if (state.slideshowTimer) {
+      clearInterval(state.slideshowTimer);
+      state.slideshowTimer = null;
+      if (sBtn) sBtn.textContent = '▶️ Слайдшоу';
+      showToast('Слайдшоу остановлено');
+    } else {
+      if (sBtn) sBtn.textContent = '⏸ Пауза';
+      showToast('▶️ Слайдшоу запущено');
+      state.slideshowTimer = setInterval(() => {
+        if (!state.lightboxMediaList.length) return;
+        state.lightboxCurrentIdx = (state.lightboxCurrentIdx + 1) % state.lightboxMediaList.length;
+        const cur = state.lightboxMediaList[state.lightboxCurrentIdx];
+        const img = document.getElementById('lightboxImg');
+        const sName = document.getElementById('lightboxSenderName');
+        const sTime = document.getElementById('lightboxTime');
+        const sCap = document.getElementById('lightboxCaption');
+        const dlBtn = document.getElementById('lbDownloadBtn');
+        if (img) img.src = cur.url;
+        if (sName) sName.textContent = cur.sender;
+        if (sTime) sTime.textContent = cur.time;
+        if (sCap) sCap.textContent = cur.caption;
+        if (dlBtn) dlBtn.href = cur.url;
+      }, 3000);
+    }
+  }
+
+  // Lightbox Navigation & Action buttons
+  const btnCloseLb = document.getElementById('btnCloseLightbox');
+  const btnPrevLb = document.getElementById('lbPrevBtn');
+  const btnNextLb = document.getElementById('lbNextBtn');
+  const btnSlideLb = document.getElementById('lbSlideshowBtn');
+  const modalLb = document.getElementById('mediaLightboxModal');
+
+  if (btnCloseLb) btnCloseLb.addEventListener('click', window.closeMediaLightbox);
+  if (btnSlideLb) btnSlideLb.addEventListener('click', toggleSlideshow);
+  if (btnPrevLb) {
+    btnPrevLb.addEventListener('click', () => {
+      if (!state.lightboxMediaList.length) return;
+      state.lightboxCurrentIdx = (state.lightboxCurrentIdx - 1 + state.lightboxMediaList.length) % state.lightboxMediaList.length;
+      const cur = state.lightboxMediaList[state.lightboxCurrentIdx];
+      document.getElementById('lightboxImg').src = cur.url;
+      document.getElementById('lightboxSenderName').textContent = cur.sender;
+      document.getElementById('lightboxTime').textContent = cur.time;
+      document.getElementById('lightboxCaption').textContent = cur.caption;
+      document.getElementById('lbDownloadBtn').href = cur.url;
+      haptic('selection');
+    });
+  }
+  if (btnNextLb) {
+    btnNextLb.addEventListener('click', () => {
+      if (!state.lightboxMediaList.length) return;
+      state.lightboxCurrentIdx = (state.lightboxCurrentIdx + 1) % state.lightboxMediaList.length;
+      const cur = state.lightboxMediaList[state.lightboxCurrentIdx];
+      document.getElementById('lightboxImg').src = cur.url;
+      document.getElementById('lightboxSenderName').textContent = cur.sender;
+      document.getElementById('lightboxTime').textContent = cur.time;
+      document.getElementById('lightboxCaption').textContent = cur.caption;
+      document.getElementById('lbDownloadBtn').href = cur.url;
+      haptic('selection');
+    });
+  }
+
+  // Feature 12: Contact Tags Management
+  let activeTagUid = null;
+  window.openTagModal = function(uid, name) {
+    activeTagUid = uid;
+    const modal = document.getElementById('tagAssignModal');
+    const title = document.getElementById('tagModalContactName');
+    const input = document.getElementById('inputCustomTag');
+    if (title) title.textContent = `Контакт: ${name} (ID: ${uid})`;
+    if (input) input.value = (state.contactTags[uid] && state.contactTags[uid].tag) || '';
+    if (modal) modal.style.display = 'flex';
+    haptic('light');
+  };
+
+  window.setContactTag = function(tag, color) {
+    if (!activeTagUid) return;
+    if (!tag || tag === 'none') {
+      delete state.contactTags[activeTagUid];
+      showToast('Тег снят');
+    } else {
+      state.contactTags[activeTagUid] = { tag, color: color || 'purple' };
+      showToast(`Тег «${tag}» сохранен`);
+    }
+    localStorage.setItem('ayulite_contact_tags', JSON.stringify(state.contactTags));
+    const modal = document.getElementById('tagAssignModal');
+    if (modal) modal.style.display = 'none';
+    renderFeed();
+    haptic('medium');
+  };
+
+  // Tag modal buttons setup
+  const tagBtns = document.querySelectorAll('.preset-tag-btn');
+  tagBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      window.setContactTag(btn.dataset.tag, btn.dataset.color);
+    });
+  });
+
+  const btnSaveCustomTag = document.getElementById('btnSaveCustomTag');
+  if (btnSaveCustomTag) {
+    btnSaveCustomTag.addEventListener('click', () => {
+      const val = document.getElementById('inputCustomTag')?.value?.trim();
+      if (val) window.setContactTag(val, 'purple');
+      else window.setContactTag('none', 'none');
+    });
+  }
+
+  const btnCloseTag = document.getElementById('btnCloseTagModal');
+  if (btnCloseTag) {
+    btnCloseTag.addEventListener('click', () => {
+      document.getElementById('tagAssignModal').style.display = 'none';
+    });
+  }
+
+  // Feature 42: Favourite Contacts
+  window.toggleFavContact = function(uid, name) {
+    const idx = state.favouriteContacts.findIndex(x => x.uid === uid);
+    if (idx >= 0) {
+      state.favouriteContacts.splice(idx, 1);
+      showToast(`${name || 'Контакт'} удален из избранных`);
+    } else {
+      if (state.favouriteContacts.length >= 10) state.favouriteContacts.shift();
+      state.favouriteContacts.push({ uid, name: name || `ID ${uid}`, initial: (name || 'U').charAt(0).toUpperCase() });
+      showToast(`⭐ ${name || 'Контакт'} добавлен в избранные`);
+    }
+    localStorage.setItem('ayulite_fav_contacts', JSON.stringify(state.favouriteContacts));
+    renderFavContactsBar();
+    renderFeed();
+    haptic('selection');
+  };
+
+  function renderFavContactsBar() {
+    const bar = document.getElementById('favContactsScroll');
+    if (!bar) return;
+
+    if (!state.favouriteContacts.length) {
+      const seen = new Set();
+      state.feedEvents.forEach(it => {
+        if (it.sender_id && !seen.has(it.sender_id) && seen.size < 6) {
+          seen.add(it.sender_id);
+          state.favouriteContacts.push({
+            uid: it.sender_id,
+            name: it.sender_name || `ID ${it.sender_id}`,
+            initial: (it.sender_name || 'U').charAt(0).toUpperCase()
+          });
+        }
+      });
+      localStorage.setItem('ayulite_fav_contacts', JSON.stringify(state.favouriteContacts));
+    }
+
+    bar.innerHTML = state.favouriteContacts.map(c => `
+      <div class="fav-contact-item ${state.activeContactFilter === c.uid ? 'active' : ''}" onclick="window.filterByContact(${c.uid})">
+        <div class="fav-avatar">
+          <span>${escapeHtml(c.initial || 'U')}</span>
+          <span class="fav-avatar-dot"></span>
+        </div>
+        <span class="fav-name">${escapeHtml(c.name)}</span>
+      </div>
+    `).join('');
+  }
+
+  window.filterByContact = function(uid) {
+    if (state.activeContactFilter === uid) {
+      state.activeContactFilter = null;
+      showToast('Фильтр контакта сброшен');
+    } else {
+      state.activeContactFilter = uid;
+      showToast('Фильтр по контакту активирован');
+    }
+    renderFavContactsBar();
+    renderFeed();
+    haptic('selection');
+  };
+
+  // Feature 2: Pull-to-refresh on all views
+  function setupPullToRefresh() {
+    const views = document.querySelectorAll('.view-container');
+    const ptrBox = document.getElementById('ptrFeed');
+    if (!ptrBox) return;
+
+    views.forEach(v => {
+      let startY = 0;
+      let isPulling = false;
+
+      v.addEventListener('touchstart', (e) => {
+        if (v.scrollTop <= 0) {
+          startY = e.touches[0].clientY;
+          isPulling = true;
+        }
+      }, { passive: true });
+
+      v.addEventListener('touchmove', (e) => {
+        if (!isPulling) return;
+        const diff = e.touches[0].clientY - startY;
+        if (diff > 15 && diff < 120) {
+          ptrBox.classList.add('pulling');
+          const lbl = ptrBox.querySelector('.ptr-label');
+          if (lbl) lbl.textContent = diff > 60 ? '⚡ Отпустите для обновления' : '↓ Потяните для обновления';
+        }
+      }, { passive: true });
+
+      v.addEventListener('touchend', async () => {
+        if (!isPulling) return;
+        isPulling = false;
+        if (ptrBox.classList.contains('pulling')) {
+          ptrBox.classList.add('refreshing');
+          const lbl = ptrBox.querySelector('.ptr-label');
+          if (lbl) lbl.textContent = 'Обновление...';
+          haptic('medium');
+          try {
+            await Promise.allSettled([loadFeed(), loadState(), loadVaultOverview()]);
+            showToast('✓ Данные обновлены', '⚡');
+          } catch (_) {}
+          setTimeout(() => {
+            ptrBox.classList.remove('pulling', 'refreshing');
+          }, 400);
+        }
+      });
     });
   }
 

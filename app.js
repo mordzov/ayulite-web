@@ -1019,18 +1019,52 @@
       });
     }
 
-    // 6. Duplicate detection (Feature 16)
+    // 6. Duplicate detection (Feature 16) — строго реальные дубликаты, никаких ложных срабатываний на заглушки
+    function getDuplicateKey(it) {
+      if (!it) return null;
+      const mType = (it.media_type || '').toLowerCase();
+      const rawText = (it.transcription || it.new_text || it.text || it.old_text || '').trim();
+      const isPlaceholder = !rawText || rawText.startsWith('[') || rawText === 'Сообщение было удалено' || rawText.includes('перехвачено в Сейф') || rawText.includes('перехвачено в Vault');
+
+      // Голосовые сообщения: дубликат ТОЛЬКО если реальный распознанный текст полностью совпадает (от 6 символов)
+      if (mType === 'voice') {
+        if (isPlaceholder || rawText.length < 6) return null;
+        return `voice_transcript:${rawText.toLowerCase()}`;
+      }
+
+      // Фото, видео, документы: дубликат только при одинаковой реальной подписи или идентичном файле
+      if (mType === 'photo' || mType === 'video' || mType === 'document' || mType === 'video_note') {
+        if (!isPlaceholder && rawText.length >= 6) {
+          return `${mType}_caption:${rawText.toLowerCase()}`;
+        }
+        if (it.media_path) {
+          const fname = it.media_path.split(/[/\\]/).pop();
+          if (fname && !fname.startsWith('sub_') && fname.length > 5) {
+            return `${mType}_file:${fname.toLowerCase()}`;
+          }
+        }
+        return null;
+      }
+
+      // Обычные текстовые сообщения: дубликат только при совпадении текста (от 6 символов, без системных заглушек)
+      if (!isPlaceholder && rawText.length >= 6) {
+        return `text:${rawText.toLowerCase()}`;
+      }
+
+      return null;
+    }
+
     const textCounts = {};
     items.forEach(it => {
-      const key = (it.text || it.media_path || '').trim();
-      if (key && key.length > 4) {
+      const key = getDuplicateKey(it);
+      if (key) {
         textCounts[key] = (textCounts[key] || 0) + 1;
       }
     });
 
     if (state.showDuplicatesOnly) {
       items = items.filter(it => {
-        const key = (it.text || it.media_path || '').trim();
+        const key = getDuplicateKey(it);
         return key && textCounts[key] > 1;
       });
     }
@@ -1073,6 +1107,9 @@
       let badgeText = 'УДАЛЕНО';
       let contentHtml = '';
 
+      const mType = (it.media_type || '').toLowerCase();
+      const actualVoiceTranscript = it.transcription || (it.text && !it.text.startsWith('[') && !it.text.includes('перехвачено') ? it.text : '');
+
       if (it.type === 'edited') {
         badgeClass = 'edited';
         badgeText = 'ПРАВКА';
@@ -1096,20 +1133,24 @@
         contentHtml = `<div class="feed-quote" style="border-left-color: var(--sky); color: var(--sky);">🔥 Одноразовое медиа перехвачено до уничтожения таймером</div>`;
       } else {
         let txt = it.text;
-        if (!txt) {
-          const m = (it.media_type || '').toLowerCase();
-          if (m === 'photo') txt = '📷 [Фотография перехвачена в Vault]';
-          else if (m === 'voice') txt = '🎙 [Голосовое сообщение]';
-          else if (m === 'video') txt = '🎥 [Видеозапись]';
-          else if (m === 'video_note') txt = '🔵 [Видеосообщение (кружок)]';
-          else if (m === 'document') txt = '📄 [Документ / Файл]';
+        if (mType === 'voice') {
+          if (actualVoiceTranscript) {
+            txt = `🎙 «${actualVoiceTranscript}»`;
+          } else {
+            txt = '🎙 [Голосовое сообщение]';
+          }
+        } else if (!txt) {
+          if (mType === 'photo') txt = '📷 [Фотография перехвачена в Vault]';
+          else if (mType === 'video') txt = '🎥 [Видеозапись]';
+          else if (mType === 'video_note') txt = '🔵 [Видеосообщение (кружок)]';
+          else if (mType === 'document') txt = '📄 [Документ / Файл]';
           else txt = 'Сообщение было удалено собеседником';
         }
         contentHtml = `<div class="feed-quote">${escapeHtml(txt)}</div>`;
       }
 
       // Check duplicate
-      const dupKey = (it.text || it.media_path || '').trim();
+      const dupKey = getDuplicateKey(it);
       const isDup = dupKey && textCounts[dupKey] > 1;
       const dupBadge = isDup ? `<span class="duplicate-badge">⚠️ Дубликат (x${textCounts[dupKey]})</span>` : '';
 
@@ -1119,7 +1160,7 @@
       const isFav = state.favouriteContacts.some(x => x.uid === it.sender_id);
 
       // Safe encoded copy text
-      const rawToCopy = it.new_text || it.text || it.old_text || '';
+      const rawToCopy = actualVoiceTranscript || it.new_text || it.text || it.old_text || '';
       const safeEncodedCopy = encodeURIComponent(rawToCopy);
 
       // Media Rendering
@@ -1129,7 +1170,6 @@
         let rawMUrl = it.media_url || `/api/vault/media/${it.session_id}/${it.msg_id}`;
         let mUrl = rawMUrl.startsWith('http') ? rawMUrl : `${base}${rawMUrl.startsWith('/') ? '' : '/'}${rawMUrl}`;
         const fullMediaUrl = `${mUrl}${mUrl.includes('?') ? '&' : '?'}auth=${encodeURIComponent(state.authToken || '')}&user_id=${state.userId}`;
-        const mType = (it.media_type || '').toLowerCase();
 
         if (mType === 'photo' || it.type === 'ttl' || mType === 'sticker') {
           // Photo Lightbox with resilient placeholder fallback
@@ -1149,6 +1189,8 @@
           `;
         } else if (mType === 'video_note') {
           // Circular Video Note Player (Feature 7)
+          const vNoteTranscript = it.transcription || (it.text && !it.text.startsWith('[') ? it.text : '');
+          const vNoteDisplay = vNoteTranscript ? escapeHtml(vNoteTranscript) : '<span style="color: var(--text-muted); font-style: italic;">Расшифровка Silent Ear формируется...</span>';
           mediaHtml = `
             <div class="video-note-box">
               <span class="video-note-badge">🔵 КРУЖОК</span>
@@ -1157,7 +1199,7 @@
             <!-- Transcript for video note (Feature 10) -->
             <div class="transcript-wrap">
               <button type="button" class="transcript-toggle-btn" onclick="window.toggleTranscript(this)">📝 Расшифровка (Silent Ear)</button>
-              <div class="transcript-body" style="display: none;">${escapeHtml(it.text || 'Кружок перехвачен и расшифрован')}</div>
+              <div class="transcript-body" style="display: none; font-weight: 500; color: var(--text-primary); background: rgba(99, 102, 241, 0.08); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(99, 102, 241, 0.2); margin-top: 6px;">${vNoteDisplay}</div>
             </div>
           `;
         } else if (mType === 'video') {
@@ -1173,11 +1215,30 @@
             return `<div class="voice-bar" style="height: ${Math.round(h)}px;"></div>`;
           }).join('');
 
+          const transcriptDisplay = actualVoiceTranscript 
+            ? escapeHtml(actualVoiceTranscript) 
+            : '<span style="color: var(--text-muted); font-style: italic;">Расшифровка Silent Ear формируется...</span>';
+
           mediaHtml = `
             <div class="custom-voice-player">
               <button type="button" class="voice-play-btn" data-audio-url="${fullMediaUrl}">▶</button>
               <div class="voice-waveform-wrap">
                 <div class="voice-waveform-bars">${barsHtml}</div>
+                <div class="voice-time-row">
+                  <span class="voice-curr-time">0:00</span>
+                  <span class="voice-total-time">0:00</span>
+                </div>
+              </div>
+              <button type="button" class="voice-speed-btn">1x</button>
+            </div>
+            <!-- Voice Transcript Accordion (Feature 10) -->
+            <div class="transcript-wrap">
+              <button type="button" class="transcript-toggle-btn" onclick="window.toggleTranscript(this)">📝 Расшифровка (Silent Ear)</button>
+              <div class="transcript-body" style="display: none; font-weight: 500; color: var(--text-primary); background: rgba(99, 102, 241, 0.08); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(99, 102, 241, 0.2); margin-top: 6px;">${transcriptDisplay}</div>
+            </div>
+          `;
+        }
+      }
                 <div class="voice-time-row">
                   <span class="voice-curr-time">0:00</span>
                   <span class="voice-total-time">0:00</span>

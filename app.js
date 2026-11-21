@@ -1239,21 +1239,6 @@
           `;
         }
       }
-                <div class="voice-time-row">
-                  <span class="voice-curr-time">0:00</span>
-                  <span class="voice-total-time">0:00</span>
-                </div>
-              </div>
-              <button type="button" class="voice-speed-btn">1x</button>
-            </div>
-            <!-- Voice Transcript Accordion (Feature 10) -->
-            <div class="transcript-wrap">
-              <button type="button" class="transcript-toggle-btn" onclick="window.toggleTranscript(this)">📝 Расшифровка (Silent Ear)</button>
-              <div class="transcript-body" style="display: none;">${escapeHtml(it.text || 'Голосовое сообщение распознано Silent Ear движком')}</div>
-            </div>
-          `;
-        }
-      }
 
       htmlOutput += `
         <article class="feed-item" data-cid="${it.chat_id || 0}">

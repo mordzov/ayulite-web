@@ -1095,7 +1095,16 @@
         badgeText = `1-VIEW TTL ${it.ttl ? `(${it.ttl}s)` : ''}`;
         contentHtml = `<div class="feed-quote" style="border-left-color: var(--sky); color: var(--sky);">🔥 Одноразовое медиа перехвачено до уничтожения таймером</div>`;
       } else {
-        const txt = it.text || (it.media_type ? `[${it.media_type.toUpperCase()} перехвачено в Сейф]` : 'Сообщение было удалено');
+        let txt = it.text;
+        if (!txt) {
+          const m = (it.media_type || '').toLowerCase();
+          if (m === 'photo') txt = '📷 [Фотография перехвачена в Vault]';
+          else if (m === 'voice') txt = '🎙 [Голосовое сообщение]';
+          else if (m === 'video') txt = '🎥 [Видеозапись]';
+          else if (m === 'video_note') txt = '🔵 [Видеосообщение (кружок)]';
+          else if (m === 'document') txt = '📄 [Документ / Файл]';
+          else txt = 'Сообщение было удалено собеседником';
+        }
         contentHtml = `<div class="feed-quote">${escapeHtml(txt)}</div>`;
       }
 
@@ -1109,8 +1118,9 @@
       const tagBadge = contactTag ? `<span class="contact-tag-badge tag-${contactTag.color}">${escapeHtml(contactTag.tag)}</span>` : '';
       const isFav = state.favouriteContacts.some(x => x.uid === it.sender_id);
 
-      // Copy text data (Feature 6 - Screenshot 3)
-      const rawCopyText = (it.new_text || it.text || it.old_text || '').replace(/'/g, "\\'");
+      // Safe encoded copy text
+      const rawToCopy = it.new_text || it.text || it.old_text || '';
+      const safeEncodedCopy = encodeURIComponent(rawToCopy);
 
       // Media Rendering
       let mediaHtml = '';
@@ -1122,21 +1132,30 @@
         const mType = (it.media_type || '').toLowerCase();
 
         if (mType === 'photo' || it.type === 'ttl' || mType === 'sticker') {
-          // Photo Lightbox (Feature 8)
+          // Photo Lightbox with resilient placeholder fallback
           mediaHtml = `
             <div class="feed-media-wrap" style="margin: 8px 0; max-width: 100%;">
-              <img src="${fullMediaUrl}" class="feed-media-img" onclick="event.stopPropagation(); window.openMediaLightbox('${fullMediaUrl}', '${escapeHtml(it.sender_name || '')}', '${escapeHtml(it.time || '')}', '${escapeHtml(it.text || '')}')" loading="lazy" alt="Media" style="max-width: 100%; max-height: 260px; border-radius: 8px; border: 1px solid var(--border-subtle); object-fit: cover; cursor: pointer; display: block;" onerror="this.parentElement.style.display='none'">
+              <img src="${fullMediaUrl}" class="feed-media-img" data-lb-url="${fullMediaUrl}" loading="lazy" alt="Фото"
+                   style="max-width: 100%; max-height: 280px; width: 100%; border-radius: 8px; border: 1px solid var(--border-subtle); object-fit: cover; cursor: pointer; display: block;"
+                   onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
+              <div class="feed-media-placeholder" style="display: none; padding: 10px 14px; background: rgba(99, 102, 241, 0.08); border: 1px dashed rgba(99, 102, 241, 0.3); border-radius: 8px; align-items: center; gap: 10px; font-size: 13px; color: var(--text-primary);">
+                <span style="font-size: 22px;">🖼</span>
+                <div>
+                  <div style="font-weight: 600;">Перехваченное фото</div>
+                  <div style="font-size: 11px; color: var(--text-secondary);">Медиафайл зафиксирован в Vault (кэш на устройстве)</div>
+                </div>
+              </div>
             </div>
           `;
         } else if (mType === 'video_note') {
           // Circular Video Note Player (Feature 7)
           mediaHtml = `
-            <div class="video-note-box" onclick="event.stopPropagation(); window.toggleVideoNote(this)">
+            <div class="video-note-box">
               <span class="video-note-badge">🔵 КРУЖОК</span>
               <video src="${fullMediaUrl}" class="video-note-elem" loop playsinline preload="metadata"></video>
             </div>
             <!-- Transcript for video note (Feature 10) -->
-            <div class="transcript-wrap" onclick="event.stopPropagation()">
+            <div class="transcript-wrap">
               <button type="button" class="transcript-toggle-btn" onclick="window.toggleTranscript(this)">📝 Расшифровка (Silent Ear)</button>
               <div class="transcript-body" style="display: none;">${escapeHtml(it.text || 'Кружок перехвачен и расшифрован')}</div>
             </div>
@@ -1144,7 +1163,7 @@
         } else if (mType === 'video') {
           mediaHtml = `
             <div class="feed-media-wrap" style="margin: 8px 0; max-width: 100%;">
-              <video src="${fullMediaUrl}" controls class="feed-media-video" preload="metadata" style="max-width: 100%; max-height: 260px; border-radius: 8px; background: #000;" onclick="event.stopPropagation()"></video>
+              <video src="${fullMediaUrl}" controls class="feed-media-video" preload="metadata" style="max-width: 100%; max-height: 260px; border-radius: 8px; background: #000;"></video>
             </div>
           `;
         } else if (mType === 'voice') {
@@ -1155,19 +1174,19 @@
           }).join('');
 
           mediaHtml = `
-            <div class="custom-voice-player" onclick="event.stopPropagation()">
-              <button type="button" class="voice-play-btn" onclick="window.toggleVoicePlayback(this, '${fullMediaUrl}')">▶</button>
-              <div class="voice-waveform-wrap" onclick="window.seekVoicePlayback(event, this)">
+            <div class="custom-voice-player">
+              <button type="button" class="voice-play-btn" data-audio-url="${fullMediaUrl}">▶</button>
+              <div class="voice-waveform-wrap">
                 <div class="voice-waveform-bars">${barsHtml}</div>
                 <div class="voice-time-row">
                   <span class="voice-curr-time">0:00</span>
-                  <span class="voice-total-time">0:14</span>
+                  <span class="voice-total-time">0:00</span>
                 </div>
               </div>
-              <button type="button" class="voice-speed-btn" onclick="window.toggleVoiceSpeed(this)">1x</button>
+              <button type="button" class="voice-speed-btn">1x</button>
             </div>
             <!-- Voice Transcript Accordion (Feature 10) -->
-            <div class="transcript-wrap" onclick="event.stopPropagation()">
+            <div class="transcript-wrap">
               <button type="button" class="transcript-toggle-btn" onclick="window.toggleTranscript(this)">📝 Расшифровка (Silent Ear)</button>
               <div class="transcript-body" style="display: none;">${escapeHtml(it.text || 'Голосовое сообщение распознано Silent Ear движком')}</div>
             </div>
@@ -1183,8 +1202,8 @@
               <span class="sender-name">${escapeHtml(it.sender_name || 'Собеседник')}</span>
               ${tagBadge}
               ${dupBadge}
-              <button type="button" class="btn-assign-tag" onclick="event.stopPropagation(); window.openTagModal(${it.sender_id || 0}, '${escapeHtml(it.sender_name || '')}')" title="Назначить тег">🏷</button>
-              <button type="button" class="btn-assign-tag" onclick="event.stopPropagation(); window.toggleFavContact(${it.sender_id || 0}, '${escapeHtml(it.sender_name || '')}')" title="Избранный контакт">${isFav ? '★' : '☆'}</button>
+              <button type="button" class="btn-assign-tag btn-assign-tag-action" data-uid="${it.sender_id || 0}" data-name="${encodeURIComponent(it.sender_name || '')}" title="Назначить тег">🏷</button>
+              <button type="button" class="btn-assign-tag btn-fav-contact-action" data-uid="${it.sender_id || 0}" data-name="${encodeURIComponent(it.sender_name || '')}" title="Избранный контакт">${isFav ? '★' : '☆'}</button>
             </div>
             <span class="type-tag ${badgeClass}">${badgeText}</span>
           </div>
@@ -1194,7 +1213,7 @@
             <span style="font-weight: 500; color: var(--text-secondary);">${escapeHtml(it.chat_title || 'Диалог')}</span>
             <div style="display: flex; align-items: center; gap: 8px;">
               <!-- Copy Text Button (Feature 6 - Screenshot 3) -->
-              <button type="button" class="btn-copy-card" onclick="event.stopPropagation(); window.copyCardText('${rawCopyText}')" title="Скопировать текст перехвата">📋 Скопировать</button>
+              <button type="button" class="btn-copy-card" data-copy="${safeEncodedCopy}" title="Скопировать текст перехвата">📋 Скопировать</button>
               <span>${escapeHtml(it.time || '')}</span>
             </div>
           </div>
@@ -1204,17 +1223,106 @@
 
     list.innerHTML = htmlOutput;
 
-    // Clicking feed card switches to Vault view for that chat
+    // Clean Event Delegation on feedList (no event collisions, no accidental tab switches)
     list.querySelectorAll('.feed-item').forEach(card => {
-      card.addEventListener('click', () => {
+      card.addEventListener('click', (e) => {
+        // If clicked on any interactive element or button, do NOT switch to Vault view
+        if (e.target.closest('button, a, input, select, .custom-voice-player, .video-note-box, .feed-media-wrap, .transcript-wrap, .btn-assign-tag, .btn-copy-card, .voice-play-btn, .voice-speed-btn, .voice-waveform-wrap, .contact-tag-badge')) {
+          return;
+        }
         const cid = parseInt(card.dataset.cid, 10);
         if (cid) {
           haptic('light');
           switchTab('vault');
-          openChatMessages(cid, card.querySelector('.feed-footer span').textContent);
+          const title = card.querySelector('.feed-footer span')?.textContent || `Чат ${cid}`;
+          openChatMessages(cid, title);
         }
       });
     });
+
+    // Delegated actions on the list
+    list.onclick = (e) => {
+      // Copy Card Text Button
+      const copyBtn = e.target.closest('.btn-copy-card');
+      if (copyBtn) {
+        e.stopPropagation();
+        e.preventDefault();
+        const raw = copyBtn.dataset.copy ? decodeURIComponent(copyBtn.dataset.copy) : '';
+        window.copyCardText(raw);
+        return;
+      }
+
+      // Voice Play/Pause Button
+      const playBtn = e.target.closest('.voice-play-btn');
+      if (playBtn) {
+        e.stopPropagation();
+        e.preventDefault();
+        window.toggleVoicePlayback(playBtn);
+        return;
+      }
+
+      // Voice Speed Button
+      const speedBtn = e.target.closest('.voice-speed-btn');
+      if (speedBtn) {
+        e.stopPropagation();
+        e.preventDefault();
+        window.toggleVoiceSpeed(speedBtn);
+        return;
+      }
+
+      // Voice Waveform Seek
+      const waveWrap = e.target.closest('.voice-waveform-wrap');
+      if (waveWrap) {
+        e.stopPropagation();
+        e.preventDefault();
+        window.seekVoicePlayback(e, waveWrap);
+        return;
+      }
+
+      // Video Note Toggle
+      const vNote = e.target.closest('.video-note-box');
+      if (vNote) {
+        e.stopPropagation();
+        e.preventDefault();
+        window.toggleVideoNote(vNote);
+        return;
+      }
+
+      // Photo Lightbox
+      const img = e.target.closest('.feed-media-img');
+      if (img && img.dataset.lbUrl) {
+        e.stopPropagation();
+        e.preventDefault();
+        const card = img.closest('.feed-item');
+        const sName = card?.querySelector('.sender-name')?.textContent || 'Собеседник';
+        const sTime = card?.querySelector('.feed-footer span:last-child')?.textContent || '';
+        const quote = card?.querySelector('.feed-quote')?.textContent || '';
+        window.openMediaLightbox(img.dataset.lbUrl, sName, sTime, quote);
+        return;
+      }
+
+      // Tag Button
+      const tagBtn = e.target.closest('.btn-assign-tag-action');
+      if (tagBtn) {
+        e.stopPropagation();
+        e.preventDefault();
+        const uid = parseInt(tagBtn.dataset.uid, 10);
+        const name = tagBtn.dataset.name ? decodeURIComponent(tagBtn.dataset.name) : '';
+        window.openTagModal(uid, name);
+        return;
+      }
+
+      // Favorite Contact Button
+      const favBtn = e.target.closest('.btn-fav-contact-action');
+      if (favBtn) {
+        e.stopPropagation();
+        e.preventDefault();
+        const uid = parseInt(favBtn.dataset.uid, 10);
+        const name = favBtn.dataset.name ? decodeURIComponent(favBtn.dataset.name) : '';
+        window.toggleFavContact(uid, name);
+        return;
+      }
+    };
   }
 
   // Load Initial State & Live Counters (with auto-retry)
@@ -1611,48 +1719,98 @@
   // Wave 2 Helpers: Audio, Video Notes, Lightbox, Copy, Tags, Pull-to-refresh
   // ==========================================================================
 
-  // Feature 6: In-feed Audio Waveform Player
+  // Feature 6: In-feed Audio Waveform Player with Bulletproof Cross-Platform Support
   window.toggleVoicePlayback = function(btn, audioUrl) {
+    const url = audioUrl || btn.dataset.audioUrl;
+    if (!url) return;
     let audio = btn._audio;
-    if (!audio) {
-      audio = new Audio(audioUrl);
-      btn._audio = audio;
-      const playerBox = btn.closest('.custom-voice-player');
-      const timeElem = playerBox.querySelector('.voice-curr-time');
-      const totalElem = playerBox.querySelector('.voice-total-time');
-      const bars = playerBox.querySelectorAll('.voice-bar');
+    const playerBox = btn.closest('.custom-voice-player');
+    const timeElem = playerBox ? playerBox.querySelector('.voice-curr-time') : null;
+    const totalElem = playerBox ? playerBox.querySelector('.voice-total-time') : null;
+    const bars = playerBox ? playerBox.querySelectorAll('.voice-bar') : [];
 
+    if (!audio) {
+      audio = new Audio();
+      audio.crossOrigin = 'anonymous';
+      audio.preload = 'metadata';
+      audio.src = url;
+      btn._audio = audio;
+
+      // Realtime ticking seconds and animated waveform
       audio.addEventListener('timeupdate', () => {
-        if (!audio.duration) return;
-        const prog = audio.currentTime / audio.duration;
-        const playedCount = Math.floor(prog * bars.length);
-        bars.forEach((b, idx) => {
-          if (idx <= playedCount) b.classList.add('played');
-          else b.classList.remove('played');
-        });
-        const mins = Math.floor(audio.currentTime / 60);
-        const secs = Math.floor(audio.currentTime % 60);
-        timeElem.textContent = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        const cur = audio.currentTime || 0;
+        const dur = audio.duration;
+        const curM = Math.floor(cur / 60);
+        const curS = Math.floor(cur % 60);
+        if (timeElem) timeElem.textContent = `${curM}:${curS < 10 ? '0' : ''}${curS}`;
+
+        if (dur && !isNaN(dur) && isFinite(dur) && dur > 0) {
+          const totM = Math.floor(dur / 60);
+          const totS = Math.floor(dur % 60);
+          if (totalElem) totalElem.textContent = `${totM}:${totS < 10 ? '0' : ''}${totS}`;
+
+          const prog = Math.min(1, Math.max(0, cur / dur));
+          const playedCount = Math.floor(prog * bars.length);
+          bars.forEach((b, idx) => {
+            if (idx <= playedCount) b.classList.add('played');
+            else b.classList.remove('played');
+          });
+        }
       });
 
       audio.addEventListener('loadedmetadata', () => {
-        const mins = Math.floor(audio.duration / 60);
-        const secs = Math.floor(audio.duration % 60);
-        totalElem.textContent = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        const dur = audio.duration;
+        if (dur && !isNaN(dur) && isFinite(dur)) {
+          const mins = Math.floor(dur / 60);
+          const secs = Math.floor(dur % 60);
+          if (totalElem) totalElem.textContent = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+      });
+
+      audio.addEventListener('play', () => {
+        btn.textContent = '⏸';
+      });
+
+      audio.addEventListener('pause', () => {
+        btn.textContent = '▶';
       });
 
       audio.addEventListener('ended', () => {
         btn.textContent = '▶';
         bars.forEach(b => b.classList.remove('played'));
-        timeElem.textContent = '0:00';
+        if (timeElem) timeElem.textContent = '0:00';
+      });
+
+      audio.addEventListener('error', (e) => {
+        console.warn('Audio playback error:', e);
+        btn.textContent = '⚠️';
+        btn.title = 'Не удалось воспроизвести аудиофайл';
+        showToast('Аудиофайл не найден или не поддерживается', '⚠️', true);
+        haptic('error');
       });
     }
 
     if (audio.paused) {
-      document.querySelectorAll('audio, video').forEach(el => { if (el !== audio) el.pause(); });
-      audio.play().catch(() => {});
-      btn.textContent = '⏸';
-      haptic('light');
+      // Pause all other media
+      document.querySelectorAll('audio, video').forEach(el => {
+        if (el !== audio) el.pause();
+      });
+      document.querySelectorAll('.voice-play-btn').forEach(b => {
+        if (b !== btn) b.textContent = '▶';
+      });
+
+      btn.textContent = '⏳';
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.then(() => {
+          btn.textContent = '⏸';
+          haptic('light');
+        }).catch(err => {
+          console.warn('Playback error:', err);
+          btn.textContent = '⚠️';
+          showToast('Ошибка воспроизведения аудио', '❌', true);
+        });
+      }
     } else {
       audio.pause();
       btn.textContent = '▶';

@@ -392,15 +392,89 @@
     }
   }
 
-  // Fakeshot Studio iOS 18 Modal & Controller
+  // Fakeshot Studio Pro iOS 18 Modal & Controller
   function setupFakeshotStudio() {
     const modal = document.getElementById('fakeshotModal');
     const btnOpen = document.getElementById('btnOpenFakeshotModal');
     const btnClose = document.getElementById('btnCloseFakeshot');
     const btnGen = document.getElementById('btnGenerateFakeshot');
+    const btnAddMsg = document.getElementById('btnAddFakeMsg');
+    const msgsContainer = document.getElementById('fakeMessagesContainer');
     const resultWrap = document.getElementById('fakeshotResultWrap');
     const previewImg = document.getElementById('fakeshotPreviewImg');
     const downloadA = document.getElementById('btnDownloadFakeshot');
+
+    let dialogueMessages = [
+      { text: 'Привет, всё готово к запуску?', is_out: false, time: '11:07', is_deleted: false },
+      { text: 'Да, все тесты пройдены, запускаем.', is_out: true, time: '11:08', is_deleted: false }
+    ];
+
+    function renderDialogueInputs() {
+      if (!msgsContainer) return;
+      msgsContainer.innerHTML = dialogueMessages.map((m, idx) => `
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 8px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <select class="fake-msg-sender search-input" data-idx="${idx}" style="width: auto; padding: 2px 6px; font-size: 11px; background: var(--bg-card);">
+              <option value="in" ${!m.is_out ? 'selected' : ''}>📥 Собеседник (Входящее)</option>
+              <option value="out" ${m.is_out ? 'selected' : ''}>📤 Я (Исходящее)</option>
+            </select>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <label style="font-size: 11px; display: flex; align-items: center; gap: 3px; cursor: pointer; color: var(--text-muted);">
+                <input type="checkbox" class="fake-msg-del" data-idx="${idx}" ${m.is_deleted ? 'checked' : ''}> 🗑
+              </label>
+              <button type="button" class="btn-remove-fake-msg" data-idx="${idx}" style="background: none; border: none; color: var(--rose); cursor: pointer; font-size: 14px; padding: 0 4px;">✕</button>
+            </div>
+          </div>
+          <textarea class="fake-msg-text search-input" data-idx="${idx}" style="width: 100%; height: 46px; resize: none; background: var(--bg-card); padding: 4px 8px; font-size: 12px; margin-bottom: 4px;" placeholder="Текст сообщения...">${escapeHtml(m.text)}</textarea>
+          <div style="display: flex; justify-content: flex-end; align-items: center; gap: 6px;">
+            <span style="font-size: 10.5px; color: var(--text-muted);">Время:</span>
+            <input type="text" class="fake-msg-time search-input" data-idx="${idx}" value="${escapeHtml(m.time)}" style="width: 65px; padding: 2px 6px; font-size: 11px; text-align: center; background: var(--bg-card);">
+          </div>
+        </div>
+      `).join('');
+
+      // Wire remove buttons
+      msgsContainer.querySelectorAll('.btn-remove-fake-msg').forEach(b => {
+        b.addEventListener('click', () => {
+          const idx = parseInt(b.dataset.idx, 10);
+          dialogueMessages.splice(idx, 1);
+          renderDialogueInputs();
+        });
+      });
+
+      // Wire inputs
+      msgsContainer.querySelectorAll('.fake-msg-sender').forEach(s => {
+        s.addEventListener('change', () => {
+          dialogueMessages[parseInt(s.dataset.idx, 10)].is_out = s.value === 'out';
+        });
+      });
+      msgsContainer.querySelectorAll('.fake-msg-text').forEach(t => {
+        t.addEventListener('input', () => {
+          dialogueMessages[parseInt(t.dataset.idx, 10)].text = t.value;
+        });
+      });
+      msgsContainer.querySelectorAll('.fake-msg-time').forEach(tm => {
+        tm.addEventListener('input', () => {
+          dialogueMessages[parseInt(tm.dataset.idx, 10)].time = tm.value;
+        });
+      });
+      msgsContainer.querySelectorAll('.fake-msg-del').forEach(d => {
+        d.addEventListener('change', () => {
+          dialogueMessages[parseInt(d.dataset.idx, 10)].is_deleted = d.checked;
+        });
+      });
+    }
+
+    if (btnAddMsg) {
+      btnAddMsg.addEventListener('click', () => {
+        haptic('light');
+        const lastTime = dialogueMessages.length ? dialogueMessages[dialogueMessages.length - 1].time : '11:08';
+        dialogueMessages.push({ text: 'Новое сообщение', is_out: true, time: lastTime, is_deleted: false });
+        renderDialogueInputs();
+      });
+    }
+
+    renderDialogueInputs();
 
     if (btnOpen && modal) {
       btnOpen.addEventListener('click', () => {
@@ -417,11 +491,16 @@
 
     if (btnGen) {
       btnGen.addEventListener('click', async () => {
-        const title = document.getElementById('fakeTitle').value.trim() || 'Павел Дуров';
-        const subtitle = document.getElementById('fakeSubtitle').value.trim() || 'был(а) недавно';
-        const text = document.getElementById('fakeMessageText').value.trim() || 'Привет';
-        const timeHeader = document.getElementById('fakeTime').value.trim() || '14:28';
-        const batteryPct = parseInt(document.getElementById('fakeBattery').value, 10) || 86;
+        const title = document.getElementById('fakeTitle')?.value.trim() || 'Павел Дуров';
+        const subtitle = document.getElementById('fakeSubtitle')?.value.trim() || 'был(а) недавно';
+        const timeHeader = document.getElementById('fakeTime')?.value.trim() || '11:08';
+        const batteryPct = parseInt(document.getElementById('fakeBattery')?.value, 10) || 86;
+        const carrier = document.getElementById('fakeCarrier')?.value || '5G';
+        const theme = document.getElementById('fakeTheme')?.value || 'dark_blue';
+        const isVerified = document.getElementById('fakeVerified')?.checked ?? true;
+        const dynamicIsland = document.getElementById('fakeDynamicIsland')?.checked ?? true;
+        const autoHeight = document.getElementById('fakeAutoHeight')?.checked ?? true;
+        const sendToSaved = document.getElementById('fakeSendToSaved')?.checked ?? false;
 
         haptic('medium');
         btnGen.disabled = true;
@@ -435,9 +514,19 @@
               subtitle: subtitle,
               time_header: timeHeader,
               battery_pct: batteryPct,
-              messages: [
-                { sender: title, text: text, is_out: false, time: timeHeader }
-              ],
+              carrier: carrier,
+              theme: theme,
+              is_verified: isVerified,
+              dynamic_island: dynamicIsland,
+              auto_height: autoHeight,
+              send_to_saved: sendToSaved,
+              messages: dialogueMessages.map(m => ({
+                sender: m.is_out ? 'me' : title,
+                text: m.text,
+                is_out: m.is_out,
+                time: m.time,
+                is_deleted: m.is_deleted
+              })),
               user_id: state.userId
             })
           });
@@ -447,12 +536,15 @@
             downloadA.href = res.image_data;
             resultWrap.style.display = 'block';
             showToast('Скриншот iOS 18 сгенерирован!', '📸');
+            if (sendToSaved) {
+              showToast('Отправлено в Избранное!', '✈️');
+            }
           }
         } catch (e) {
           showToast(`Ошибка генератора: ${e.message}`, '❌', true);
         } finally {
           btnGen.disabled = false;
-          btnGen.textContent = 'Сгенерировать iOS 18 скриншот';
+          btnGen.textContent = '📸 Сгенерировать iOS 18 скриншот';
         }
       });
     }
@@ -634,6 +726,33 @@
         contentHtml = `<div class="feed-quote">${escapeHtml(txt)}</div>`;
       }
 
+      let mediaHtml = '';
+      if (it.media_url || (it.session_id && it.msg_id && it.media_type)) {
+        const mUrl = it.media_url || `/api/vault/media/${it.session_id}/${it.msg_id}`;
+        const fullMediaUrl = `${mUrl}${mUrl.includes('?') ? '&' : '?'}auth=${encodeURIComponent(state.authToken || '')}&user_id=${state.userId}`;
+        const mType = (it.media_type || '').toLowerCase();
+
+        if (mType === 'photo' || it.type === 'ttl' || mType === 'sticker') {
+          mediaHtml = `
+            <div class="feed-media-wrap" style="margin: 8px 0; max-width: 100%;">
+              <img src="${fullMediaUrl}" class="feed-media-img" onclick="event.stopPropagation(); window.openMediaLightbox('${fullMediaUrl}')" loading="lazy" alt="Media" style="max-width: 100%; max-height: 260px; border-radius: 8px; border: 1px solid var(--border-subtle); object-fit: cover; cursor: pointer; display: block;" onerror="this.parentElement.style.display='none'">
+            </div>
+          `;
+        } else if (mType === 'video' || mType === 'video_note') {
+          mediaHtml = `
+            <div class="feed-media-wrap" style="margin: 8px 0; max-width: 100%;">
+              <video src="${fullMediaUrl}" controls class="feed-media-video" preload="metadata" style="max-width: 100%; max-height: 260px; border-radius: 8px; background: #000;" onclick="event.stopPropagation()"></video>
+            </div>
+          `;
+        } else if (mType === 'voice') {
+          mediaHtml = `
+            <div class="feed-media-wrap" style="margin: 8px 0;">
+              <audio src="${fullMediaUrl}" controls class="feed-media-audio" preload="metadata" style="width: 100%; height: 38px;" onclick="event.stopPropagation()"></audio>
+            </div>
+          `;
+        }
+      }
+
       return `
         <article class="feed-item" data-cid="${it.chat_id || 0}">
           <div class="feed-item-head">
@@ -644,6 +763,7 @@
             <span class="type-tag ${badgeClass}">${badgeText}</span>
           </div>
           ${contentHtml}
+          ${mediaHtml}
           <div class="feed-footer">
             <span style="font-weight: 500; color: var(--text-secondary);">${escapeHtml(it.chat_title || 'Диалог')}</span>
             <span>${escapeHtml(it.time || '')}</span>
@@ -678,13 +798,26 @@
         const acc = data.account;
         const opName = document.getElementById('opName');
         const opUser = document.getElementById('opUsername');
-        const opAv = document.getElementById('opAvatar');
+        const opAvInit = document.getElementById('opAvatarInitial');
+        const opAvImg = document.getElementById('opAvatarImg');
         const opSafe = document.getElementById('opSafeChannel');
 
         if (opName && acc.name) opName.textContent = acc.name;
         if (opUser && acc.username) opUser.textContent = `@${acc.username}`;
-        if (opAv && acc.name) opAv.textContent = acc.name.charAt(0).toUpperCase();
+        if (opAvInit && acc.name) opAvInit.textContent = acc.name.replace(/^[.@_]+/, '').charAt(0).toUpperCase() || 'K';
         if (opSafe && acc.log_channel_id) opSafe.textContent = `AyuVault (${acc.log_channel_id})`;
+
+        if (opAvImg && acc.avatar_url) {
+          opAvImg.src = acc.avatar_url;
+          opAvImg.onload = () => {
+            opAvImg.style.display = 'block';
+            if (opAvInit) opAvInit.style.display = 'none';
+          };
+          opAvImg.onerror = () => {
+            opAvImg.style.display = 'none';
+            if (opAvInit) opAvInit.style.display = 'block';
+          };
+        }
       }
 
       // Update Metrics Counters
@@ -995,22 +1128,24 @@
         id: `del_${ev.msg_id}_${Date.now()}`,
         type: 'deleted',
         chat_id: ev.chat_id,
-        chat_title: `Чат ${ev.chat_id}`,
+        chat_title: ev.chat_title || `Чат ${ev.chat_id}`,
         sender_name: ev.sender_name || `ID ${ev.sender_id}`,
         time: ev.deleted_at || 'только что',
-        text: 'Сообщение было удалено собеседником'
+        text: ev.text || 'Сообщение было удалено собеседником',
+        media_type: ev.media_type,
+        media_url: ev.media_url
       });
       updateFilterCounters();
       renderFeed();
-      showToast(`Удаление в чате ${ev.chat_id}`, '🗑');
+      showToast(`Удаление: ${ev.sender_name || ev.chat_id}`, '🗑');
     } else if (ev.type === 'message_edited') {
       haptic('light');
       state.feedEvents.unshift({
         id: `edit_${ev.msg_id}_${Date.now()}`,
         type: 'edited',
         chat_id: ev.chat_id,
-        chat_title: `Чат ${ev.chat_id}`,
-        sender_name: 'Собеседник',
+        chat_title: ev.chat_title || `Чат ${ev.chat_id}`,
+        sender_name: ev.sender_name || 'Собеседник',
         time: ev.edited_at || 'только что',
         old_text: ev.old_text,
         new_text: ev.new_text
@@ -1033,7 +1168,34 @@
       updateFilterCounters();
       renderFeed();
       showToast(`Реакция: ${ev.old_reactions} ➔ ${ev.new_reactions}`, '⚡️');
+    } else if (ev.type === 'voip_call_blocked') {
+      haptic('heavy');
+      showToast(`Сброшен входящий вызов #${ev.call_id}`, '📵');
     }
+  }
+
+  // Fullscreen Media Lightbox Helper
+  window.openMediaLightbox = function(url) {
+    const modal = document.getElementById('mediaLightboxModal');
+    const img = document.getElementById('lightboxImg');
+    if (modal && img) {
+      img.src = url;
+      modal.style.display = 'flex';
+      haptic('light');
+    }
+  };
+
+  const btnCloseLb = document.getElementById('btnCloseLightbox');
+  const modalLb = document.getElementById('mediaLightboxModal');
+  if (btnCloseLb && modalLb) {
+    btnCloseLb.addEventListener('click', () => {
+      modalLb.style.display = 'none';
+    });
+    modalLb.addEventListener('click', (e) => {
+      if (e.target === modalLb) {
+        modalLb.style.display = 'none';
+      }
+    });
   }
 
   function escapeHtml(str) {

@@ -306,7 +306,10 @@
       <div class="operator-card">
         <div class="operator-badge-strip">
           <div style="display: flex; align-items: center; gap: 10px;">
-            <div class="operator-avatar" id="opAvatar">K</div>
+            <div class="operator-avatar" id="opAvatar" style="overflow: hidden; display: flex; align-items: center; justify-content: center; position: relative;">
+              <img id="opAvatarImg" src="" style="display:none; width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" alt="Avatar">
+              <span id="opAvatarInitial">K</span>
+            </div>
             <div>
               <div style="font-size: 16px; font-weight: 700; color: #fff;" id="opName">.koreye</div>
               <div style="font-size: 12px; color: var(--text-muted);" id="opUsername">@koreyskiynoob</div>
@@ -428,48 +431,102 @@
   </div>
 
   <!-- =========================================================================
-       MODAL: FAKESHOT STUDIO (IOS 18)
+       MODAL: FAKESHOT STUDIO PRO (IOS 18 TELEGRAM EDITION)
        ========================================================================= -->
   <div class="modal-overlay" id="fakeshotModal">
-    <div class="bottom-sheet" style="max-height: 85vh; overflow-y: auto;">
+    <div class="bottom-sheet" style="max-height: 88vh; overflow-y: auto;">
       <div class="sheet-handle"></div>
       <div class="sheet-header">
-        <span class="sheet-title">📸 iOS 18 Fakeshot Studio</span>
+        <span class="sheet-title">📸 iOS 18 Fakeshot Studio Pro</span>
         <button class="btn-close" id="btnCloseFakeshot">✕</button>
       </div>
-      
-      <div style="margin-bottom: 10px;">
-        <label style="font-size: 11.5px; color: var(--text-muted); display: block; margin-bottom: 4px;">Имя собеседника / Заголовок:</label>
-        <input type="text" id="fakeTitle" class="search-input" value="Павел Дуров" style="background: var(--bg-card);">
-      </div>
 
-      <div style="margin-bottom: 10px;">
-        <label style="font-size: 11.5px; color: var(--text-muted); display: block; margin-bottom: 4px;">Статус / Подзаголовок:</label>
-        <input type="text" id="fakeSubtitle" class="search-input" value="был(а) недавно" style="background: var(--bg-card);">
-      </div>
-
-      <div style="margin-bottom: 10px;">
-        <label style="font-size: 11.5px; color: var(--text-muted); display: block; margin-bottom: 4px;">Текст сообщения:</label>
-        <textarea id="fakeMessageText" class="search-input" style="height: 70px; resize: none; background: var(--bg-card); padding: 8px 10px;">Привет, всё готово к запуску.</textarea>
-      </div>
-
-      <div style="display: flex; gap: 8px; margin-bottom: 14px;">
-        <div style="flex: 1;">
-          <label style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px;">Время (ЧЧ:ММ):</label>
-          <input type="text" id="fakeTime" class="search-input" value="14:28" style="background: var(--bg-card); text-align: center;">
+      <!-- Собеседник и статус -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+        <div>
+          <label style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px;">Имя собеседника:</label>
+          <input type="text" id="fakeTitle" class="search-input" value="Павел Дуров" style="background: var(--bg-card);">
         </div>
-        <div style="flex: 1;">
-          <label style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px;">Батарея %:</label>
-          <input type="number" id="fakeBattery" class="search-input" value="86" min="1" max="100" style="background: var(--bg-card); text-align: center;">
+        <div>
+          <label style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px;">Статус в шапке:</label>
+          <input type="text" id="fakeSubtitle" class="search-input" value="в сети" style="background: var(--bg-card);">
         </div>
       </div>
 
-      <button class="btn-primary" id="btnGenerateFakeshot" style="margin-bottom: 12px;">Сгенерировать iOS 18 скриншот</button>
+      <!-- Опции верификации и статус бара -->
+      <div style="display: flex; gap: 12px; margin-bottom: 10px; font-size: 12px; flex-wrap: wrap;">
+        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: var(--text-primary);">
+          <input type="checkbox" id="fakeVerified" checked> <span>✓ Верифицирован</span>
+        </label>
+        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: var(--text-primary);">
+          <input type="checkbox" id="fakeDynamicIsland" checked> <span>Dynamic Island</span>
+        </label>
+        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: var(--text-primary);">
+          <input type="checkbox" id="fakeAutoHeight" checked> <span>Компактная высота</span>
+        </label>
+      </div>
+
+      <!-- Параметры устройства (Время, Батарея, Сеть, Тема) -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 6px; margin-bottom: 12px;">
+        <div>
+          <label style="font-size: 10.5px; color: var(--text-muted); display: block; margin-bottom: 3px;">Время:</label>
+          <input type="text" id="fakeTime" class="search-input" value="11:08" style="background: var(--bg-card); text-align: center; padding: 6px 4px;">
+        </div>
+        <div>
+          <label style="font-size: 10.5px; color: var(--text-muted); display: block; margin-bottom: 3px;">АКБ %:</label>
+          <input type="number" id="fakeBattery" class="search-input" value="86" min="1" max="100" style="background: var(--bg-card); text-align: center; padding: 6px 4px;">
+        </div>
+        <div>
+          <label style="font-size: 10.5px; color: var(--text-muted); display: block; margin-bottom: 3px;">Сеть:</label>
+          <select id="fakeCarrier" class="search-input" style="background: var(--bg-card); padding: 6px 4px; text-align: center;">
+            <option value="5G">5G</option>
+            <option value="LTE">LTE</option>
+            <option value="Wi-Fi">Wi-Fi</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size: 10.5px; color: var(--text-muted); display: block; margin-bottom: 3px;">Тема:</label>
+          <select id="fakeTheme" class="search-input" style="background: var(--bg-card); padding: 6px 4px; text-align: center;">
+            <option value="dark_blue">iOS Blue</option>
+            <option value="purple">AyuLite</option>
+            <option value="oled">Pure OLED</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Конструктор сообщений диалога -->
+      <div style="margin-bottom: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <span style="font-size: 12px; font-weight: 600; color: var(--text-primary);">Сообщения диалога:</span>
+          <button type="button" class="btn-secondary" id="btnAddFakeMsg" style="padding: 4px 8px; font-size: 11px;">➕ Добавить реплику</button>
+        </div>
+        <div id="fakeMessagesContainer" style="display: flex; flex-direction: column; gap: 8px; max-height: 240px; overflow-y: auto; padding-right: 4px;">
+          <!-- Карточки реплик генерируются через JS -->
+        </div>
+      </div>
+
+      <div style="margin-bottom: 12px;">
+        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px; color: var(--text-primary);">
+          <input type="checkbox" id="fakeSendToSaved"> <span>✈️ Отправить оригинал в Избранное (Saved Messages)</span>
+        </label>
+      </div>
+
+      <button class="btn-primary" id="btnGenerateFakeshot" style="margin-bottom: 12px;">📸 Сгенерировать iOS 18 скриншот</button>
 
       <div id="fakeshotResultWrap" style="display: none; text-align: center; padding-top: 10px; border-top: 1px solid var(--border-subtle);">
-        <img id="fakeshotPreviewImg" style="width: 100%; border-radius: var(--radius-md); box-shadow: 0 4px 20px rgba(0,0,0,0.5); margin-bottom: 10px;" alt="Preview">
-        <a id="btnDownloadFakeshot" class="btn-secondary" style="display: inline-block; text-decoration: none;" download="fakeshot_ios18.png">⬇️ Скачать изображение</a>
+        <img id="fakeshotPreviewImg" style="width: 100%; max-height: 400px; object-fit: contain; border-radius: var(--radius-md); box-shadow: 0 4px 20px rgba(0,0,0,0.5); margin-bottom: 10px; cursor: pointer;" alt="Preview" onclick="window.openMediaLightbox(this.src)">
+        <a id="btnDownloadFakeshot" class="btn-secondary" style="display: inline-block; text-decoration: none;" download="fakeshot_ios18.png">⬇️ Скачать PNG оригинал</a>
       </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       MODAL: FULLSCREEN MEDIA LIGHTBOX
+       ========================================================================= -->
+  <div class="modal-overlay" id="mediaLightboxModal" style="display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.92); z-index: 9999;">
+    <div style="position: relative; max-width: 94vw; max-height: 94vh; text-align: center;">
+      <button class="btn-close" id="btnCloseLightbox" style="position: absolute; top: -40px; right: 0; font-size: 24px; color: #fff; background: none; border: none; cursor: pointer;">✕</button>
+      <img id="lightboxImg" src="" style="max-width: 90vw; max-height: 85vh; border-radius: 8px; box-shadow: 0 8px 30px rgba(0,0,0,0.8); object-fit: contain;" alt="Enlarged media">
     </div>
   </div>
 
@@ -479,6 +536,6 @@
     <span id="toastText">Событие выполнено</span>
   </div>
 
-  <script src="app.js?v=8.5"></script>
+  <script src="app.js?v=9.0"></script>
 </body>
 </html>

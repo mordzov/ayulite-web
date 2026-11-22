@@ -73,7 +73,14 @@
         <button class="pill-btn" data-filter="archived">📦 Архив <span class="pill-count" id="countFilterArchived">0</span></button>
       </div>
 
-      <!-- Sub-Filters: Media Type & Tool Buttons (Features 10, 11, 14, 15, 16) -->
+      <!-- Smart Folders Row (Feature 13) -->
+      <div class="smart-folders-bar" id="smartFoldersBar" style="display: none; padding: 6px 0; overflow-x: auto; gap: 6px; align-items: center;">
+        <span style="font-size: 11px; color: var(--text-muted); white-space: nowrap;">📁 Папки:</span>
+        <div id="smartFoldersList" style="display: flex; gap: 6px; align-items: center;"></div>
+        <button type="button" class="btn-secondary" id="btnAddSmartFolderDirect" style="padding: 2px 8px; font-size: 11px; white-space: nowrap; border-radius: 12px;">+ Папка</button>
+      </div>
+
+      <!-- Sub-Filters: Media Type & Tool Buttons (Features 10, 11, 13, 14, 15, 16) -->
       <div class="sub-filter-bar">
         <div class="media-type-chips">
           <button class="media-chip active" data-media="all">Все типы</button>
@@ -84,6 +91,7 @@
           <button class="media-chip" data-media="document">📄 Файлы</button>
         </div>
         <div class="feed-tool-btns">
+          <button class="tool-btn" id="btnOpenSmartFolders">📁 Папки</button>
           <button class="tool-btn" id="btnToggleDateGrouping">📅 По дням</button>
           <button class="tool-btn" id="btnToggleDateRange">🗓 Даты</button>
           <button class="tool-btn" id="btnFindDuplicates">🔍 Дубликаты</button>
@@ -631,6 +639,72 @@
       <div style="display: flex; gap: 6px;">
         <input type="text" id="inputCustomTag" class="search-input" placeholder="Свой тег..." style="flex: 1;">
         <button class="btn-primary" id="btnSaveCustomTag" style="padding: 6px 14px; font-size: 12px;">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       MODAL: SMART FOLDERS / AUTO-FILTERS (Feature 13)
+       ========================================================================= -->
+  <div class="modal-overlay" id="smartFolderModal" style="display: none;">
+    <div class="bottom-sheet" style="max-height: 80vh; overflow-y: auto;">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <span class="sheet-title">📁 Смарт-папка (Автофильтр)</span>
+        <button class="btn-close" id="btnCloseSmartFolder">✕</button>
+      </div>
+      <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">Создайте правило автофильтрации: папка сама наполняется нужными событиями.</div>
+      
+      <div style="margin-bottom: 12px;">
+        <label style="display: block; font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">Название папки:</label>
+        <input type="text" id="sfName" class="search-input" placeholder="Например: Удаленные от шефа" style="width: 100%;">
+      </div>
+
+      <div style="margin-bottom: 12px;">
+        <label style="display: block; font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">Тип событий:</label>
+        <select id="sfType" class="search-input" style="width: 100%; background: var(--bg-card); color: var(--text-primary);">
+          <option value="all">Все события</option>
+          <option value="deleted">Только удаленные</option>
+          <option value="edited">Только правки</option>
+          <option value="ttl">Только сгорающие TTL</option>
+          <option value="reactions">Только реакции</option>
+        </select>
+      </div>
+
+      <div style="margin-bottom: 12px;">
+        <label style="display: block; font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">Отправитель (@username или ID):</label>
+        <input type="text" id="sfSender" class="search-input" placeholder="Оставьте пустым для всех или укажите @username / ID" style="width: 100%;">
+      </div>
+
+      <div style="margin-bottom: 12px;">
+        <label style="display: block; font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">Период:</label>
+        <select id="sfPeriod" class="search-input" style="width: 100%; background: var(--bg-card); color: var(--text-primary);">
+          <option value="all">За всё время</option>
+          <option value="today">За сегодня</option>
+          <option value="week">За эту неделю (7 дней)</option>
+          <option value="month">За месяц (30 дней)</option>
+        </select>
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">Тип медиа:</label>
+        <select id="sfMedia" class="search-input" style="width: 100%; background: var(--bg-card); color: var(--text-primary);">
+          <option value="all">Любое (включая текст)</option>
+          <option value="photo">Только фото</option>
+          <option value="voice">Только голосовые</option>
+          <option value="video_note">Только кружки</option>
+          <option value="video">Только видео</option>
+          <option value="document">Только файлы</option>
+        </select>
+      </div>
+
+      <div style="display: flex; gap: 8px;">
+        <button class="btn-primary" id="btnSaveSmartFolder" style="flex: 1;">💾 Создать папку</button>
+      </div>
+
+      <div style="margin-top: 18px; border-top: 1px solid var(--border-subtle); padding-top: 12px;">
+        <div style="font-size: 12px; font-weight: 600; margin-bottom: 8px;">Существующие смарт-папки:</div>
+        <div id="smartFoldersManageList" style="display: flex; flex-direction: column; gap: 6px;"></div>
       </div>
     </div>
   </div>

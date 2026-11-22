@@ -27,6 +27,8 @@
     searchHistory: JSON.parse(localStorage.getItem('ayulite_search_history') || '[]'),
     contactTags: JSON.parse(localStorage.getItem('ayulite_contact_tags') || '{}'),
     favouriteContacts: JSON.parse(localStorage.getItem('ayulite_fav_contacts') || '[]'),
+    smartFolders: JSON.parse(localStorage.getItem('ayulite_smart_folders') || '[]'),
+    activeSmartFolderId: null,
     lightboxMediaList: [],
     lightboxCurrentIdx: 0,
     slideshowTimer: null,
@@ -486,6 +488,60 @@
         } else {
           showToast('Нет фото в текущей ленте для слайдшоу', '📷');
         }
+      });
+    }
+
+    // Smart Folders (Feature 13)
+    renderSmartFolders();
+    const sfModal = document.getElementById('smartFolderModal');
+    const btnOpenSF = document.getElementById('btnOpenSmartFolders');
+    const btnAddSFDirect = document.getElementById('btnAddSmartFolderDirect');
+    const btnCloseSF = document.getElementById('btnCloseSmartFolder');
+    const btnSaveSF = document.getElementById('btnSaveSmartFolder');
+
+    if (btnOpenSF && sfModal) {
+      btnOpenSF.addEventListener('click', () => {
+        sfModal.style.display = 'flex';
+        renderSmartFolders();
+        haptic('light');
+      });
+    }
+    if (btnAddSFDirect && sfModal) {
+      btnAddSFDirect.addEventListener('click', () => {
+        sfModal.style.display = 'flex';
+        haptic('light');
+      });
+    }
+    if (btnCloseSF && sfModal) {
+      btnCloseSF.addEventListener('click', () => {
+        sfModal.style.display = 'none';
+        haptic('light');
+      });
+    }
+    if (btnSaveSF) {
+      btnSaveSF.addEventListener('click', () => {
+        const name = (document.getElementById('sfName')?.value || '').trim();
+        if (!name) {
+          showToast('Укажите название папки', '⚠️');
+          return;
+        }
+        const newFolder = {
+          id: `sf_${Date.now()}`,
+          name: name,
+          type: document.getElementById('sfType')?.value || 'all',
+          sender: (document.getElementById('sfSender')?.value || '').trim(),
+          period: document.getElementById('sfPeriod')?.value || 'all',
+          media: document.getElementById('sfMedia')?.value || 'all'
+        };
+        state.smartFolders.push(newFolder);
+        localStorage.setItem('ayulite_smart_folders', JSON.stringify(state.smartFolders));
+        const inName = document.getElementById('sfName');
+        const inSender = document.getElementById('sfSender');
+        if (inName) inName.value = '';
+        if (inSender) inSender.value = '';
+        renderSmartFolders();
+        showToast(`Папка «${name}» создана!`, '📁');
+        haptic('success');
       });
     }
 
@@ -1017,6 +1073,31 @@
           (x.new_text && x.new_text.toLowerCase().includes(q))
         );
       });
+    }
+
+    // 5.5 Smart Folder Auto-Filter (Feature 13)
+    if (state.activeSmartFolderId) {
+      const sf = state.smartFolders.find(x => x.id === state.activeSmartFolderId);
+      if (sf) {
+        items = items.filter(it => {
+          if (sf.type && sf.type !== 'all' && it.type !== sf.type) return false;
+          if (sf.media && sf.media !== 'all' && (it.media_type || '').toLowerCase() !== sf.media) return false;
+          if (sf.sender) {
+            const s = sf.sender.toLowerCase().replace(/^@/, '').trim();
+            const sName = (it.sender_name || '').toLowerCase();
+            const sUser = (it.sender_username || '').toLowerCase();
+            const sId = String(it.sender_id || '');
+            if (!sName.includes(s) && !sUser.includes(s) && !sId.includes(s)) return false;
+          }
+          if (sf.period === 'today') {
+            const t = (it.time || '').toLowerCase();
+            if (!t.includes('только что') && !t.includes('мин') && !t.includes('сек') && !t.includes('сегодня') && !t.includes(new Date().toLocaleDateString('ru-RU'))) {
+              return false;
+            }
+          }
+          return true;
+        });
+      }
     }
 
     // 6. Duplicate detection (Feature 16) — строго реальные дубликаты, никаких ложных срабатываний на заглушки
@@ -2126,6 +2207,68 @@
     renderFavContactsBar();
     renderFeed();
     haptic('selection');
+  };
+
+  // Feature 13: Smart Folders Rendering & Selection
+  function renderSmartFolders() {
+    const bar = document.getElementById('smartFoldersBar');
+    const list = document.getElementById('smartFoldersList');
+    const manageList = document.getElementById('smartFoldersManageList');
+    if (!bar || !list) return;
+
+    if (!state.smartFolders.length) {
+      bar.style.display = 'none';
+      if (manageList) manageList.innerHTML = '<span style="font-size: 11px; color: var(--text-muted);">Нет созданных папок. Создайте первую выше!</span>';
+      return;
+    }
+
+    bar.style.display = 'flex';
+    list.innerHTML = state.smartFolders.map(sf => {
+      const isActive = sf.id === state.activeSmartFolderId;
+      return `
+        <button type="button" class="tool-btn ${isActive ? 'active' : ''}" style="white-space: nowrap; font-size: 11px; padding: 3px 8px; border-radius: 12px;" onclick="window.selectSmartFolder('${sf.id}')">
+          📁 ${escapeHtml(sf.name)}
+        </button>
+      `;
+    }).join('');
+
+    if (manageList) {
+      manageList.innerHTML = state.smartFolders.map(sf => `
+        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03); padding: 8px 12px; border-radius: 6px; font-size: 11px; border: 1px solid var(--border-subtle);">
+          <div>
+            <span style="font-weight: 600; color: var(--text-primary);">📁 ${escapeHtml(sf.name)}</span>
+            <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">
+              ${sf.type !== 'all' ? `тип: ${sf.type} • ` : ''}${sf.sender ? `от: ${escapeHtml(sf.sender)} • ` : ''}${sf.media !== 'all' ? `медиа: ${sf.media}` : 'любое медиа'}
+            </div>
+          </div>
+          <button type="button" class="btn-close" style="font-size: 12px; padding: 2px 6px; color: var(--rose);" onclick="window.deleteSmartFolder('${sf.id}')" title="Удалить папку">✕</button>
+        </div>
+      `).join('');
+    }
+  }
+
+  window.selectSmartFolder = function(id) {
+    if (state.activeSmartFolderId === id) {
+      state.activeSmartFolderId = null;
+      showToast('Фильтр папки снят', '📁');
+    } else {
+      state.activeSmartFolderId = id;
+      const sf = state.smartFolders.find(x => x.id === id);
+      showToast(`Папка: ${sf ? sf.name : ''}`, '📁');
+    }
+    renderSmartFolders();
+    renderFeed();
+    haptic('selection');
+  };
+
+  window.deleteSmartFolder = function(id) {
+    state.smartFolders = state.smartFolders.filter(x => x.id !== id);
+    if (state.activeSmartFolderId === id) state.activeSmartFolderId = null;
+    localStorage.setItem('ayulite_smart_folders', JSON.stringify(state.smartFolders));
+    renderSmartFolders();
+    renderFeed();
+    showToast('Папка удалена', '🗑');
+    haptic('medium');
   };
 
   function renderFavContactsBar() {

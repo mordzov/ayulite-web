@@ -498,17 +498,65 @@
     const btnAddSFDirect = document.getElementById('btnAddSmartFolderDirect');
     const btnCloseSF = document.getElementById('btnCloseSmartFolder');
     const btnSaveSF = document.getElementById('btnSaveSmartFolder');
+    const btnResetSF = document.getElementById('btnResetSmartFolder');
+
+    window.populateSfSenders = function() {
+      const sel = document.getElementById('sfSenderSelect');
+      if (!sel) return;
+      const senders = new Map();
+      state.feedEvents.forEach(it => {
+        const id = it.sender_id || '';
+        const name = it.sender_name || (id ? `ID ${id}` : '');
+        const user = it.sender_username || '';
+        const val = user ? `@${user}` : (id ? String(id) : name);
+        if (val && !senders.has(val)) {
+          senders.set(val, name ? `${name} (${val})` : val);
+        }
+      });
+      sel.innerHTML = '<option value="">-- Любой отправитель --</option>' +
+        Array.from(senders.entries()).map(([v, label]) => `<option value="${escapeHtml(v)}">${escapeHtml(label)}</option>`).join('');
+    };
+
+    window.updateSfLiveCount = function() {
+      const countEl = document.getElementById('sfLiveCount');
+      if (!countEl) return;
+      const dummySf = {
+        type: document.getElementById('sfType')?.value || 'all',
+        sender: (document.getElementById('sfSender')?.value || '').trim(),
+        period: document.getElementById('sfPeriod')?.value || 'all',
+        media: document.getElementById('sfMedia')?.value || 'all'
+      };
+      let count = 0;
+      state.feedEvents.forEach(it => {
+        if (matchesSmartFolderRule(it, dummySf)) count++;
+      });
+      countEl.textContent = `${count} ${count === 1 ? 'событие' : (count >= 2 && count <= 4 ? 'события' : 'событий')}`;
+    };
+
+    if (btnResetSF) {
+      btnResetSF.addEventListener('click', () => {
+        state.activeSmartFolderId = null;
+        renderSmartFolders();
+        renderFeed();
+        showToast('Фильтр папки сброшен', '📁');
+        haptic('light');
+      });
+    }
 
     if (btnOpenSF && sfModal) {
       btnOpenSF.addEventListener('click', () => {
         sfModal.style.display = 'flex';
+        populateSfSenders();
         renderSmartFolders();
+        updateSfLiveCount();
         haptic('light');
       });
     }
     if (btnAddSFDirect && sfModal) {
       btnAddSFDirect.addEventListener('click', () => {
         sfModal.style.display = 'flex';
+        populateSfSenders();
+        updateSfLiveCount();
         haptic('light');
       });
     }
@@ -518,6 +566,72 @@
         haptic('light');
       });
     }
+
+    // Modal field listeners for live count
+    const sfSenderSelect = document.getElementById('sfSenderSelect');
+    if (sfSenderSelect) {
+      sfSenderSelect.addEventListener('change', () => {
+        const val = sfSenderSelect.value;
+        const inSender = document.getElementById('sfSender');
+        if (inSender) inSender.value = val;
+        updateSfLiveCount();
+      });
+    }
+
+    ['sfName', 'sfType', 'sfSender', 'sfPeriod', 'sfMedia'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('input', updateSfLiveCount);
+        el.addEventListener('change', updateSfLiveCount);
+      }
+    });
+
+    // 1-Click Automation Presets
+    document.querySelectorAll('.sf-preset-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        haptic('selection');
+        const p = btn.dataset.preset;
+        const inName = document.getElementById('sfName');
+        const inType = document.getElementById('sfType');
+        const inSender = document.getElementById('sfSender');
+        const inPeriod = document.getElementById('sfPeriod');
+        const inMedia = document.getElementById('sfMedia');
+        const sSelect = document.getElementById('sfSenderSelect');
+
+        if (p === 'deleted_contact') {
+          if (inType) inType.value = 'deleted';
+          if (inMedia) inMedia.value = 'all';
+          if (inPeriod) inPeriod.value = 'all';
+          if (!inSender.value && sSelect && sSelect.options.length > 1) {
+            sSelect.selectedIndex = 1;
+            inSender.value = sSelect.value;
+          }
+          if (inName) inName.value = inSender.value ? `🗑 Удаленные: ${inSender.value}` : '🗑 Удаленные сообщения';
+        } else if (p === 'voice_all') {
+          if (inType) inType.value = 'all';
+          if (inMedia) inMedia.value = 'voice';
+          if (inPeriod) inPeriod.value = 'all';
+          if (inName) inName.value = '🎙 Все голосовые';
+        } else if (p === 'ttl_photos') {
+          if (inType) inType.value = 'ttl';
+          if (inMedia) inMedia.value = 'photo';
+          if (inPeriod) inPeriod.value = 'all';
+          if (inName) inName.value = '🔥 Сгорающие фото (TTL)';
+        } else if (p === 'edits_all') {
+          if (inType) inType.value = 'edited';
+          if (inMedia) inMedia.value = 'all';
+          if (inPeriod) inPeriod.value = 'all';
+          if (inName) inName.value = '✏️ Все правки';
+        } else if (p === 'media_week') {
+          if (inType) inType.value = 'all';
+          if (inMedia) inMedia.value = 'photo';
+          if (inPeriod) inPeriod.value = 'week';
+          if (inName) inName.value = '🎬 Медиа за 7 дней';
+        }
+        updateSfLiveCount();
+      });
+    });
+
     if (btnSaveSF) {
       btnSaveSF.addEventListener('click', () => {
         const name = (document.getElementById('sfName')?.value || '').trim();
@@ -534,16 +648,27 @@
           media: document.getElementById('sfMedia')?.value || 'all'
         };
         state.smartFolders.push(newFolder);
+        state.activeSmartFolderId = newFolder.id; // Auto-activate the created folder
         localStorage.setItem('ayulite_smart_folders', JSON.stringify(state.smartFolders));
         const inName = document.getElementById('sfName');
         const inSender = document.getElementById('sfSender');
         if (inName) inName.value = '';
         if (inSender) inSender.value = '';
+        if (sfModal) sfModal.style.display = 'none';
         renderSmartFolders();
-        showToast(`Папка «${name}» создана!`, '📁');
+        renderFeed();
+        showToast(`Папка «${name}» создана и активна!`, '📁');
         haptic('success');
       });
     }
+
+    // Universal Mouse Drag & Wheel Horizontal Scroll (Fix for Desktop & Telegram)
+    makeHorizontalScrollable('.filter-pills');
+    makeHorizontalScrollable('.smart-folders-bar');
+    makeHorizontalScrollable('.media-type-chips');
+    makeHorizontalScrollable('.feed-tool-btns');
+    makeHorizontalScrollable('.fav-contacts-section');
+    makeHorizontalScrollable('.search-history-row');
 
     // Setup Pull-to-refresh
     setupPullToRefresh();
@@ -1079,24 +1204,7 @@
     if (state.activeSmartFolderId) {
       const sf = state.smartFolders.find(x => x.id === state.activeSmartFolderId);
       if (sf) {
-        items = items.filter(it => {
-          if (sf.type && sf.type !== 'all' && it.type !== sf.type) return false;
-          if (sf.media && sf.media !== 'all' && (it.media_type || '').toLowerCase() !== sf.media) return false;
-          if (sf.sender) {
-            const s = sf.sender.toLowerCase().replace(/^@/, '').trim();
-            const sName = (it.sender_name || '').toLowerCase();
-            const sUser = (it.sender_username || '').toLowerCase();
-            const sId = String(it.sender_id || '');
-            if (!sName.includes(s) && !sUser.includes(s) && !sId.includes(s)) return false;
-          }
-          if (sf.period === 'today') {
-            const t = (it.time || '').toLowerCase();
-            if (!t.includes('только что') && !t.includes('мин') && !t.includes('сек') && !t.includes('сегодня') && !t.includes(new Date().toLocaleDateString('ru-RU'))) {
-              return false;
-            }
-          }
-          return true;
-        });
+        items = items.filter(it => matchesSmartFolderRule(it, sf));
       }
     }
 
@@ -1331,6 +1439,7 @@
               ${dupBadge}
               <button type="button" class="btn-assign-tag btn-assign-tag-action" data-uid="${it.sender_id || 0}" data-name="${encodeURIComponent(it.sender_name || '')}" title="Назначить тег">🏷</button>
               <button type="button" class="btn-assign-tag btn-fav-contact-action" data-uid="${it.sender_id || 0}" data-name="${encodeURIComponent(it.sender_name || '')}" title="Избранный контакт">${isFav ? '★' : '☆'}</button>
+              <button type="button" class="btn-assign-tag btn-smart-folder-action" data-sender="${encodeURIComponent(it.sender_username ? '@' + it.sender_username : (it.sender_id ? String(it.sender_id) : (it.sender_name || '')))}" data-name="${encodeURIComponent(it.sender_name || '')}" title="Создать смарт-папку для контакта">📁</button>
             </div>
             <span class="type-tag ${badgeClass}">${badgeText}</span>
           </div>
@@ -1354,7 +1463,7 @@
     list.querySelectorAll('.feed-item').forEach(card => {
       card.addEventListener('click', (e) => {
         // If clicked on any interactive element or button, do NOT switch to Vault view
-        if (e.target.closest('button, a, input, select, .custom-voice-player, .video-note-box, .feed-media-wrap, .transcript-wrap, .btn-assign-tag, .btn-copy-card, .voice-play-btn, .voice-speed-btn, .voice-waveform-wrap, .contact-tag-badge')) {
+        if (e.target.closest('button, a, input, select, .custom-voice-player, .video-note-box, .feed-media-wrap, .transcript-wrap, .btn-assign-tag, .btn-smart-folder-action, .btn-copy-card, .voice-play-btn, .voice-speed-btn, .voice-waveform-wrap, .contact-tag-badge')) {
           return;
         }
         const cid = parseInt(card.dataset.cid, 10);
@@ -1447,6 +1556,17 @@
         const uid = parseInt(favBtn.dataset.uid, 10);
         const name = favBtn.dataset.name ? decodeURIComponent(favBtn.dataset.name) : '';
         window.toggleFavContact(uid, name);
+        return;
+      }
+
+      // Smart Folder Button on Card
+      const sfBtn = e.target.closest('.btn-smart-folder-action');
+      if (sfBtn) {
+        e.stopPropagation();
+        e.preventDefault();
+        const sName = sfBtn.dataset.name ? decodeURIComponent(sfBtn.dataset.name) : '';
+        const sSender = sfBtn.dataset.sender ? decodeURIComponent(sfBtn.dataset.sender) : '';
+        window.openSmartFolderForSender(sName, sSender);
         return;
       }
     };
@@ -2209,11 +2329,67 @@
     haptic('selection');
   };
 
+  // Feature 13: Smart Folders Rule Checker
+  function matchesSmartFolderRule(it, sf) {
+    if (!it || !sf) return false;
+    if (sf.type && sf.type !== 'all' && it.type !== sf.type) return false;
+    if (sf.media && sf.media !== 'all' && (it.media_type || '').toLowerCase() !== sf.media) return false;
+    if (sf.sender) {
+      const s = sf.sender.toLowerCase().replace(/^@/, '').trim();
+      const sName = (it.sender_name || '').toLowerCase();
+      const sUser = (it.sender_username || '').toLowerCase();
+      const sId = String(it.sender_id || '');
+      if (!sName.includes(s) && !sUser.includes(s) && !sId.includes(s)) return false;
+    }
+    if (sf.period === 'today') {
+      const t = (it.time || '').toLowerCase();
+      if (!t.includes('только что') && !t.includes('мин') && !t.includes('сек') && !t.includes('сегодня') && !t.includes(new Date().toLocaleDateString('ru-RU'))) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   // Feature 13: Smart Folders Rendering & Selection
   function renderSmartFolders() {
     const bar = document.getElementById('smartFoldersBar');
     const list = document.getElementById('smartFoldersList');
     const manageList = document.getElementById('smartFoldersManageList');
+    const banner = document.getElementById('activeFolderBanner');
+    const bannerTitle = document.getElementById('activeFolderTitle');
+    const bannerDesc = document.getElementById('activeFolderDesc');
+
+    // Update banner for active smart folder
+    if (banner) {
+      if (state.activeSmartFolderId) {
+        const sf = state.smartFolders.find(x => x.id === state.activeSmartFolderId);
+        if (sf) {
+          banner.style.display = 'flex';
+          if (bannerTitle) bannerTitle.textContent = `Папка: ${sf.name}`;
+          const ruleParts = [];
+          if (sf.type && sf.type !== 'all') {
+            const typeLabels = { deleted: '🗑 Удаленные', edited: '✏️ Правки', ttl: '🔥 TTL', reactions: '⚡ Реакции' };
+            ruleParts.push(typeLabels[sf.type] || sf.type);
+          }
+          if (sf.sender) ruleParts.push(`От: ${sf.sender}`);
+          if (sf.media && sf.media !== 'all') {
+            const mediaLabels = { photo: 'Фото', voice: 'Голосовые', video_note: 'Кружки', video: 'Видео', document: 'Файлы' };
+            ruleParts.push(`Медиа: ${mediaLabels[sf.media] || sf.media}`);
+          }
+          if (sf.period && sf.period !== 'all') {
+            const periodLabels = { today: 'За сегодня', week: 'За неделю', month: 'За месяц' };
+            ruleParts.push(periodLabels[sf.period] || sf.period);
+          }
+          if (bannerDesc) bannerDesc.textContent = ruleParts.length ? ruleParts.join(' • ') : 'Фильтрует все события ленты';
+        } else {
+          state.activeSmartFolderId = null;
+          banner.style.display = 'none';
+        }
+      } else {
+        banner.style.display = 'none';
+      }
+    }
+
     if (!bar || !list) return;
 
     if (!state.smartFolders.length) {
@@ -2238,7 +2414,7 @@
           <div>
             <span style="font-weight: 600; color: var(--text-primary);">📁 ${escapeHtml(sf.name)}</span>
             <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">
-              ${sf.type !== 'all' ? `тип: ${sf.type} • ` : ''}${sf.sender ? `от: ${escapeHtml(sf.sender)} • ` : ''}${sf.media !== 'all' ? `медиа: ${sf.media}` : 'любое медиа'}
+              ${sf.type !== 'all' ? `тип: ${sf.type} • ` : ''}${sf.sender ? `от: ${escapeHtml(sf.sender)} • ` : ''}${sf.media !== 'all' ? `медиа: ${sf.media} • ` : ''}${sf.period !== 'all' ? `период: ${sf.period}` : 'за всё время'}
             </div>
           </div>
           <button type="button" class="btn-close" style="font-size: 12px; padding: 2px 6px; color: var(--rose);" onclick="window.deleteSmartFolder('${sf.id}')" title="Удалить папку">✕</button>
@@ -2254,7 +2430,7 @@
     } else {
       state.activeSmartFolderId = id;
       const sf = state.smartFolders.find(x => x.id === id);
-      showToast(`Папка: ${sf ? sf.name : ''}`, '📁');
+      showToast(`Папка «${sf ? sf.name : ''}» активна`, '📁');
     }
     renderSmartFolders();
     renderFeed();
@@ -2270,6 +2446,87 @@
     showToast('Папка удалена', '🗑');
     haptic('medium');
   };
+
+  window.openSmartFolderForSender = function(name, usernameOrId) {
+    const modal = document.getElementById('smartFolderModal');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    if (typeof window.populateSfSenders === 'function') window.populateSfSenders();
+    const inName = document.getElementById('sfName');
+    const inSender = document.getElementById('sfSender');
+    const inType = document.getElementById('sfType');
+    const senderSelect = document.getElementById('sfSenderSelect');
+
+    const cleanSender = usernameOrId ? (usernameOrId.startsWith('@') ? usernameOrId : `@${usernameOrId}`) : name;
+    if (inSender) inSender.value = cleanSender || '';
+    if (senderSelect && cleanSender) {
+      for (let i = 0; i < senderSelect.options.length; i++) {
+        if (senderSelect.options[i].value === cleanSender) {
+          senderSelect.selectedIndex = i;
+          break;
+        }
+      }
+    }
+    if (inType) inType.value = 'deleted';
+    if (inName) inName.value = `📁 ${name || cleanSender}: Удаленные`;
+    if (typeof window.updateSfLiveCount === 'function') window.updateSfLiveCount();
+    renderSmartFolders();
+    haptic('light');
+  };
+
+  // Universal Mouse Drag & Mouse Wheel Horizontal Scroll
+  function makeHorizontalScrollable(selector) {
+    const containers = document.querySelectorAll(selector);
+    containers.forEach(el => {
+      if (el._dragScrollBound) return;
+      el._dragScrollBound = true;
+
+      // Translate vertical wheel into horizontal scroll on wide containers
+      el.addEventListener('wheel', (e) => {
+        if (e.deltaY !== 0 && el.scrollWidth > el.clientWidth) {
+          e.preventDefault();
+          el.scrollLeft += e.deltaY * 0.9;
+        }
+      }, { passive: false });
+
+      // Click & drag scroll
+      let isDown = false;
+      let startX = 0;
+      let scrollLeft = 0;
+      let hasDragged = false;
+
+      el.addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return;
+        isDown = true;
+        hasDragged = false;
+        startX = e.pageX - el.offsetLeft;
+        scrollLeft = el.scrollLeft;
+        el.style.userSelect = 'none';
+      });
+
+      window.addEventListener('mouseup', () => {
+        if (!isDown) return;
+        isDown = false;
+        el.style.userSelect = '';
+      });
+
+      el.addEventListener('mousemove', (e) => {
+        if (!isDown) return;
+        const x = e.pageX - el.offsetLeft;
+        const walk = (x - startX) * 1.3;
+        if (Math.abs(walk) > 4) hasDragged = true;
+        el.scrollLeft = scrollLeft - walk;
+      });
+
+      el.addEventListener('click', (e) => {
+        if (hasDragged) {
+          e.stopImmediatePropagation();
+          e.preventDefault();
+          hasDragged = false;
+        }
+      }, true);
+    });
+  }
 
   function renderFavContactsBar() {
     const bar = document.getElementById('favContactsScroll');

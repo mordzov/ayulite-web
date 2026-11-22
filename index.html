@@ -77,7 +77,19 @@
       <div class="smart-folders-bar" id="smartFoldersBar" style="display: none; padding: 6px 0; overflow-x: auto; gap: 6px; align-items: center;">
         <span style="font-size: 11px; color: var(--text-muted); white-space: nowrap;">📁 Папки:</span>
         <div id="smartFoldersList" style="display: flex; gap: 6px; align-items: center;"></div>
-        <button type="button" class="btn-secondary" id="btnAddSmartFolderDirect" style="padding: 2px 8px; font-size: 11px; white-space: nowrap; border-radius: 12px;">+ Папка</button>
+        <button type="button" class="btn-secondary" id="btnAddSmartFolderDirect" style="padding: 3px 8px; font-size: 11px; white-space: nowrap; border-radius: 12px;">+ Новая папка</button>
+      </div>
+
+      <!-- Active Folder Banner (When a folder filter is applied) -->
+      <div class="active-folder-banner" id="activeFolderBanner" style="display: none; margin-bottom: 8px; padding: 8px 12px; background: rgba(99, 102, 241, 0.15); border: 1px solid var(--accent); border-radius: 8px; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 18px;">📁</span>
+          <div>
+            <div style="font-size: 12px; font-weight: 600; color: #fff;" id="afbTitle">Папка активна</div>
+            <div style="font-size: 11px; color: var(--text-secondary);" id="afbDesc">Фильтрация ленты по правилу папки</div>
+          </div>
+        </div>
+        <button type="button" class="btn-secondary" id="btnResetSmartFolder" style="padding: 3px 8px; font-size: 11px; color: var(--rose); border-color: rgba(244,63,94,0.3);">✕ Сбросить</button>
       </div>
 
       <!-- Sub-Filters: Media Type & Tool Buttons (Features 10, 11, 13, 14, 15, 16) -->
@@ -91,7 +103,7 @@
           <button class="media-chip" data-media="document">📄 Файлы</button>
         </div>
         <div class="feed-tool-btns">
-          <button class="tool-btn" id="btnOpenSmartFolders">📁 Папки</button>
+          <button class="tool-btn" id="btnOpenSmartFolders">⚙️ Настроить папки</button>
           <button class="tool-btn" id="btnToggleDateGrouping">📅 По дням</button>
           <button class="tool-btn" id="btnToggleDateRange">🗓 Даты</button>
           <button class="tool-btn" id="btnFindDuplicates">🔍 Дубликаты</button>
@@ -647,63 +659,91 @@
        MODAL: SMART FOLDERS / AUTO-FILTERS (Feature 13)
        ========================================================================= -->
   <div class="modal-overlay" id="smartFolderModal" style="display: none;">
-    <div class="bottom-sheet" style="max-height: 80vh; overflow-y: auto;">
+    <div class="bottom-sheet" style="max-height: 85vh; overflow-y: auto;">
       <div class="sheet-handle"></div>
       <div class="sheet-header">
         <span class="sheet-title">📁 Смарт-папка (Автофильтр)</span>
         <button class="btn-close" id="btnCloseSmartFolder">✕</button>
       </div>
-      <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">Создайте правило автофильтрации: папка сама наполняется нужными событиями.</div>
+      <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">Папка автоматически фильтрует ленту под ваше персональное правило.</div>
+
+      <!-- Quick 1-Click Automation Templates -->
+      <div style="margin-bottom: 14px;">
+        <span style="font-size: 11px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 6px;">⚡ Быстрые авто-шаблоны:</span>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+          <button type="button" class="btn-secondary sf-preset-btn" data-preset="deleted_contact" style="padding: 4px 8px; font-size: 11px;">🗑 Удаленные от контакта</button>
+          <button type="button" class="btn-secondary sf-preset-btn" data-preset="voice_all" style="padding: 4px 8px; font-size: 11px;">🎙 Все голосовые и кружки</button>
+          <button type="button" class="btn-secondary sf-preset-btn" data-preset="ttl_photos" style="padding: 4px 8px; font-size: 11px;">🔥 Сгорающие фото (TTL)</button>
+          <button type="button" class="btn-secondary sf-preset-btn" data-preset="edits_all" style="padding: 4px 8px; font-size: 11px;">✏️ Правки сообщений</button>
+          <button type="button" class="btn-secondary sf-preset-btn" data-preset="media_week" style="padding: 4px 8px; font-size: 11px;">🎬 Медиа за 7 дней</button>
+        </div>
+      </div>
       
-      <div style="margin-bottom: 12px;">
-        <label style="display: block; font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">Название папки:</label>
-        <input type="text" id="sfName" class="search-input" placeholder="Например: Удаленные от шефа" style="width: 100%;">
-      </div>
+      <!-- Rule Settings -->
+      <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 12px; margin-bottom: 14px;">
+        <div style="margin-bottom: 10px;">
+          <label style="display: block; font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">Название папки:</label>
+          <input type="text" id="sfName" class="search-input" placeholder="Например: Удаленные от шефа" style="width: 100%;">
+        </div>
 
-      <div style="margin-bottom: 12px;">
-        <label style="display: block; font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">Тип событий:</label>
-        <select id="sfType" class="search-input" style="width: 100%; background: var(--bg-card); color: var(--text-primary);">
-          <option value="all">Все события</option>
-          <option value="deleted">Только удаленные</option>
-          <option value="edited">Только правки</option>
-          <option value="ttl">Только сгорающие TTL</option>
-          <option value="reactions">Только реакции</option>
-        </select>
-      </div>
+        <div style="margin-bottom: 10px;">
+          <label style="display: block; font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">Тип событий:</label>
+          <select id="sfType" class="search-input" style="width: 100%; background: var(--bg-card); color: var(--text-primary);">
+            <option value="all">Все события (удаления, правки, TTL)</option>
+            <option value="deleted">Только удаленные сообщения</option>
+            <option value="edited">Только отредактированные</option>
+            <option value="ttl">Только сгорающие TTL</option>
+            <option value="reactions">Только реакции</option>
+          </select>
+        </div>
 
-      <div style="margin-bottom: 12px;">
-        <label style="display: block; font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">Отправитель (@username или ID):</label>
-        <input type="text" id="sfSender" class="search-input" placeholder="Оставьте пустым для всех или укажите @username / ID" style="width: 100%;">
-      </div>
+        <div style="margin-bottom: 10px;">
+          <label style="display: block; font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">Собеседник (выберите из ленты или введите):</label>
+          <div style="display: flex; gap: 6px;">
+            <select id="sfSenderSelect" class="search-input" style="flex: 1; background: var(--bg-card); color: var(--text-primary);">
+              <option value="">-- Любой отправитель --</option>
+            </select>
+            <input type="text" id="sfSender" class="search-input" placeholder="@username или ID" style="flex: 1;">
+          </div>
+        </div>
 
-      <div style="margin-bottom: 12px;">
-        <label style="display: block; font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">Период:</label>
-        <select id="sfPeriod" class="search-input" style="width: 100%; background: var(--bg-card); color: var(--text-primary);">
-          <option value="all">За всё время</option>
-          <option value="today">За сегодня</option>
-          <option value="week">За эту неделю (7 дней)</option>
-          <option value="month">За месяц (30 дней)</option>
-        </select>
-      </div>
+        <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+          <div style="flex: 1;">
+            <label style="display: block; font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">Период:</label>
+            <select id="sfPeriod" class="search-input" style="width: 100%; background: var(--bg-card); color: var(--text-primary);">
+              <option value="all">За всё время</option>
+              <option value="today">За сегодня</option>
+              <option value="week">За эту неделю (7 дней)</option>
+              <option value="month">За месяц (30 дней)</option>
+            </select>
+          </div>
+          <div style="flex: 1;">
+            <label style="display: block; font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">Тип медиа:</label>
+            <select id="sfMedia" class="search-input" style="width: 100%; background: var(--bg-card); color: var(--text-primary);">
+              <option value="all">Любое (включая текст)</option>
+              <option value="photo">Только фото</option>
+              <option value="voice">Только голосовые</option>
+              <option value="video_note">Только кружки</option>
+              <option value="video">Только видео</option>
+              <option value="document">Только файлы</option>
+            </select>
+          </div>
+        </div>
 
-      <div style="margin-bottom: 16px;">
-        <label style="display: block; font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">Тип медиа:</label>
-        <select id="sfMedia" class="search-input" style="width: 100%; background: var(--bg-card); color: var(--text-primary);">
-          <option value="all">Любое (включая текст)</option>
-          <option value="photo">Только фото</option>
-          <option value="voice">Только голосовые</option>
-          <option value="video_note">Только кружки</option>
-          <option value="video">Только видео</option>
-          <option value="document">Только файлы</option>
-        </select>
+        <!-- Live Match Counter Preview -->
+        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(99, 102, 241, 0.1); border: 1px dashed rgba(99, 102, 241, 0.3); border-radius: 6px; padding: 8px 12px; margin-top: 6px;">
+          <span style="font-size: 11px; color: var(--text-secondary);">🔍 Найдено в ленте прямо сейчас:</span>
+          <span style="font-size: 12px; font-weight: 700; color: var(--accent);" id="sfLiveCount">0 событий</span>
+        </div>
       </div>
 
       <div style="display: flex; gap: 8px;">
-        <button class="btn-primary" id="btnSaveSmartFolder" style="flex: 1;">💾 Создать папку</button>
+        <button class="btn-primary" id="btnSaveSmartFolder" style="flex: 1; padding: 10px;">💾 Сохранить и применить папку</button>
       </div>
 
+      <!-- Existing Folders List -->
       <div style="margin-top: 18px; border-top: 1px solid var(--border-subtle); padding-top: 12px;">
-        <div style="font-size: 12px; font-weight: 600; margin-bottom: 8px;">Существующие смарт-папки:</div>
+        <div style="font-size: 12px; font-weight: 600; margin-bottom: 8px;">Ваши сохраненные смарт-папки:</div>
         <div id="smartFoldersManageList" style="display: flex; flex-direction: column; gap: 6px;"></div>
       </div>
     </div>

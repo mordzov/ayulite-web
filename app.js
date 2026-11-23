@@ -126,6 +126,19 @@
     }
   }
 
+  function showOfflineBanner(msg) {
+    const b = document.getElementById('c2OfflineBanner');
+    if (!b) return;
+    b.style.display = 'flex';
+    const txt = b.querySelector('.c2-offline-text');
+    if (txt && msg) txt.textContent = msg;
+  }
+
+  function hideOfflineBanner() {
+    const b = document.getElementById('c2OfflineBanner');
+    if (b) b.style.display = 'none';
+  }
+
   // Resolve backend API URL (handles URL query, tunnel.json, local dev, with health check)
   async function resolveApiUrl() {
     const q = new URLSearchParams(window.location.search);
@@ -137,8 +150,10 @@
       const isAlive = await testApiReachable(cleanParam);
       if (isAlive) {
         state.apiUrl = cleanParam;
+        setOnlineStatus(true);
+        hideOfflineBanner();
         console.log('[API] Resolved & verified via URL query param:', state.apiUrl);
-        return;
+        return true;
       }
       console.warn('[API] Query ?api= unreachable, attempting tunnel.json failover:', cleanParam);
     }
@@ -147,8 +162,10 @@
     const host = window.location.hostname;
     if (host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0') {
       state.apiUrl = window.location.origin;
+      setOnlineStatus(true);
+      hideOfflineBanner();
       console.log('[API] Resolved via local origin:', state.apiUrl);
-      return;
+      return true;
     }
 
     // 3. Hosted on GitHub Pages: load tunnel.json with cache busting
@@ -161,12 +178,16 @@
           const isAlive = await testApiReachable(candidate);
           if (isAlive) {
             state.apiUrl = candidate;
+            setOnlineStatus(true);
+            hideOfflineBanner();
             console.log('[API] Resolved & verified via tunnel.json:', state.apiUrl);
-            return;
+            return true;
           }
           state.apiUrl = candidate;
-          console.warn('[API] tunnel.json candidate applied (unverified):', state.apiUrl);
-          return;
+          setOnlineStatus(false);
+          showOfflineBanner('Сервер C2 оффлайн • Запустите bot_main.py');
+          console.warn('[API] tunnel.json candidate applied (unverified/offline):', state.apiUrl);
+          return false;
         }
       }
     } catch (e) {
@@ -179,7 +200,10 @@
     } else {
       state.apiUrl = window.location.origin;
     }
-    console.log('[API] Fallback to origin:', state.apiUrl);
+    setOnlineStatus(false);
+    showOfflineBanner('Сервер C2 оффлайн • Запустите bot_main.py');
+    console.log('[API] Fallback to origin (offline):', state.apiUrl);
+    return false;
   }
 
   // Resilient API Fetch Helper with CORS & Auth Headers
@@ -1082,6 +1106,29 @@
         }
       });
     }
+
+    const btnRetryConn = document.getElementById('btnRetryC2Connection');
+    if (btnRetryConn) {
+      btnRetryConn.addEventListener('click', async () => {
+        haptic('medium');
+        btnRetryConn.textContent = '⏳ Проверка...';
+        showToast('Проверка соединения с C2 сервером...', '⏳');
+        const ok = await resolveApiUrl();
+        btnRetryConn.textContent = '🔄 Подключиться';
+        if (ok) {
+          showToast('✅ Связь с C2 успешно установлена!', '✓');
+          haptic('success');
+          loadFeed();
+          loadState();
+          loadVaultOverview();
+          loadFarmAccounts();
+          connectWebSocket();
+        } else {
+          showToast('Сервер C2 не отвечает. Запустите bot_main.py', '⚠️', true);
+          haptic('error');
+        }
+      });
+    }
   }
 
   // Load Accumulated Feed Events from SQLite via API (with auto-retry on connect)
@@ -1112,6 +1159,9 @@
     }
     if (txt) {
       txt.textContent = isOnline ? 'Live' : 'Offline';
+    }
+    if (isOnline) {
+      hideOfflineBanner();
     }
   }
 
@@ -1297,7 +1347,10 @@
       let contentHtml = '';
 
       const mType = (it.media_type || '').toLowerCase();
-      const actualVoiceTranscript = it.transcription || (it.text && !it.text.startsWith('[') && !it.text.includes('перехвачено') ? it.text : '');
+      const isPl = (s) => !s || s.startsWith('[') || s.includes('перехвачено') || s.includes('Сейф') || s.includes('Vault');
+      const rawTrans = (it.transcription || '').trim();
+      const rawTxt = (it.text || '').trim();
+      const actualVoiceTranscript = !isPl(rawTrans) ? rawTrans : (!isPl(rawTxt) ? rawTxt : '');
 
       if (it.type === 'edited') {
         badgeClass = 'edited';
@@ -1328,7 +1381,7 @@
           } else {
             txt = '🎙 [Голосовое сообщение]';
           }
-        } else if (!txt) {
+        } else if (!txt || txt.startsWith('[')) {
           if (mType === 'photo') txt = '📷 [Фотография перехвачена в Vault]';
           else if (mType === 'video') txt = '🎥 [Видеозапись]';
           else if (mType === 'video_note') txt = '🔵 [Видеосообщение (кружок)]';
@@ -1361,25 +1414,28 @@
         const fullMediaUrl = `${mUrl}${mUrl.includes('?') ? '&' : '?'}auth=${encodeURIComponent(state.authToken || '')}&user_id=${state.userId}`;
 
         if (mType === 'photo' || it.type === 'ttl' || mType === 'sticker') {
-          // Photo Lightbox with resilient placeholder fallback
+          // Photo Lightbox with resilient placeholder fallback and manual retry
           mediaHtml = `
             <div class="feed-media-wrap" style="margin: 8px 0; max-width: 100%;">
               <img src="${fullMediaUrl}" class="feed-media-img" data-lb-url="${fullMediaUrl}" loading="lazy" alt="Фото"
                    style="max-width: 100%; max-height: 280px; width: 100%; border-radius: 8px; border: 1px solid var(--border-subtle); object-fit: cover; cursor: pointer; display: block;"
                    onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
-              <div class="feed-media-placeholder" style="display: none; padding: 10px 14px; background: rgba(99, 102, 241, 0.08); border: 1px dashed rgba(99, 102, 241, 0.3); border-radius: 8px; align-items: center; gap: 10px; font-size: 13px; color: var(--text-primary);">
-                <span style="font-size: 22px;">🖼</span>
-                <div>
-                  <div style="font-weight: 600;">Перехваченное фото</div>
-                  <div style="font-size: 11px; color: var(--text-secondary);">Медиафайл зафиксирован в Vault (кэш на устройстве)</div>
+              <div class="feed-media-placeholder" style="display: none; padding: 10px 14px; background: rgba(99, 102, 241, 0.08); border: 1px dashed rgba(99, 102, 241, 0.3); border-radius: 8px; align-items: center; justify-content: space-between; gap: 10px; font-size: 13px; color: var(--text-primary);">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span style="font-size: 22px;">🖼</span>
+                  <div>
+                    <div style="font-weight: 600;">Перехваченное фото</div>
+                    <div style="font-size: 11px; color: var(--text-secondary);">Медиафайл в Сейфе (требуется активный бот C2)</div>
+                  </div>
                 </div>
+                <button type="button" class="btn-secondary" style="font-size: 11px; padding: 4px 8px;" onclick="window.retryImageLoad(this, '${encodeURIComponent(fullMediaUrl)}')">🔄</button>
               </div>
             </div>
           `;
         } else if (mType === 'video_note') {
           // Circular Video Note Player (Feature 7)
-          const vNoteTranscript = it.transcription || (it.text && !it.text.startsWith('[') ? it.text : '');
-          const vNoteDisplay = vNoteTranscript ? escapeHtml(vNoteTranscript) : '<span style="color: var(--text-muted); font-style: italic;">Расшифровка Silent Ear формируется...</span>';
+          const vNoteTranscript = it.transcription || (it.text && !isPl(it.text) ? it.text : '');
+          const vNoteDisplay = vNoteTranscript ? escapeHtml(vNoteTranscript) : '<span style="color: var(--text-muted); font-style: italic;">Идет скрытое распознавание речи (Silent Ear)...</span>';
           mediaHtml = `
             <div class="video-note-box">
               <span class="video-note-badge">🔵 КРУЖОК</span>
@@ -1406,7 +1462,11 @@
 
           const transcriptDisplay = actualVoiceTranscript 
             ? escapeHtml(actualVoiceTranscript) 
-            : '<span style="color: var(--text-muted); font-style: italic;">Расшифровка Silent Ear формируется...</span>';
+            : '<span style="color: var(--text-muted); font-style: italic;">Идет скрытое распознавание речи (Silent Ear)...</span>';
+
+          const transcriptBtnLabel = actualVoiceTranscript
+            ? `📝 Текст: «${escapeHtml(actualVoiceTranscript.slice(0, 32))}${actualVoiceTranscript.length > 32 ? '...' : ''}»`
+            : '📝 Расшифровка (Silent Ear)';
 
           mediaHtml = `
             <div class="custom-voice-player">
@@ -1422,7 +1482,7 @@
             </div>
             <!-- Voice Transcript Accordion (Feature 10) -->
             <div class="transcript-wrap">
-              <button type="button" class="transcript-toggle-btn" onclick="window.toggleTranscript(this)">📝 Расшифровка (Silent Ear)</button>
+              <button type="button" class="transcript-toggle-btn" onclick="window.toggleTranscript(this)">${transcriptBtnLabel}</button>
               <div class="transcript-body" style="display: none; font-weight: 500; color: var(--text-primary); background: rgba(99, 102, 241, 0.08); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(99, 102, 241, 0.2); margin-top: 6px;">${transcriptDisplay}</div>
             </div>
           `;
@@ -1966,6 +2026,29 @@
   // Wave 2 Helpers: Audio, Video Notes, Lightbox, Copy, Tags, Pull-to-refresh
   // ==========================================================================
 
+  // Helper for manual image re-fetching
+  window.retryImageLoad = function(btn, encUrl) {
+    const wrap = btn.closest('.feed-media-wrap');
+    if (!wrap) return;
+    const img = wrap.querySelector('.feed-media-img');
+    const ph = wrap.querySelector('.feed-media-placeholder');
+    const url = decodeURIComponent(encUrl);
+    const retryUrl = url + (url.includes('?') ? '&' : '?') + '_ts=' + Date.now();
+    btn.textContent = '⏳';
+    if (img) {
+      img.src = retryUrl;
+      img.onload = () => {
+        img.style.display = 'block';
+        if (ph) ph.style.display = 'none';
+        btn.textContent = '🔄';
+      };
+      img.onerror = () => {
+        btn.textContent = '🔄';
+        showToast('Сервер C2 не отвечает. Запустите bot_main.py.', '⚠️', true);
+      };
+    }
+  };
+
   // Feature 6: In-feed Audio Waveform Player with Bulletproof Cross-Platform Support
   window.toggleVoicePlayback = function(btn, audioUrl) {
     const url = audioUrl || btn.dataset.audioUrl;
@@ -1978,7 +2061,6 @@
 
     if (!audio) {
       audio = new Audio();
-      audio.crossOrigin = 'anonymous';
       audio.preload = 'metadata';
       audio.src = url;
       btn._audio = audio;
@@ -2030,9 +2112,24 @@
 
       audio.addEventListener('error', (e) => {
         console.warn('Audio playback error:', e);
+        if (!audio._retryDone) {
+          audio._retryDone = true;
+          const retrySrc = url + (url.includes('?') ? '&' : '?') + '_ts=' + Date.now();
+          audio.src = retrySrc;
+          audio.load();
+          audio.play().then(() => {
+            btn.textContent = '⏸';
+          }).catch(() => {
+            btn.textContent = '⚠️';
+            btn.title = 'Сервер C2 не отвечает или файл не найден';
+            showToast('Аудио недоступно: сервер C2 оффлайн', '⚠️', true);
+            haptic('error');
+          });
+          return;
+        }
         btn.textContent = '⚠️';
-        btn.title = 'Не удалось воспроизвести аудиофайл';
-        showToast('Аудиофайл не найден или не поддерживается', '⚠️', true);
+        btn.title = 'Сервер C2 не отвечает или файл не найден';
+        showToast('Аудио недоступно: сервер C2 оффлайн', '⚠️', true);
         haptic('error');
       });
     }
@@ -2055,7 +2152,7 @@
         }).catch(err => {
           console.warn('Playback error:', err);
           btn.textContent = '⚠️';
-          showToast('Ошибка воспроизведения аудио', '❌', true);
+          showToast('Сервер C2 не отвечает (бот оффлайн)', '❌', true);
         });
       }
     } else {

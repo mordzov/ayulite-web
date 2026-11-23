@@ -281,6 +281,7 @@
     setupModals();
     setupSystemActions();
     setupFakeshotStudio();
+    setupStoreAndAutomations();
 
     // Load Live Data Concurrently
     await Promise.allSettled([
@@ -850,6 +851,364 @@
           btnSubmit.textContent = 'Подключить в пул воркеров';
         }
       });
+    }
+  }
+
+
+  // Cyberpunk Stars Store & Quick Automation Controller
+  function setupStoreAndAutomations() {
+    const storeModal = document.getElementById('tierStoreModal');
+    const btnCloseStore = document.getElementById('btnCloseStore');
+    const heroBtn = document.getElementById('btnOpenStoreHero');
+    const fadStoreBtn = document.getElementById('fadStoreBtn');
+    const tierBadge = document.getElementById('userTierBadge');
+    const opTierBadge = document.getElementById('opTierBadge');
+
+    function openStore() {
+      if (storeModal) {
+        haptic('medium');
+        storeModal.classList.add('active');
+      }
+    }
+
+    function closeStore() {
+      if (storeModal) {
+        haptic('light');
+        storeModal.classList.remove('active');
+      }
+    }
+
+    if (heroBtn) heroBtn.addEventListener('click', openStore);
+    if (fadStoreBtn) fadStoreBtn.addEventListener('click', openStore);
+    if (tierBadge) {
+      tierBadge.style.cursor = 'pointer';
+      tierBadge.title = 'Нажмите для выбора тарифа';
+      tierBadge.addEventListener('click', openStore);
+    }
+    if (opTierBadge) {
+      opTierBadge.style.cursor = 'pointer';
+      opTierBadge.addEventListener('click', openStore);
+    }
+    if (btnCloseStore) btnCloseStore.addEventListener('click', closeStore);
+
+    if (storeModal) {
+      storeModal.addEventListener('click', (e) => {
+        if (e.target === storeModal) closeStore();
+      });
+    }
+
+    // Duration Switcher (30 days vs Forever)
+    const btnDur30 = document.getElementById('btnDur30');
+    const btnDurForever = document.getElementById('btnDurForever');
+    let currentDuration = 30;
+
+    const pricePro = document.getElementById('priceValPro');
+    const pricePrem = document.getElementById('priceValPrem');
+    const priceUlt = document.getElementById('priceValUlt');
+
+    const btnBuyPro = document.getElementById('btnBuyPro');
+    const btnBuyPrem = document.getElementById('btnBuyPrem');
+    const btnBuyUlt = document.getElementById('btnBuyUlt');
+
+    function updatePricing(duration) {
+      currentDuration = duration;
+      if (duration === 30) {
+        btnDur30?.classList.add('active');
+        btnDurForever?.classList.remove('active');
+        if (pricePro) pricePro.textContent = '150';
+        if (pricePrem) pricePrem.textContent = '350';
+        if (priceUlt) priceUlt.textContent = '599';
+        if (btnBuyPro) {
+          btnBuyPro.textContent = '⭐ Оплатить 150 Stars';
+          btnBuyPro.dataset.plan = 'pro_30';
+        }
+        if (btnBuyPrem) {
+          btnBuyPrem.textContent = '⭐ Оплатить 350 Stars';
+          btnBuyPrem.dataset.plan = 'prem_30';
+        }
+        if (btnBuyUlt) {
+          btnBuyUlt.textContent = '⭐ Оплатить 599 Stars';
+          btnBuyUlt.dataset.plan = 'ult_30';
+        }
+      } else {
+        btnDurForever?.classList.add('active');
+        btnDur30?.classList.remove('active');
+        if (pricePro) pricePro.textContent = '499';
+        if (pricePrem) pricePrem.textContent = '899';
+        if (priceUlt) priceUlt.textContent = '1499';
+        if (btnBuyPro) {
+          btnBuyPro.textContent = '⭐ Оплатить 499 Stars (Forever)';
+          btnBuyPro.dataset.plan = 'pro_forever';
+        }
+        if (btnBuyPrem) {
+          btnBuyPrem.textContent = '⭐ Оплатить 899 Stars (Forever)';
+          btnBuyPrem.dataset.plan = 'prem_forever';
+        }
+        if (btnBuyUlt) {
+          btnBuyUlt.textContent = '⭐ Оплатить 1499 Stars (Forever)';
+          btnBuyUlt.dataset.plan = 'ult_forever';
+        }
+      }
+    }
+
+    if (btnDur30) {
+      btnDur30.addEventListener('click', () => {
+        haptic('selection');
+        updatePricing(30);
+      });
+    }
+    if (btnDurForever) {
+      btnDurForever.addEventListener('click', () => {
+        haptic('selection');
+        updatePricing(9999);
+      });
+    }
+    updatePricing(30);
+
+    // Purchase Plan Handler via Telegram Stars Invoice
+    async function handleBuy(planKey, btnEl) {
+      haptic('medium');
+      const originalText = btnEl ? btnEl.textContent : '';
+      if (btnEl) {
+        btnEl.disabled = true;
+        btnEl.textContent = '⏳ Создание счёта...';
+      }
+      try {
+        const payload = {
+          plan: planKey,
+          user_id: state.userId
+        };
+        const res = await api('/api/billing/create_invoice', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (res && res.invoice_link) {
+          if (window.Telegram?.WebApp?.openInvoice) {
+            window.Telegram.WebApp.openInvoice(res.invoice_link, async (status) => {
+              if (status === 'paid') {
+                showToast('🎉 Подписка активирована!', '👑');
+                haptic('success');
+                closeStore();
+                await loadState();
+              } else if (status === 'cancelled') {
+                showToast('Оплата отменена', 'ℹ️');
+              } else if (status === 'failed') {
+                showToast('Сбой при проведении оплаты', '⚠️', true);
+              }
+            });
+          } else {
+            window.open(res.invoice_link, '_blank');
+            showToast('Счёт открыт в Telegram', '⭐');
+          }
+        } else {
+          throw new Error(res?.message || 'Не удалось сформировать ссылку на счёт');
+        }
+      } catch (err) {
+        showToast(err.message || 'Ошибка биллинга', '⚠️', true);
+      } finally {
+        if (btnEl) {
+          btnEl.disabled = false;
+          btnEl.textContent = originalText;
+        }
+      }
+    }
+
+    if (btnBuyPro) {
+      btnBuyPro.addEventListener('click', () => {
+        const plan = btnBuyPro.dataset.plan || (currentDuration === 30 ? 'pro_30' : 'pro_forever');
+        handleBuy(plan, btnBuyPro);
+      });
+    }
+    if (btnBuyPrem) {
+      btnBuyPrem.addEventListener('click', () => {
+        const plan = btnBuyPrem.dataset.plan || (currentDuration === 30 ? 'prem_30' : 'prem_forever');
+        handleBuy(plan, btnBuyPrem);
+      });
+    }
+    if (btnBuyUlt) {
+      btnBuyUlt.addEventListener('click', () => {
+        const plan = btnBuyUlt.dataset.plan || (currentDuration === 30 ? 'ult_30' : 'ult_forever');
+        handleBuy(plan, btnBuyUlt);
+      });
+    }
+
+    // Promo Code Redemption
+    const btnPromo = document.getElementById('btnApplyStorePromo');
+    const inputPromo = document.getElementById('storePromoCode');
+    async function redeemCode() {
+      const code = (inputPromo ? inputPromo.value : '').trim();
+      if (!code) {
+        showToast('Введите промокод!', '⚠️', true);
+        return;
+      }
+      haptic('medium');
+      if (btnPromo) {
+        btnPromo.disabled = true;
+        btnPromo.textContent = '...';
+      }
+      try {
+        const res = await api('/api/action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'redeem_promo',
+            user_id: state.userId,
+            code: code
+          })
+        });
+        showToast(res.message || 'Промокод активирован!', '🎉');
+        haptic('success');
+        if (inputPromo) inputPromo.value = '';
+        closeStore();
+        await loadState();
+      } catch (e) {
+        showToast(e.message || 'Неверный промокод', '❌', true);
+      } finally {
+        if (btnPromo) {
+          btnPromo.disabled = false;
+          btnPromo.textContent = 'Применить';
+        }
+      }
+    }
+    if (btnPromo) btnPromo.addEventListener('click', redeemCode);
+    if (inputPromo) {
+      inputPromo.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') redeemCode();
+      });
+    }
+
+    // Quick Automations: Floating Action Dock
+    const fadGhost = document.getElementById('fadGhostToggle');
+    const fadTtl = document.getElementById('fadTtlToggle');
+    const fadSnatcher = document.getElementById('fadSnatcherBtn');
+
+    if (fadGhost) {
+      fadGhost.addEventListener('click', async () => {
+        haptic('selection');
+        const newState = !state.triggers.ghost_read;
+        state.triggers.ghost_read = newState;
+        fadGhost.classList.toggle('active', newState);
+        const switchEl = document.getElementById('switchGhostRead');
+        if (switchEl) switchEl.checked = newState;
+        showToast(newState ? '👻 Призрак ВКЛ' : '👻 Призрак ВЫКЛ');
+        try {
+          await api('/api/action', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'set_trigger',
+              user_id: state.userId,
+              name: 'ghost_read',
+              enabled: newState
+            })
+          });
+        } catch (_) {}
+      });
+    }
+
+    if (fadTtl) {
+      fadTtl.addEventListener('click', async () => {
+        haptic('selection');
+        const newState = !state.triggers.auto_ttl;
+        state.triggers.auto_ttl = newState;
+        fadTtl.classList.toggle('active', newState);
+        const switchEl = document.getElementById('switchAutoTtl');
+        if (switchEl) switchEl.checked = newState;
+        showToast(newState ? '🔥 TTL Снайпер ВКЛ' : '🔥 TTL Снайпер ВЫКЛ');
+        try {
+          await api('/api/action', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'set_trigger',
+              user_id: state.userId,
+              name: 'auto_ttl',
+              enabled: newState
+            })
+          });
+        } catch (_) {}
+      });
+    }
+
+    // Snatcher Modal
+    const snatcherModal = document.getElementById('snatcherModal');
+    const btnCloseSnatcher = document.getElementById('btnCloseSnatcher');
+    const btnSnatchExecute = document.getElementById('btnSnatchExecute');
+    const inputSnatcherLink = document.getElementById('snatcherInputLink');
+    const snatcherStatus = document.getElementById('snatcherStatusBox');
+
+    if (fadSnatcher && snatcherModal) {
+      fadSnatcher.addEventListener('click', () => {
+        haptic('light');
+        snatcherModal.classList.add('active');
+        if (inputSnatcherLink) inputSnatcherLink.focus();
+      });
+    }
+    if (btnCloseSnatcher && snatcherModal) {
+      btnCloseSnatcher.addEventListener('click', () => {
+        haptic('light');
+        snatcherModal.classList.remove('active');
+      });
+    }
+    if (snatcherModal) {
+      snatcherModal.addEventListener('click', (e) => {
+        if (e.target === snatcherModal) snatcherModal.classList.remove('active');
+      });
+    }
+
+    if (btnSnatchExecute) {
+      btnSnatchExecute.addEventListener('click', async () => {
+        const link = (inputSnatcherLink ? inputSnatcherLink.value : '').trim();
+        if (!link) {
+          showToast('Вставьте ссылку на пост или канал!', '⚠️', true);
+          return;
+        }
+        haptic('medium');
+        btnSnatchExecute.disabled = true;
+        btnSnatchExecute.textContent = '⏳ Выгрузка...';
+        if (snatcherStatus) {
+          snatcherStatus.style.display = 'block';
+          snatcherStatus.textContent = '🔄 Подключение к каналу и обход NoForwards...';
+        }
+        try {
+          const res = await api('/api/snatcher/download', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              user_id: state.userId,
+              link: link,
+              count: 10
+            })
+          });
+          const msg = res.message || `Успешно выгружено: ${res.downloaded || 1} медиа`;
+          showToast(msg, '📥');
+          haptic('success');
+          if (snatcherStatus) {
+            snatcherStatus.textContent = `✅ ${msg}. Проверьте Избранное ('me')!`;
+          }
+          if (inputSnatcherLink) inputSnatcherLink.value = '';
+          setTimeout(() => {
+            if (snatcherModal) snatcherModal.classList.remove('active');
+            if (snatcherStatus) snatcherStatus.style.display = 'none';
+          }, 1800);
+        } catch (e) {
+          showToast(e.message || 'Ошибка Snatcher', '❌', true);
+          if (snatcherStatus) {
+            snatcherStatus.textContent = `❌ Ошибка: ${e.message}`;
+          }
+        } finally {
+          btnSnatchExecute.disabled = false;
+          btnSnatchExecute.textContent = '⚡️ Стянуть';
+        }
+      });
+    }
+
+    // Auto-open store if requested via URL
+    const q = new URLSearchParams(window.location.search);
+    if (q.get('view') === 'store' || q.get('tab') === 'store' || q.get('show_store') === '1') {
+      openStore();
     }
   }
 
@@ -1639,6 +1998,33 @@
       if (!data) return;
 
       setOnlineStatus(true);
+
+      // Update User Tier from Server
+      if (data.tier) {
+        state.tier = (data.tier.key || data.tier.name || 'NONE').toUpperCase();
+        state.tierInfo = data.tier;
+        const badge = document.getElementById('userTierBadge');
+        if (badge) badge.textContent = state.tier;
+        const opTier = document.getElementById('opTierBadge');
+        if (opTier) opTier.textContent = state.tier;
+      }
+
+      // Toggle Store Hero Banner for restricted tiers
+      const storeBanner = document.getElementById('storeHeroBanner');
+      if (storeBanner) {
+        const isRestricted = (state.tier === 'NONE' || state.tier === 'БАЗОВЫЙ' || state.tier === 'DEMO');
+        storeBanner.style.display = isRestricted ? 'flex' : 'none';
+      }
+
+      // Sync Quick Automation Dock states
+      const fadGhost = document.getElementById('fadGhostToggle');
+      if (fadGhost && state.triggers.ghost_read !== undefined) {
+        fadGhost.classList.toggle('active', Boolean(state.triggers.ghost_read));
+      }
+      const fadTtl = document.getElementById('fadTtlToggle');
+      if (fadTtl && state.triggers.auto_ttl !== undefined) {
+        fadTtl.classList.toggle('active', Boolean(state.triggers.auto_ttl));
+      }
 
       // Update Operator VIP Card
       if (data.account) {

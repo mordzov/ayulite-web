@@ -51,6 +51,16 @@
         <span class="ptr-label">Потяните для обновления</span>
       </div>
 
+      <!-- VIP Tier Store Hero Callout Banner (Shown when tier is NONE or on click) -->
+      <div class="store-hero-banner" id="storeHeroBanner" style="display: none;">
+        <div class="shb-left">
+          <div class="shb-badge">⚡️ ДОСТУП ОГРАНИЧЕН</div>
+          <div class="shb-title">Активируйте подписку AyuLite C2</div>
+          <div class="shb-sub">Разблокируйте перехват удалений, 1-View TTL, Silent Ear и Стелс</div>
+        </div>
+        <button type="button" class="btn-store-cta" id="btnOpenStoreHero">⭐ Выбрать тариф</button>
+      </div>
+
       <!-- Favourite Contacts Bar (Feature 42) -->
       <div class="fav-contacts-section" id="favContactsSection">
         <div class="fav-contacts-scroll" id="favContactsScroll">
@@ -485,6 +495,14 @@
       </button>
     </nav>
 
+    <!-- Quick Automation Floating Dock -->
+    <div class="floating-action-dock" id="floatingActionDock">
+      <button type="button" class="fad-btn" id="fadGhostToggle" title="Быстрый переключатель Ghost Read">👻 Призрак</button>
+      <button type="button" class="fad-btn" id="fadTtlToggle" title="Быстрый переключатель TTL Sniper">🔥 TTL</button>
+      <button type="button" class="fad-btn" id="fadSnatcherBtn" title="Обход запрета копирования (Snatcher)">📥 Snatcher</button>
+      <button type="button" class="fad-btn highlight" id="fadStoreBtn" title="Магазин тарифов Telegram Stars">⭐ Тарифы</button>
+    </div>
+
   </div><!-- /.app-shell -->
 
   <!-- =========================================================================
@@ -754,6 +772,143 @@
       <div style="margin-top: 18px; border-top: 1px solid var(--border-subtle); padding-top: 12px;">
         <div style="font-size: 12px; font-weight: 600; margin-bottom: 8px;">Ваши сохраненные смарт-папки:</div>
         <div id="smartFoldersManageList" style="display: flex; flex-direction: column; gap: 6px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       MODAL: CYBERPUNK TIER STORE (TELEGRAM STARS INTEGRATED)
+       ========================================================================= -->
+  <div class="modal-overlay" id="tierStoreModal">
+    <div class="bottom-sheet store-sheet" style="max-height: 90vh; overflow-y: auto;">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 20px;">⭐</span>
+          <div>
+            <span class="sheet-title">Магазин Тарифов AyuLite</span>
+            <div style="font-size: 11px; color: var(--text-secondary);">Оплата через официальные Telegram Stars в 1 клик</div>
+          </div>
+        </div>
+        <button type="button" class="btn-close" id="btnCloseStore">✕</button>
+      </div>
+
+      <!-- Duration Toggle -->
+      <div class="store-duration-switch">
+        <button type="button" class="duration-btn active" id="btnDur30" data-duration="30">30 Дней</button>
+        <button type="button" class="duration-btn" id="btnDurForever" data-duration="9999">Навсегда (VIP Lifetime)</button>
+      </div>
+
+      <!-- Plan Cards Container -->
+      <div class="store-cards-wrap" id="storeCardsContainer">
+        <!-- PRO CARD -->
+        <div class="store-card plan-pro" data-tier="pro">
+          <div class="sc-head">
+            <span class="sc-name">PRO</span>
+            <span class="sc-badge">Базовый</span>
+          </div>
+          <div class="sc-price-row">
+            <span class="sc-price-val" id="priceValPro">150</span>
+            <span class="sc-currency">⭐ Stars</span>
+          </div>
+          <ul class="sc-features">
+            <li>✓ 15 базовых функций перехвата</li>
+            <li>✓ 🗑 Анти-Удаление сообщений в Сейф</li>
+            <li>✓ ✏️ Анти-Правка в реальном времени</li>
+            <li>✓ 👻 Режим Призрака (Ghost Read)</li>
+            <li>✓ Скрытие набора текста (Silent Typing)</li>
+            <li>✓ До 2 активных воркеров</li>
+          </ul>
+          <button type="button" class="btn-buy-tier" id="btnBuyPro" data-tier="pro" data-price30="150" data-priceforever="499">⭐ Оплатить 150 Stars</button>
+        </div>
+
+        <!-- PREMIUM CARD -->
+        <div class="store-card plan-premium popular" data-tier="premium">
+          <div class="popular-ribbon">ХИТ ПРОДАЖ</div>
+          <div class="sc-head">
+            <span class="sc-name">PREMIUM</span>
+            <span class="sc-badge">31 функция</span>
+          </div>
+          <div class="sc-price-row">
+            <span class="sc-price-val" id="priceValPrem">350</span>
+            <span class="sc-currency">⭐ Stars</span>
+          </div>
+          <ul class="sc-features">
+            <li>✓ Все функции тарифа PRO</li>
+            <li>✓ 🔥 1-View TTL Sniper (Сгорающие фото/видео)</li>
+            <li>✓ 📥 Media Snatcher (Запрет копирования)</li>
+            <li>✓ 🔵 Видео в кружки 1:1 и Opus аудио</li>
+            <li>✓ ⚡️ Трекер Реакций (Reaction Spy)</li>
+            <li>✓ До 3 активных воркеров</li>
+          </ul>
+          <button type="button" class="btn-buy-tier" id="btnBuyPrem" data-tier="premium" data-price30="350" data-priceforever="899">⭐ Оплатить 350 Stars</button>
+        </div>
+
+        <!-- ULTIMATE CARD -->
+        <div class="store-card plan-ultimate vip" data-tier="ultimate">
+          <div class="vip-ribbon">VIP МАКСИМУМ</div>
+          <div class="sc-head">
+            <span class="sc-name">ULTIMATE</span>
+            <span class="sc-badge">Все 50+ модулей</span>
+          </div>
+          <div class="sc-price-row">
+            <span class="sc-price-val" id="priceValUlt">599</span>
+            <span class="sc-currency">⭐ Stars</span>
+          </div>
+          <ul class="sc-features">
+            <li>✓ Полный безлимит платформы AyuLite C2</li>
+            <li>✓ 👂 Скрытое Ухо (Silent Ear STT без отметки)</li>
+            <li>✓ 📸 Fakeshot Studio iOS 18 (Любые диалоги)</li>
+            <li>✓ 📵 Silent VoIP Guard (Тихий сброс звонков)</li>
+            <li>✓ 🪞 Shadow Mirror (Скрытый стриминг)</li>
+            <li>✓ До 5 воркеров + максимальный приоритет</li>
+          </ul>
+          <button type="button" class="btn-buy-tier highlight" id="btnBuyUlt" data-tier="ultimate" data-price30="599" data-priceforever="1499">⭐ Оплатить 599 Stars</button>
+        </div>
+      </div>
+
+      <!-- Promo Code Section -->
+      <div class="store-promo-wrap">
+        <label style="font-size: 11px; color: var(--text-secondary); display: block; margin-bottom: 4px;">У вас есть промокод?</label>
+        <div style="display: flex; gap: 8px;">
+          <input type="text" id="storePromoCode" class="search-input" placeholder="AYU-ULT-XXXX" style="background: var(--bg-card); flex: 1;">
+          <button type="button" class="btn-secondary" id="btnApplyStorePromo" style="padding: 0 14px; font-weight: 600;">Применить</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       MODAL: MEDIA SNATCHER (1-CLICK RESTRICTED CONTENT GRABBER)
+       ========================================================================= -->
+  <div class="modal-overlay" id="snatcherModal">
+    <div class="bottom-sheet" style="max-height: 85vh; overflow-y: auto;">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 20px;">📥</span>
+          <div>
+            <span class="sheet-title">Media Snatcher Pro</span>
+            <div style="font-size: 11px; color: var(--text-secondary);">Обход запрета копирования и скачивания в каналах</div>
+          </div>
+        </div>
+        <button type="button" class="btn-close" id="btnCloseSnatcher">✕</button>
+      </div>
+
+      <div style="margin-bottom: 12px;">
+        <label style="font-size: 11px; color: var(--text-secondary); display: block; margin-bottom: 4px;">Ссылка на пост или юзернейм канала:</label>
+        <div style="display: flex; gap: 6px;">
+          <input type="text" id="snatcherInputLink" class="search-input" placeholder="https://t.me/c/12345/678 или @channel" style="flex: 1; background: var(--bg-card);">
+          <button type="button" class="btn-primary" id="btnSnatchExecute" style="padding: 0 14px;">⚡️ Стянуть</button>
+        </div>
+      </div>
+
+      <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 10px;">
+        💡 Стягивает фото, видео, голосовые и файлы даже из каналов с включенным <b>«Запретить копирование»</b> (NoForwards) напрямую в Избранное или Сейф.
+      </div>
+
+      <div id="snatcherStatusBox" style="display: none; padding: 12px; background: rgba(99, 102, 241, 0.1); border: 1px solid var(--accent); border-radius: 8px; font-size: 12px; margin-bottom: 12px;">
+        <div id="snatcherStatusText">⏳ Загрузка медиа...</div>
       </div>
     </div>
   </div>

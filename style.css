@@ -1424,3 +1424,260 @@ input:checked + .slider:before {
   cursor: pointer;
 }
 .preset-tag-btn:hover { border-color: var(--accent); }
+
+/* ==========================================================================
+   VIP Store Hero Banner (Shown when tier is NONE)
+   ========================================================================== */
+.store-hero-banner {
+  margin: 10px 16px 14px 16px;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(168, 85, 247, 0.2) 100%);
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.15);
+}
+.shb-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--amber);
+  margin-bottom: 2px;
+}
+.shb-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #fff;
+}
+.shb-sub {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.3;
+}
+.btn-store-cta {
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  border: none;
+  color: #fff;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 2px 10px rgba(168, 85, 247, 0.4);
+  transition: transform 0.15s ease;
+}
+.btn-store-cta:active {
+  transform: scale(0.95);
+}
+
+/* ==========================================================================
+   Quick Automation Floating Action Dock
+   ========================================================================== */
+.floating-action-dock {
+  position: fixed;
+  bottom: calc(64px + var(--safe-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 32px);
+  max-width: 568px;
+  background: rgba(14, 16, 24, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 30px;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  z-index: 95;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+}
+.fad-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+.fad-btn:active {
+  transform: scale(0.95);
+}
+.fad-btn.active {
+  background: rgba(99, 102, 241, 0.2);
+  color: #fff;
+  border: 1px solid rgba(99, 102, 241, 0.4);
+}
+.fad-btn.highlight {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(244, 63, 94, 0.2));
+  color: var(--amber);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+/* ==========================================================================
+   Cyberpunk Tier Store Modal & Cards
+   ========================================================================== */
+.store-duration-switch {
+  display: flex;
+  background: var(--bg-card);
+  border: 1px solid var(--border-medium);
+  border-radius: 10px;
+  padding: 3px;
+  margin-bottom: 14px;
+}
+.duration-btn {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 7px 0;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.duration-btn.active {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+}
+.store-cards-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.store-card {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--border-medium);
+  border-radius: 12px;
+  padding: 14px 16px;
+  overflow: hidden;
+  transition: border-color 0.2s ease;
+}
+.store-card.popular {
+  border-color: rgba(6, 182, 212, 0.5);
+  background: linear-gradient(180deg, rgba(6, 182, 212, 0.08) 0%, var(--bg-card) 40%);
+}
+.store-card.vip {
+  border-color: rgba(168, 85, 247, 0.6);
+  background: linear-gradient(180deg, rgba(168, 85, 247, 0.1) 0%, var(--bg-card) 40%);
+}
+.popular-ribbon {
+  position: absolute;
+  top: 10px;
+  right: -28px;
+  background: linear-gradient(135deg, #06b6d4, #3b82f6);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 3px 28px;
+  transform: rotate(45deg);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+.vip-ribbon {
+  position: absolute;
+  top: 10px;
+  right: -28px;
+  background: linear-gradient(135deg, #a855f7, #ec4899);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 3px 28px;
+  transform: rotate(45deg);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+.sc-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.sc-name {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: #fff;
+}
+.sc-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+}
+.sc-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.sc-price-val {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--amber);
+}
+.sc-currency {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.sc-features {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 14px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.sc-features li {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+.btn-buy-tier {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-medium);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 10px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.btn-buy-tier:active {
+  transform: scale(0.97);
+}
+.btn-buy-tier.highlight {
+  background: linear-gradient(135deg, #a855f7, #6366f1);
+  border: none;
+  box-shadow: 0 4px 16px rgba(168, 85, 247, 0.4);
+}
+.store-promo-wrap {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed var(--border-medium);
+  border-radius: 10px;
+  padding: 12px;
+  margin-top: 10px;
+}

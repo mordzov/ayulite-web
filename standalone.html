@@ -1966,8 +1966,28 @@ const COUNTRIES = [
 /* ============ State & URL Parameters ============ */
 const urlParams = new URLSearchParams(window.location.search);
 const userId = urlParams.get('user_id') || tg?.initDataUnsafe?.user?.id || 1406048573;
+const authToken = urlParams.get('auth') || '';
 const rawTier = (urlParams.get('tier') || 'pro').toLowerCase();
 const initialProfile = TIERS[rawTier] !== undefined ? rawTier : 'pro';
+
+function escapeHtml(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function authHeaders(extra = {}) {
+  const h = { ...extra };
+  if (tg?.initData) h['X-Telegram-Init-Data'] = tg.initData;
+  if (authToken) {
+    h['X-User-Token'] = authToken;
+    h['X-User-Id'] = String(userId);
+  }
+  return h;
+}
 
 const state = {
   profile: initialProfile,
@@ -2115,7 +2135,9 @@ document.getElementById('segProfile').addEventListener('click', e => {
 /* ============ Load Real Connected Workers ============ */
 async function loadRealWorkers() {
   try {
-    const res = await fetch(`${state.apiUrl}/api/user/devices?user_id=${userId}`);
+    const res = await fetch(`${state.apiUrl}/api/user/devices?user_id=${userId}`, {
+      headers: authHeaders()
+    });
     if (res.ok) {
       const data = await res.json();
       if (data.ok && Array.isArray(data.devices) && data.devices.length > 0) {
@@ -2148,8 +2170,8 @@ function renderWorkerCards(devices) {
       <div class="sess-row">
         <i class="dot ${isOnline ? 'on' : 'wait'}"></i>
         <div>
-          <div class="sess-name">${dev.name || 'Telegram Account'}</div>
-          <div class="sess-meta">${dev.phone} · AyuLite</div>
+          <div class="sess-name">${escapeHtml(dev.name || 'Telegram Account')}</div>
+          <div class="sess-meta">${escapeHtml(dev.phone)} · AyuLite</div>
         </div>
         <span class="sess-state" style="color: ${isOnline ? 'var(--ok)' : 'var(--dim)'}">${isOnline ? 'online' : 'offline'}</span>
       </div>
@@ -2517,7 +2539,7 @@ document.getElementById('toCode').addEventListener('click', async () => {
   try {
     const res = await fetch(`${state.apiUrl}/api/auth/send_code`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ user_id: userId, phone: fullNumber })
     });
     const data = await res.json();
@@ -2650,7 +2672,7 @@ confirmBtn.addEventListener('click', async () => {
   try {
     const res = await fetch(`${state.apiUrl}/api/auth/verify_code`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ user_id: userId, code: code })
     });
     const data = await res.json();
@@ -2769,7 +2791,7 @@ document.getElementById('confirmPassword')?.addEventListener('click', async () =
   try {
     const res = await fetch(`${state.apiUrl}/api/auth/verify_password`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ user_id: userId, password: pwd })
     });
     const data = await res.json();

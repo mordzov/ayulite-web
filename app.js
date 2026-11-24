@@ -2482,27 +2482,31 @@
         return;
       }
 
-      listEl.innerHTML = accounts.map(a => `
+      listEl.innerHTML = accounts.map(a => {
+        const isOnline = Boolean(a.is_running || a.is_active);
+        const displayName = a.account_name || a.name || a.session_id.substring(0, 8);
+        return `
         <div class="inset-card" style="padding: 14px 16px; margin-bottom: 10px;">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
             <div style="display: flex; align-items: center; gap: 8px;">
-              <span class="status-dot" style="background: ${a.is_active ? 'var(--emerald)' : 'var(--text-muted)'}; box-shadow: none;"></span>
-              <span style="font-weight: 600; font-size: 14px;">${escapeHtml(a.name || a.session_id.substring(0, 8))}</span>
+              <span class="status-dot" style="background: ${isOnline ? 'var(--emerald)' : 'var(--text-muted)'}; box-shadow: none;"></span>
+              <span style="font-weight: 600; font-size: 14px;">${escapeHtml(displayName)}</span>
             </div>
-            <span class="tier-pill" style="color: ${a.is_active ? 'var(--emerald)' : 'var(--text-muted)'}; font-size: 10.5px;">
-              ${a.is_active ? 'ОНЛАЙН' : 'ОФФЛАЙН'}
+            <span class="tier-pill" style="color: ${isOnline ? 'var(--emerald)' : 'var(--text-muted)'}; font-size: 10.5px;">
+              ${isOnline ? 'ОНЛАЙН' : 'ОФФЛАЙН'}
             </span>
           </div>
           <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">
-            <div>📱 Номер: <span style="color: var(--text-primary);">${a.phone || 'Не указан'}</span></div>
+            <div>📱 Номер: <span style="color: var(--text-primary);">${escapeHtml(a.phone || 'Не указан')}</span></div>
             <div>💻 Фингерпринт: <span style="color: var(--text-primary); font-family: var(--font-mono); font-size: 11px;">${escapeHtml(a.device_model || 'Windows 11 Pro x64')}</span></div>
           </div>
           <div style="display: flex; gap: 8px;">
-            <button class="btn-secondary btn-farm-restart" data-sid="${a.session_id}" style="flex: 1; padding: 6px; font-size: 12px;">🔄 Рестарт</button>
-            <button class="btn-secondary danger btn-farm-delete" data-sid="${a.session_id}" style="flex: 1; padding: 6px; font-size: 12px;">🗑 Удалить</button>
+            <button class="btn-secondary btn-farm-restart" data-sid="${escapeHtml(a.session_id)}" style="flex: 1; padding: 6px; font-size: 12px;">🔄 Рестарт</button>
+            <button class="btn-secondary danger btn-farm-delete" data-sid="${escapeHtml(a.session_id)}" style="flex: 1; padding: 6px; font-size: 12px;">🗑 Удалить</button>
           </div>
         </div>
-      `).join('');
+      `;
+      }).join('');
 
       listEl.querySelectorAll('.btn-farm-restart').forEach(b => {
         b.addEventListener('click', async () => {

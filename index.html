@@ -114,8 +114,14 @@
         <button type="button" class="btn-secondary" id="btnResetSmartFolder" style="padding: 3px 8px; font-size: 11px; color: var(--rose); border-color: rgba(244,63,94,0.3);">✕ Сбросить</button>
       </div>
 
+      <!-- Collapsible Sub-Filter Drawer Trigger -->
+      <button type="button" class="sub-filter-toggle-btn" id="btnToggleSubFilters">
+        <span>⚡️ Дополнительные фильтры медиа и сортировки</span>
+        <span class="sub-filter-chevron" id="subFilterChevron">▼</span>
+      </button>
+
       <!-- Sub-Filters: Media Type & Tool Buttons (Features 10, 11, 13, 14, 15, 16) -->
-      <div class="sub-filter-bar">
+      <div class="sub-filter-bar" id="subFilterBar" style="display: none;">
         <div class="media-type-chips">
           <button class="media-chip active" data-media="all">Все типы</button>
           <button class="media-chip" data-media="photo">🖼 Фото</button>

@@ -365,6 +365,17 @@
 
   // Filter Pills, Media Chips, Search History & Feed Tools
   function setupFilters() {
+    // Collapsible Sub-Filter Drawer
+    const btnToggleSub = document.getElementById('btnToggleSubFilters');
+    const subBar = document.getElementById('subFilterBar');
+    if (btnToggleSub && subBar) {
+      btnToggleSub.addEventListener('click', () => {
+        haptic('light');
+        const isHidden = subBar.style.display === 'none';
+        subBar.style.display = isHidden ? 'flex' : 'none';
+        btnToggleSub.classList.toggle('open', isHidden);
+      });
+    }
     const pills = document.querySelectorAll('.pill-btn');
     pills.forEach(p => {
       p.addEventListener('click', () => {

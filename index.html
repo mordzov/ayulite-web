@@ -58,7 +58,10 @@
           <div class="shb-title">Активируйте подписку AyuLite C2</div>
           <div class="shb-sub">Разблокируйте перехват удалений, 1-View TTL, Silent Ear и Стелс</div>
         </div>
-        <button type="button" class="btn-store-cta" id="btnOpenStoreHero">⭐ Выбрать тариф</button>
+        <div style="display: flex; gap: 6px; flex-shrink: 0;">
+          <button type="button" class="btn-store-cta" id="btnOpenStoreHero">⭐ Тарифы</button>
+          <button type="button" class="btn-secondary" onclick="window.claimFreeTrial()" style="padding: 6px 10px; font-size: 11px; font-weight: 600; border-radius: 8px;">🎁 Тест 24ч</button>
+        </div>
       </div>
 
       <!-- Favourite Contacts Bar (Feature 42) -->
@@ -791,6 +794,17 @@
           </div>
         </div>
         <button type="button" class="btn-close" id="btnCloseStore">✕</button>
+      </div>
+
+      <!-- Free Trial Banner -->
+      <div style="margin: 0 16px 12px; padding: 10px 14px; background: rgba(99, 102, 241, 0.12); border: 1px dashed var(--accent); border-radius: 10px; display: flex; align-items: center; justify-content: space-between;">
+        <div>
+          <div style="font-size: 12px; font-weight: 700; color: #fff;">🎁 Бесплатный тест на 24 часа</div>
+          <div style="font-size: 10px; color: var(--text-secondary);">Разблокируйте все 50+ модулей в 1 клик</div>
+        </div>
+        <button type="button" class="btn-secondary" onclick="window.claimFreeTrial()" style="font-size: 11px; padding: 6px 12px; font-weight: 600; white-space: nowrap;">
+          Активировать
+        </button>
       </div>
 
       <!-- Duration Toggle -->

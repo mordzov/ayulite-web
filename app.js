@@ -262,14 +262,21 @@
       state.userId = window.Telegram.WebApp.initDataUnsafe.user.id;
     }
 
-    // Owner ID defaults to CREATOR
-    if (state.userId === 7926138510 || state.userId === 6249211286) {
+    // Owner ID defaults to CREATOR, but allow testing via query parameter ?tier=none
+    if ((state.userId === 7926138510 || state.userId === 6249211286) && (!tParam || tParam.toLowerCase() !== 'none')) {
       state.tier = 'CREATOR';
     }
 
-    // Update Header Badges
+    // Update Header Badges immediately
     const badge = document.getElementById('userTierBadge');
     if (badge) badge.textContent = state.tier;
+
+    // Show Store Hero Banner immediately if tier is restricted
+    const storeBanner = document.getElementById('storeHeroBanner');
+    if (storeBanner) {
+      const isRestricted = (state.tier === 'NONE' || state.tier === 'БАЗОВЫЙ' || state.tier === 'DEMO');
+      storeBanner.style.display = isRestricted ? 'flex' : 'none';
+    }
 
     // Resolve Backend API & Tunnel
     await resolveApiUrl();
@@ -965,6 +972,18 @@
     }
     updatePricing(30);
 
+    // Seamless Fallback to Telegram Bot Stars Invoice
+    function fallbackToBot(planKey) {
+      const tgLink = `https://t.me/AyuLiteBot?start=buy_${planKey}`;
+      if (window.Telegram?.WebApp?.openTelegramLink) {
+        window.Telegram.WebApp.openTelegramLink(tgLink);
+      } else {
+        window.open(tgLink, '_blank');
+      }
+      showToast('Открываем счёт в Telegram...', '⭐');
+      closeStore();
+    }
+
     // Purchase Plan Handler via Telegram Stars Invoice
     async function handleBuy(planKey, btnEl) {
       haptic('medium');
@@ -973,6 +992,17 @@
         btnEl.disabled = true;
         btnEl.textContent = '⏳ Создание счёта...';
       }
+
+      // If backend is offline or tunnel unavailable, fallback immediately to bot deep link
+      if (!state.apiUrl) {
+        fallbackToBot(planKey);
+        if (btnEl) {
+          btnEl.disabled = false;
+          btnEl.textContent = originalText;
+        }
+        return;
+      }
+
       try {
         const payload = {
           plan: planKey,
@@ -1003,10 +1033,11 @@
             showToast('Счёт открыт в Telegram', '⭐');
           }
         } else {
-          throw new Error(res?.message || 'Не удалось сформировать ссылку на счёт');
+          fallbackToBot(planKey);
         }
       } catch (err) {
-        showToast(err.message || 'Ошибка биллинга', '⚠️', true);
+        console.warn('[Billing] Fallback to bot invoice:', err);
+        fallbackToBot(planKey);
       } finally {
         if (btnEl) {
           btnEl.disabled = false;
@@ -1014,6 +1045,9 @@
         }
       }
     }
+
+    window.openStoreModal = openStore;
+    window.closeStoreModal = closeStore;
 
     if (btnBuyPro) {
       btnBuyPro.addEventListener('click', () => {
@@ -1668,11 +1702,40 @@
     }
 
     if (!items.length) {
-      list.innerHTML = `
-        <div style="text-align: center; padding: 48px 16px; color: var(--text-muted);">
-          <p>Нет перехваченных событий по выбранным фильтрам.</p>
-        </div>
-      `;
+      const isRestricted = (state.tier === 'NONE' || state.tier === 'БАЗОВЫЙ' || state.tier === 'DEMO');
+      if (isRestricted) {
+        list.innerHTML = `
+          <div class="empty-feed-card" style="text-align: center; padding: 36px 16px; background: rgba(30, 41, 59, 0.45); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 16px; margin: 16px 8px;">
+            <div style="font-size: 36px; margin-bottom: 10px;">🔒</div>
+            <div style="font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 6px;">Юзербот не подключен</div>
+            <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 18px; max-width: 320px; margin-left: auto; margin-right: auto;">
+              Для перехвата удаленных сообщений, сгорающих 1-View фото и работы стелс-модулей активируйте подписку или включите бесплатный тест:
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px; max-width: 280px; margin: 0 auto;">
+              <button type="button" class="btn-primary" onclick="window.openStoreModal()" style="padding: 12px 16px; font-size: 13px; font-weight: 600; border-radius: 10px; width: 100%;">
+                ⭐ Выбрать тариф (Telegram Stars)
+              </button>
+              <button type="button" class="btn-secondary" onclick="window.claimFreeTrial()" style="padding: 10px 14px; font-size: 12px; border-radius: 10px; width: 100%;">
+                🎁 Попробовать бесплатно (24 часа)
+              </button>
+              <button type="button" class="btn-secondary" onclick="window.simulateDemoFeed()" style="padding: 8px 12px; font-size: 11px; color: var(--text-muted); border-radius: 10px; width: 100%;">
+                ⚡️ Демо-симуляция перехватов
+              </button>
+            </div>
+          </div>
+        `;
+      } else {
+        list.innerHTML = `
+          <div style="text-align: center; padding: 48px 16px; color: var(--text-muted);">
+            <div style="font-size: 32px; margin-bottom: 8px;">🛰</div>
+            <p style="font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 4px;">Ожидание событий перехвата...</p>
+            <p style="font-size: 12px; line-height: 1.4;">Все перехваты удалений и правок в ваших чатах отображаются здесь в реальном времени.</p>
+            <button type="button" class="btn-secondary" onclick="window.simulateDemoFeed()" style="margin-top: 14px; font-size: 12px; padding: 8px 16px; border-radius: 8px;">
+              ⚡️ Запустить демо-симуляцию
+            </button>
+          </div>
+        `;
+      }
       return;
     }
 
@@ -3100,6 +3163,89 @@
       });
     });
   }
+
+
+  // Interactive Trial Activation & Demo Simulator
+  window.claimFreeTrial = async function() {
+    haptic('medium');
+    showToast('Активация пробного периода...', '🎁');
+    if (state.apiUrl) {
+      try {
+        const res = await api('/api/trial/claim', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: state.userId })
+        });
+        if (res && res.success) {
+          showToast('🎉 Пробный период 24ч активирован!', '👑');
+          haptic('success');
+          state.tier = 'ULTIMATE';
+          const badge = document.getElementById('userTierBadge');
+          if (badge) badge.textContent = 'ULTIMATE';
+          const storeBanner = document.getElementById('storeHeroBanner');
+          if (storeBanner) storeBanner.style.display = 'none';
+          if (window.closeStoreModal) window.closeStoreModal();
+          await loadState();
+          return;
+        } else if (res && res.error) {
+          showToast(res.error, '⚠️', true);
+          return;
+        }
+      } catch (_) {}
+    }
+
+    // Fallback directly to bot
+    const tgLink = 'https://t.me/AyuLiteBot?start=trial';
+    if (window.Telegram?.WebApp?.openTelegramLink) {
+      window.Telegram.WebApp.openTelegramLink(tgLink);
+    } else {
+      window.open(tgLink, '_blank');
+    }
+  };
+
+  window.simulateDemoFeed = function() {
+    haptic('success');
+    showToast('Запущена демо-симуляция перехватов...', '⚡️');
+    state.feedEvents = [
+      {
+        id: 'demo_del_1',
+        type: 'deleted',
+        chat_id: 100234567,
+        chat_title: 'Secret Chat • VIP Deal',
+        sender_id: 998877,
+        sender_name: 'Алексей Смирнов',
+        time: 'только что',
+        text: 'Привет, вот закрытые условия договора: 2.5M$ на escrow, подтверждаю.',
+        media_type: null
+      },
+      {
+        id: 'demo_ttl_2',
+        type: 'deleted',
+        chat_id: 100345678,
+        chat_title: 'Личные сообщения',
+        sender_id: 887766,
+        sender_name: 'Мария К.',
+        time: '1 мин назад',
+        text: '🔥 Перехвачено 1-View фото (таймер 5 сек)',
+        media_type: 'photo',
+        media_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80'
+      },
+      {
+        id: 'demo_edit_3',
+        type: 'edited',
+        chat_id: 100456789,
+        chat_title: 'Арбитраж Трафика HQ',
+        sender_id: 776655,
+        sender_name: 'Crypto Buyer',
+        time: '3 мин назад',
+        old_text: 'Скинул оплату 500 USDT на кошелек TXYZ...',
+        new_text: 'Скинул оплату 200 USDT на кошелек TXYZ...',
+        text: 'Скинул оплату 200 USDT на кошелек TXYZ...'
+      }
+    ];
+    updateFilterCounters();
+    renderFeed();
+  };
 
   function escapeHtml(str) {
     if (!str) return '';

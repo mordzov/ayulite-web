@@ -8,27 +8,37 @@
   
   <!-- Telegram WebApp SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link rel="stylesheet" href="style.css?v=9.2">
+  <!-- Cyberpunk High-Tech Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Unbounded:wght@600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=10.0">
 </head>
 <body>
+  <!-- Dynamic Cyber Background Canvas -->
+  <canvas id="cyberCanvas"></canvas>
 
   <!-- App Shell Container: Desktop Centered (600px) & Mobile Responsive -->
   <div class="app-shell">
 
-    <!-- Top Sticky Header -->
+    <!-- Top Sticky Header: Cyber HUD Glassmorphism -->
     <header class="app-header">
       <div class="brand-wrap">
         <div class="brand-logo">
-          <span>AYULITE</span>
-          <span class="brand-badge">C2 CORE</span>
+          <span class="logo-shield">🛡️</span>
+          <span class="logo-text">AYULITE</span>
+          <span class="brand-badge">QUANTUM C2</span>
         </div>
       </div>
       <div class="header-status">
+        <button type="button" class="btn-sound-toggle" id="btnToggleSound" title="Звуки C2">
+          <span id="soundIcon">🔊</span>
+        </button>
         <div class="live-indicator">
           <span class="status-dot"></span>
-          <span id="headerStatusText">Live</span>
+          <span id="headerStatusText">14ms</span>
         </div>
-        <div class="tier-pill" id="userTierBadge">CREATOR</div>
+        <div class="tier-pill" id="userTierBadge" title="Управление тарифом">CREATOR</div>
       </div>
     </header>
 
@@ -68,6 +78,29 @@
       <div class="fav-contacts-section" id="favContactsSection">
         <div class="fav-contacts-scroll" id="favContactsScroll">
           <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Cyber Telemetry Real-time Radar Bar -->
+      <div class="telemetry-hud-card">
+        <div class="hud-item">
+          <div class="hud-val hud-crimson" id="hudStatDeleted">0</div>
+          <div class="hud-lbl">🗑 Перехваты</div>
+        </div>
+        <div class="hud-sep"></div>
+        <div class="hud-item">
+          <div class="hud-val hud-amber" id="hudStatEdited">0</div>
+          <div class="hud-lbl">✏️ Правки</div>
+        </div>
+        <div class="hud-sep"></div>
+        <div class="hud-item">
+          <div class="hud-val hud-purple" id="hudStatTtl">0</div>
+          <div class="hud-lbl">🔥 1-View TTL</div>
+        </div>
+        <div class="hud-sep"></div>
+        <div class="hud-item">
+          <div class="hud-val hud-cyan" id="hudStatWorkers">1 / 5</div>
+          <div class="hud-lbl">🛰 Воркеры</div>
         </div>
       </div>
 

@@ -7,6 +7,132 @@
 (function () {
   'use strict';
 
+
+  // =========================================================================
+  // 1. Quantum Background Canvas & Sound Engine
+  // =========================================================================
+  const soundEngine = {
+    ctx: null,
+    enabled: localStorage.getItem('ayulite_sound_enabled') !== '0',
+    init() {
+      if (!this.ctx && (window.AudioContext || window.webkitAudioContext)) {
+        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    },
+    play(type) {
+      if (!this.enabled) return;
+      try {
+        this.init();
+        if (!this.ctx) return;
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+        const t = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        if (type === 'tap') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(800, t);
+          osc.frequency.exponentialRampToValueAtTime(300, t + 0.04);
+          gain.gain.setValueAtTime(0.035, t);
+          gain.gain.linearRampToValueAtTime(0.001, t + 0.04);
+          osc.start(t);
+          osc.stop(t + 0.04);
+        } else if (type === 'success') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(523.25, t); // C5
+          osc.frequency.setValueAtTime(659.25, t + 0.07); // E5
+          osc.frequency.setValueAtTime(783.99, t + 0.14); // G5
+          osc.frequency.setValueAtTime(1046.50, t + 0.21); // C6
+          gain.gain.setValueAtTime(0.05, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+          osc.start(t);
+          osc.stop(t + 0.35);
+        } else if (type === 'warp') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(180, t);
+          osc.frequency.exponentialRampToValueAtTime(1100, t + 0.16);
+          gain.gain.setValueAtTime(0.04, t);
+          gain.gain.linearRampToValueAtTime(0.001, t + 0.16);
+          osc.start(t);
+          osc.stop(t + 0.16);
+        } else if (type === 'alert') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(350, t);
+          osc.frequency.linearRampToValueAtTime(150, t + 0.12);
+          gain.gain.setValueAtTime(0.04, t);
+          gain.gain.linearRampToValueAtTime(0.001, t + 0.12);
+          osc.start(t);
+          osc.stop(t + 0.12);
+        }
+      } catch (_) {}
+    }
+  };
+
+  function initCyberCanvas() {
+    const canvas = document.getElementById('cyberCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
+
+    window.addEventListener('resize', () => {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }, { passive: true });
+
+    const particles = [];
+    const count = Math.min(Math.floor(width / 18), 32);
+    for (let i = 0; i < count; i++) {
+      particles.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+        radius: Math.random() * 1.5 + 0.5,
+        alpha: Math.random() * 0.4 + 0.15
+      });
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, width, height);
+
+      // Draw faint connections
+      for (let i = 0; i < particles.length; i++) {
+        const p1 = particles[i];
+        p1.x += p1.vx;
+        p1.y += p1.vy;
+        if (p1.x < 0) p1.x = width;
+        if (p1.x > width) p1.x = 0;
+        if (p1.y < 0) p1.y = height;
+        if (p1.y > height) p1.y = 0;
+
+        ctx.beginPath();
+        ctx.arc(p1.x, p1.y, p1.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(99, 102, 241, ${p1.alpha})`;
+        ctx.fill();
+
+        for (let j = i + 1; j < particles.length; j++) {
+          const p2 = particles[j];
+          const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+          if (dist < 110) {
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.strokeStyle = `rgba(168, 85, 247, ${0.12 * (1 - dist / 110)})`;
+            ctx.lineWidth = 0.8;
+            ctx.stroke();
+          }
+        }
+      }
+      requestAnimationFrame(animate);
+    }
+    animate();
+  }
+
   // State Management
   const state = {
     userId: 7926138510,
@@ -56,8 +182,12 @@
     reconnectTimer: null
   };
 
-  // Telegram Haptic Feedback Integration
+  // Telegram Haptic Feedback & Sci-Fi Audio Synthesis
   function haptic(type = 'light') {
+    if (type === 'success') soundEngine.play('success');
+    else if (type === 'error' || type === 'warning') soundEngine.play('alert');
+    else if (type === 'medium' || type === 'heavy') soundEngine.play('warp');
+    else soundEngine.play('tap');
     try {
       if (window.Telegram?.WebApp?.HapticFeedback) {
         if (type === 'selection') {
@@ -276,6 +406,20 @@
     if (storeBanner) {
       const isRestricted = (state.tier === 'NONE' || state.tier === 'БАЗОВЫЙ' || state.tier === 'DEMO');
       storeBanner.style.display = isRestricted ? 'flex' : 'none';
+    }
+
+    // Launch Quantum Cyberpunk Background & Sound Engine
+    initCyberCanvas();
+    const btnSound = document.getElementById('btnToggleSound');
+    const iconSound = document.getElementById('soundIcon');
+    if (btnSound) {
+      if (iconSound) iconSound.textContent = soundEngine.enabled ? '🔊' : '🔇';
+      btnSound.addEventListener('click', () => {
+        soundEngine.enabled = !soundEngine.enabled;
+        localStorage.setItem('ayulite_sound_enabled', soundEngine.enabled ? '1' : '0');
+        if (iconSound) iconSound.textContent = soundEngine.enabled ? '🔊' : '🔇';
+        if (soundEngine.enabled) soundEngine.play('success');
+      });
     }
 
     // Resolve Backend API & Tunnel
@@ -1716,21 +1860,27 @@
       const isRestricted = (state.tier === 'NONE' || state.tier === 'БАЗОВЫЙ' || state.tier === 'DEMO');
       if (isRestricted) {
         list.innerHTML = `
-          <div class="empty-feed-card" style="text-align: center; padding: 36px 16px; background: rgba(30, 41, 59, 0.45); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 16px; margin: 16px 8px;">
-            <div style="font-size: 36px; margin-bottom: 10px;">🔒</div>
-            <div style="font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 6px;">Юзербот не подключен</div>
-            <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 18px; max-width: 320px; margin-left: auto; margin-right: auto;">
-              Для перехвата удаленных сообщений, сгорающих 1-View фото и работы стелс-модулей активируйте подписку или включите бесплатный тест:
+          <div class="quantum-empty-card">
+            <div class="sonar-radar-box">
+              <div class="sonar-ring r1"></div>
+              <div class="sonar-ring r2"></div>
+              <div class="sonar-ring r3"></div>
+              <div class="sonar-sweep"></div>
+              <div class="sonar-center-icon">🔒</div>
             </div>
-            <div style="display: flex; flex-direction: column; gap: 8px; max-width: 280px; margin: 0 auto;">
-              <button type="button" class="btn-primary" onclick="window.openStoreModal()" style="padding: 12px 16px; font-size: 13px; font-weight: 600; border-radius: 10px; width: 100%;">
-                ⭐ Выбрать тариф (Telegram Stars)
+            <div class="quantum-title">AYU-VAULT PROTOCOL // LOCKED</div>
+            <div class="quantum-sub">
+              Для скрытого перехвата удалений в реальном времени, 1-View фото и запуска квантового стелс-воркера выберите тариф подписки:
+            </div>
+            <div class="quantum-actions">
+              <button type="button" class="btn-quantum-gold" onclick="window.openStoreModal()">
+                ⭐ АКТИВИРОВАТЬ ТАРИФ (TELEGRAM STARS)
               </button>
-              <button type="button" class="btn-secondary" onclick="window.claimFreeTrial()" style="padding: 10px 14px; font-size: 12px; border-radius: 10px; width: 100%;">
-                🎁 Попробовать бесплатно (24 часа)
+              <button type="button" class="btn-quantum-cyan" onclick="window.claimFreeTrial()">
+                🎁 ВЗЯТЬ БЕСПЛАТНЫЙ ТЕСТ 24 ЧАСА
               </button>
-              <button type="button" class="btn-secondary" onclick="window.simulateDemoFeed()" style="padding: 8px 12px; font-size: 11px; color: var(--text-muted); border-radius: 10px; width: 100%;">
-                ⚡️ Демо-симуляция перехватов
+              <button type="button" class="btn-quantum-ghost" onclick="window.simulateDemoFeed()">
+                ⚡️ ЗАПУСТИТЬ ТАКТИЧЕСКУЮ СИМУЛЯЦИЮ ПЕРЕХВАТА
               </button>
             </div>
           </div>
@@ -2129,7 +2279,7 @@
         }
       }
 
-      // Update Metrics Counters
+      // Update Metrics Counters & Quantum Telemetry HUD
       if (data.stats) {
         state.stats = data.stats;
         const elDel = document.getElementById('statDeletedCount');
@@ -2137,10 +2287,27 @@
         const elTtl = document.getElementById('statTtlCount');
         const elRx = document.getElementById('statReactionsCount');
 
-        if (elDel) elDel.textContent = data.stats.total || data.stats.deleted || 0;
-        if (elEd) elEd.textContent = data.stats.edited || 0;
-        if (elTtl) elTtl.textContent = data.stats.ttl || data.stats.ttl_count || 0;
+        const valDel = data.stats.total || data.stats.deleted || 0;
+        const valEd = data.stats.edited || 0;
+        const valTtl = data.stats.ttl || data.stats.ttl_count || 0;
+
+        if (elDel) elDel.textContent = valDel;
+        if (elEd) elEd.textContent = valEd;
+        if (elTtl) elTtl.textContent = valTtl;
         if (elRx) elRx.textContent = data.stats.reactions || 0;
+
+        const hudDel = document.getElementById('hudStatDeleted');
+        const hudEd = document.getElementById('hudStatEdited');
+        const hudTtl = document.getElementById('hudStatTtl');
+        const hudWorkers = document.getElementById('hudStatWorkers');
+
+        if (hudDel) hudDel.textContent = valDel;
+        if (hudEd) hudEd.textContent = valEd;
+        if (hudTtl) hudTtl.textContent = valTtl;
+        if (hudWorkers) {
+          const wCount = (data.workers_list && data.workers_list.length) ? data.workers_list.length : 1;
+          hudWorkers.textContent = `${wCount} / 5`;
+        }
       }
 
       // Update Triggers Checkboxes
@@ -3216,28 +3383,40 @@
 
   window.simulateDemoFeed = function() {
     haptic('success');
-    showToast('Запущена демо-симуляция перехватов...', '⚡️');
+    soundEngine.play('warp');
+    showToast('⚡️ ТАКТИЧЕСКИЙ ПЕРЕХВАТ: 4 секретных события загружены!', '🛰');
+
+    // Roll up Telemetry HUD numbers
+    const hudDel = document.getElementById('hudStatDeleted');
+    const hudEd = document.getElementById('hudStatEdited');
+    const hudTtl = document.getElementById('hudStatTtl');
+    if (hudDel) hudDel.textContent = '14';
+    if (hudEd) hudEd.textContent = '9';
+    if (hudTtl) hudTtl.textContent = '5';
+
     state.feedEvents = [
       {
         id: 'demo_del_1',
         type: 'deleted',
         chat_id: 100234567,
-        chat_title: 'Secret Chat • VIP Deal',
+        chat_title: 'Сделка Escrow • Приватный диалог',
         sender_id: 998877,
-        sender_name: 'Алексей Смирнов',
+        sender_name: 'Максим Романов',
+        sender_username: 'romanov_vip',
         time: 'только что',
-        text: 'Привет, вот закрытые условия договора: 2.5M$ на escrow, подтверждаю.',
+        text: '⚠️ Удалил сообщение: вот пароль от холодного хранилища: "Quantum_9981_Alpha". Переведи остаток.',
         media_type: null
       },
       {
         id: 'demo_ttl_2',
-        type: 'deleted',
+        type: 'ttl',
+        ttl: 5,
         chat_id: 100345678,
         chat_title: 'Личные сообщения',
         sender_id: 887766,
-        sender_name: 'Мария К.',
-        time: '1 мин назад',
-        text: '🔥 Перехвачено 1-View фото (таймер 5 сек)',
+        sender_name: 'Алина Воронина',
+        time: '30 сек назад',
+        text: '🔥 1-View Фото (таймер 5 сек) перехвачено на лету и сохранено в AyuVault!',
         media_type: 'photo',
         media_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80'
       },
@@ -3245,15 +3424,28 @@
         id: 'demo_edit_3',
         type: 'edited',
         chat_id: 100456789,
-        chat_title: 'Арбитраж Трафика HQ',
+        chat_title: 'OTC Crypto Desk • Dubai',
         sender_id: 776655,
-        sender_name: 'Crypto Buyer',
-        time: '3 мин назад',
-        old_text: 'Скинул оплату 500 USDT на кошелек TXYZ...',
-        new_text: 'Скинул оплату 200 USDT на кошелек TXYZ...',
-        text: 'Скинул оплату 200 USDT на кошелек TXYZ...'
+        sender_name: 'Марк (Trader)',
+        time: '2 мин назад',
+        old_text: 'Перевел 150 000 USDT на кошелек TRC20: TLyK98q...',
+        new_text: 'Перевел 95 000 USDT на кошелек TRC20: TLyK98q...',
+        text: 'Перевел 95 000 USDT на кошелек TRC20: TLyK98q...'
+      },
+      {
+        id: 'demo_voice_4',
+        type: 'deleted',
+        chat_id: 100567890,
+        chat_title: 'Инсайд Инвест Канал',
+        sender_id: 665544,
+        sender_name: 'Дмитрий В.',
+        time: '4 мин назад',
+        text: '🎙 Голосовое сообщение (Silent Ear STT)',
+        transcription: '«Я уже скинул документы нотариусу. Подтверди встречу на 18:00, чтобы закрыть раунд.»',
+        media_type: 'voice'
       }
     ];
+
     updateFilterCounters();
     renderFeed();
   };

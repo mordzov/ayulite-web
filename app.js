@@ -120,13 +120,8 @@
       const host = window.location.hostname;
       const candidates = [];
 
-      if (qApi && qApi.startsWith('http')) candidates.push(qApi);
       if (host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0') {
         candidates.push(window.location.origin);
-      }
-      const cached = localStorage.getItem('ayulite_api_url');
-      if (cached && cached.startsWith('http') && !candidates.includes(cached)) {
-        candidates.push(cached);
       }
 
       try {
@@ -137,12 +132,18 @@
         }
       } catch (_) {}
 
+      if (qApi && qApi.startsWith('http') && !candidates.includes(qApi)) candidates.push(qApi);
+      const cached = localStorage.getItem('ayulite_api_url');
+      if (cached && cached.startsWith('http') && !candidates.includes(cached)) candidates.push(cached);
+
       for (const cand of candidates) {
-        const hit = await pingBase(cand);
+        const hit = await pingBase(cand, 2200);
         if (hit) {
+          const changed = state.apiUrl !== hit.url;
           state.apiUrl = hit.url;
           localStorage.setItem('ayulite_api_url', hit.url);
           setStatus(true, `${hit.ms}ms`);
+          if (changed) connectWebSocket();
           return true;
         }
       }
@@ -187,6 +188,10 @@
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         if (err.status === 'locked') showLockScreen(err.message || 'Бот временно недоступен.');
+        if (res.status >= 500) {
+          setStatus(false, 'Offline');
+          resolveApiUrl().catch(() => {});
+        }
         throw new Error(err.message || err.error || `HTTP ${res.status}`);
       }
       setStatus(true, `${Math.round(performance.now() - t0)}ms`);
@@ -1315,11 +1320,19 @@
     await Promise.allSettled([loadFeed(), loadState(), loadVaultOverview(), loadFarmAll()]);
     connectWebSocket();
 
-    setInterval(() => {
-      if (document.hidden || !state.apiUrl) return;
+    setInterval(async () => {
+      if (document.hidden) return;
+      if (!state.online) {
+        const recovered = await resolveApiUrl();
+        if (recovered) {
+          await Promise.allSettled([loadFeed(), loadState(), loadVaultOverview(), loadFarmAll()]);
+        }
+        return;
+      }
+      if (!state.apiUrl) return;
       if (state.activeTab === 'feed') loadFeed();
       else if (state.activeTab === 'farm') loadFarmHealth();
-    }, 6000);
+    }, 5000);
   }
 
   if (document.readyState === 'loading') {

@@ -61,11 +61,13 @@
 
   function setStatus(online, label) {
     state.online = online;
+    const chip = $('connStatusChip');
     const dot = $('connDot');
     const txt = $('connText');
     const bar = $('offlineBar');
+    if (chip) chip.className = 'status-chip ' + (online ? 'online' : 'offline');
     if (dot) dot.className = 'dot ' + (online ? 'ok' : 'err');
-    if (txt) txt.textContent = label || (online ? 'Live' : 'Offline');
+    if (txt) txt.textContent = label || (online ? 'Онлайн' : 'Оффлайн');
     if (bar) bar.classList.toggle('hidden', online);
   }
 
@@ -327,7 +329,12 @@
         </div>
         ${bodyHtml}
         ${mediaHtml}
-        ${e.chat_id ? `<div class="event-actions"><button type="button" class="btn btn-sm" data-open-chat="${esc(e.chat_id)}" data-chat-title="${esc(e.chat_title || 'Диалог')}">Открыть в Сейфе</button></div>` : ''}
+        ${e.chat_id ? `<div class="event-actions">
+          <button type="button" class="btn btn-sm" data-open-chat="${esc(e.chat_id)}" data-chat-title="${esc(e.chat_title || 'Диалог')}">В чат</button>
+          ${e.msg_id ? `<button type="button" class="btn btn-sm" data-shadow-msg="${esc(e.msg_id)}" data-shadow-chat="${esc(e.chat_id)}">В Избранное</button>` : ''}
+          ${e.msg_id ? `<button type="button" class="btn btn-sm btn-danger" data-burn-msg="${esc(e.msg_id)}" data-burn-chat="${esc(e.chat_id)}">Сжечь</button>` : ''}
+          <button type="button" class="btn btn-sm" data-dossier-chat="${esc(e.chat_id)}">Досье</button>
+        </div>` : ''}
       </div>`;
     }).join('');
   }
@@ -469,6 +476,11 @@
           ${m.text ? `<div class="event-body">${esc(m.text)}</div>` : ''}
           ${m.transcription ? `<div class="row-sub" style="margin-top:4px;">STT: ${esc(m.transcription)}</div>` : ''}
           ${media}
+          <div class="event-actions" style="margin-top:6px;">
+            <button type="button" class="btn btn-sm" data-shadow-msg="${esc(m.msg_id)}" data-shadow-chat="${esc(chatId)}">В Избранное</button>
+            <button type="button" class="btn btn-sm" data-read-until="${esc(m.msg_id)}">Прочитать до</button>
+            <button type="button" class="btn btn-sm btn-danger" data-burn-msg="${esc(m.msg_id)}" data-burn-chat="${esc(chatId)}">Сжечь</button>
+          </div>
         </div>`;
       }).join('');
     } catch (err) {
@@ -665,6 +677,98 @@
     };
   }
 
+  /* ================= Quick Intelligence & Chat Helpers ================= */
+  async function showChatDossier(chatId) {
+    if (!chatId || !state.userId) return toast('Укажите чат или ID цели', 'err');
+    openDrawer('Досье собеседника', '<div class="skeleton"></div><div class="skeleton"></div>');
+    try {
+      const d = await api(`/api/chat/dossier/${state.userId}/${encodeURIComponent(chatId)}`);
+      const flags = [
+        d.is_premium ? '<span class="tag acc">PREMIUM</span>' : '',
+        d.is_verified ? '<span class="tag ok">VERIFIED</span>' : '',
+        d.is_bot ? '<span class="tag">BOT</span>' : '',
+        d.is_scam ? '<span class="tag err">SCAM</span>' : '',
+        d.is_fake ? '<span class="tag err">FAKE</span>' : ''
+      ].filter(Boolean).join(' ');
+      openDrawer(`Досье: ${d.title || chatId}`, `
+        <div class="card card-flush">
+          <div class="row"><span class="row-sub">ID</span><span class="tag">${esc(d.chat_id || chatId)}</span></div>
+          <div class="row"><span class="row-sub">Username</span><span class="tag">${d.username ? '@' + esc(d.username) : '—'}</span></div>
+          <div class="row"><span class="row-sub">Телефон</span><span class="tag">${esc(d.phone || 'Скрыт')}</span></div>
+          <div class="row"><span class="row-sub">Дата-центр</span><span class="tag acc">${esc(d.dc_id || 'DC ?')}</span></div>
+          <div class="row"><span class="row-sub">Регистрация</span><span class="tag">${esc(d.reg_year || '—')}</span></div>
+          <div class="row"><span class="row-sub">Общих чатов</span><span class="tag ok">${esc(d.common_chats ?? 0)}</span></div>
+        </div>
+        ${flags ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">${flags}</div>` : ''}
+      `);
+    } catch (err) {
+      openDrawer('Ошибка досье', `<div class="empty">${esc(err.message)}</div>`);
+    }
+  }
+
+  async function shadowCopyMsg(chatId, msgId) {
+    if (!chatId || !msgId) return;
+    try {
+      const r = await api('/api/tools/shadow_forward', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: state.userId, from_chat_id: chatId, msg_id: Number(msgId), to_chat_id: 'me' })
+      });
+      toast(r.message || 'Скопировано в Избранное', 'ok');
+    } catch (err) { toast(err.message, 'err'); }
+  }
+
+  async function burnMessage(chatId, msgId, btnEl) {
+    if (!chatId || !msgId) return;
+    if (btnEl && !btnEl.dataset.armed) {
+      btnEl.dataset.armed = '1';
+      btnEl.textContent = 'Точно?';
+      setTimeout(() => { if (btnEl) { delete btnEl.dataset.armed; btnEl.textContent = 'Сжечь'; } }, 2800);
+      return;
+    }
+    try {
+      const r = await api('/api/chat/burn_ttl', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: Number(chatId), msg_id: Number(msgId) })
+      });
+      toast(r.message || 'Сожжено у обоих участников', 'ok');
+    } catch (err) { toast(err.message, 'err'); }
+  }
+
+  async function loadSnatcherChannels() {
+    const box = $('snatcherChannelsList');
+    if (!box || !state.userId) return;
+    box.innerHTML = '<div class="empty" style="padding:14px;">Загрузка каналов...</div>';
+    try {
+      const r = await api(`/api/snatcher/channels/${state.userId}`);
+      const list = r.channels || [];
+      if (!list.length) {
+        box.innerHTML = '<div class="empty" style="padding:14px;">Нет доступных каналов</div>';
+        return;
+      }
+      box.innerHTML = list.map(c => `<div class="row" data-pick-channel="${esc(c.id)}" style="cursor:pointer;padding:10px 12px;min-height:44px;">
+        <div style="min-width:0;">
+          <div class="row-title" style="font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(c.title)}</div>
+          <div class="row-sub" style="font-size:11.5px;">${c.username ? '@' + esc(c.username) : 'ID ' + esc(c.id)}</div>
+        </div>
+        ${c.noforwards ? '<span class="tag err">ЗАКРЫТ</span>' : '<span class="tag">ОТКРЫТ</span>'}
+      </div>`).join('');
+    } catch (err) {
+      box.innerHTML = `<div class="empty" style="padding:14px;">${esc(err.message)}</div>`;
+    }
+  }
+
+  async function loadReferrals() {
+    if (!state.userId) return;
+    try {
+      const r = await api(`/api/referrals/${state.userId}`);
+      state.referralLink = r.referral_link || '';
+      const cnt = r.stats?.total_referrals ?? r.stats?.invited_count ?? 0;
+      if ($('refStatsText')) $('refStatsText').textContent = `Приглашено друзей: ${cnt}`;
+    } catch (_) {}
+  }
+
   /* ================= Synchronous UI Bindings ================= */
   function bindAllUI() {
     // Theme
@@ -764,7 +868,17 @@
 
     // Feed controls
     $('btnFeedRefresh')?.addEventListener('click', () => { haptic('light'); loadFeed(); });
-    $('btnOpenSnatcher')?.addEventListener('click', () => openModal('modalSnatcher'));
+    $('btnOpenSnatcher')?.addEventListener('click', () => {
+      openModal('modalSnatcher');
+      loadSnatcherChannels();
+    });
+    $('snatcherChannelsList')?.addEventListener('click', (e) => {
+      const row = e.target.closest('[data-pick-channel]');
+      if (!row) return;
+      if ($('snatcherInputLink')) $('snatcherInputLink').value = row.dataset.pickChannel;
+      haptic('selection');
+      toast('Канал выбран', 'ok');
+    });
     $('feedSearchInput')?.addEventListener('input', (e) => {
       state.searchQuery = e.target.value.trim().toLowerCase();
       renderFeed();
@@ -779,10 +893,18 @@
       renderFeed();
     });
     $('feedList')?.addEventListener('click', (e) => {
-      const btn = e.target.closest('[data-open-chat]');
-      if (!btn) return;
-      switchTab('vault');
-      openVaultChat(btn.dataset.openChat, btn.dataset.chatTitle);
+      const openBtn = e.target.closest('[data-open-chat]');
+      if (openBtn) {
+        switchTab('vault');
+        openVaultChat(openBtn.dataset.openChat, openBtn.dataset.chatTitle);
+        return;
+      }
+      const shBtn = e.target.closest('[data-shadow-msg]');
+      if (shBtn) return shadowCopyMsg(shBtn.dataset.shadowChat, shBtn.dataset.shadowMsg);
+      const burnBtn = e.target.closest('[data-burn-msg]');
+      if (burnBtn) return burnMessage(burnBtn.dataset.burnChat, burnBtn.dataset.burnMsg, burnBtn);
+      const dosBtn = e.target.closest('[data-dossier-chat]');
+      if (dosBtn) return showChatDossier(dosBtn.dataset.dossierChat);
     });
 
     // Vault controls
@@ -825,6 +947,76 @@
     $('btnVaultShadow')?.addEventListener('click', () => {
       if (!state.activeChatId) return toast('Выберите диалог', 'err');
       openModal('modalShadowFwd');
+    });
+    $('btnChatDossier')?.addEventListener('click', () => {
+      if (!state.activeChatId) return toast('Выберите диалог', 'err');
+      showChatDossier(state.activeChatId);
+    });
+    $('btnSilentPeek')?.addEventListener('click', async () => {
+      if (!state.activeChatId) return toast('Выберите диалог', 'err');
+      const stream = $('vaultMessagesStream');
+      if (stream) stream.innerHTML = '<div class="skeleton"></div><div class="skeleton"></div>';
+      try {
+        const r = await api('/api/silent_reader/peek', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: Number(state.activeChatId), limit: 25 })
+        });
+        const msgs = r.messages || [];
+        if (!stream) return;
+        stream.innerHTML = msgs.map(m => `<div class="msg-bubble">
+          <div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:4px;">
+            <span style="font-weight:600;font-size:12px;">${esc(m.sender_name || 'Собеседник')}</span>
+            <span class="event-meta">#${esc(m.id)} • ${esc(m.date || '')}</span>
+          </div>
+          <div class="event-body">${esc(m.text || (m.has_media ? '[Медиа]' : ''))}</div>
+          <div class="event-actions" style="margin-top:6px;">
+            <button type="button" class="btn btn-sm" data-shadow-msg="${esc(m.id)}" data-shadow-chat="${esc(state.activeChatId)}">В Избранное</button>
+            <button type="button" class="btn btn-sm" data-read-until="${esc(m.id)}">Прочитать до</button>
+          </div>
+        </div>`).join('') || '<div class="empty">Сообщений нет</div>';
+        toast('Прочитано без отметки', 'ok');
+      } catch (err) { toast(err.message, 'err'); }
+    });
+    $('btnSilentToggle')?.addEventListener('click', async () => {
+      if (!state.activeChatId) return toast('Выберите диалог', 'err');
+      try {
+        const r = await api('/api/silent_reader/toggle', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: Number(state.activeChatId), title: state.activeChatTitle || 'Диалог', enable: true })
+        });
+        toast(r.is_silent ? 'Режим тишины включён для этого чата' : 'Режим тишины выключен', 'ok');
+      } catch (err) { toast(err.message, 'err'); }
+    });
+    $('selectActionFaker')?.addEventListener('change', async (e) => {
+      const action = e.target.value;
+      if (!action || !state.activeChatId) return;
+      try {
+        const r = await api('/api/chat/action_faker', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: Number(state.activeChatId), action })
+        });
+        toast(r.message || 'Статус применён', 'ok');
+      } catch (err) { toast(err.message, 'err'); }
+    });
+    $('vaultMessagesStream')?.addEventListener('click', async (e) => {
+      const shBtn = e.target.closest('[data-shadow-msg]');
+      if (shBtn) return shadowCopyMsg(shBtn.dataset.shadowChat, shBtn.dataset.shadowMsg);
+      const burnBtn = e.target.closest('[data-burn-msg]');
+      if (burnBtn) return burnMessage(burnBtn.dataset.burnChat, burnBtn.dataset.burnMsg, burnBtn);
+      const readBtn = e.target.closest('[data-read-until]');
+      if (readBtn && state.activeChatId) {
+        try {
+          const r = await api('/api/chat/read_until', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: Number(state.activeChatId), msg_id: Number(readBtn.dataset.readUntil) })
+          });
+          toast(r.message || 'Отмечено прочитанным до этого места', 'ok');
+        } catch (err) { toast(err.message, 'err'); }
+      }
     });
     $('btnShadowExecute')?.addEventListener('click', async () => {
       const msgId = Number($('shadowMsgId')?.value || 0);
@@ -885,6 +1077,21 @@
         body: JSON.stringify({ user_id: state.userId, action: 'remove', target_id: b.dataset.trackerDel })
       });
       loadOnlineTracker();
+    });
+
+    $('btnReconDossier')?.addEventListener('click', () => {
+      const t = ($('inputReconTarget')?.value || '').trim();
+      showChatDossier(t);
+    });
+    $('btnCopyRef')?.addEventListener('click', async () => {
+      if (!state.referralLink) await loadReferrals();
+      if (!state.referralLink) return toast('Ссылка недоступна', 'err');
+      try {
+        await navigator.clipboard.writeText(state.referralLink);
+        toast('Реферальная ссылка скопирована', 'ok');
+      } catch (_) {
+        toast(state.referralLink, 'ok');
+      }
     });
 
     $('btnReconShared')?.addEventListener('click', async () => {
@@ -1317,7 +1524,7 @@
 
     // 2. Auto-discover backend, fetch data, start WS & background sync
     await resolveApiUrl();
-    await Promise.allSettled([loadFeed(), loadState(), loadVaultOverview(), loadFarmAll()]);
+    await Promise.allSettled([loadFeed(), loadState(), loadVaultOverview(), loadFarmAll(), loadReferrals()]);
     connectWebSocket();
 
     setInterval(async () => {

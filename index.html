@@ -3,26 +3,27 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-  <meta name="theme-color" content="#09090b">
+  <meta name="theme-color" content="#0b0c10">
   <title>AyuLite C2</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link rel="stylesheet" href="style.css?v=13.0">
+  <link rel="stylesheet" href="style.css?v=14.0">
 </head>
 <body>
   <div class="shell">
     <!-- Top Header -->
     <header class="topbar">
       <div class="brand">
-        <span class="brand-prompt">&gt;_</span>
-        <span class="brand-name">AYULITE</span>
-        <span class="brand-slash">/</span>
-        <span class="status-chip" id="connStatusChip">
-          <span class="dot" id="connDot"></span>
-          <span id="connText">SYNC</span>
-        </span>
+        <span class="brand-logo">A</span>
+        <div class="brand-meta">
+          <span class="brand-name">AyuLite</span>
+          <span class="status-chip" id="connStatusChip">
+            <span class="dot" id="connDot"></span>
+            <span id="connText">Подключение...</span>
+          </span>
+        </div>
       </div>
       <div class="topbar-right">
-        <button type="button" class="icon-btn" id="btnCmdOpen" title="Команды (Ctrl+K)">⌘K</button>
+        <button type="button" class="icon-btn" id="btnCmdOpen" title="Быстрые команды (Ctrl+K)">Поиск</button>
         <button type="button" class="tier-btn" id="userTierBadge">PRO</button>
       </div>
     </header>
@@ -30,58 +31,54 @@
     <!-- Offline Banner -->
     <div class="offline-bar hidden" id="offlineBar">
       <div class="offline-text">
-        <span class="offline-code">ERR_LINK</span>
-        <span id="offlineMsg">Нет связи с сервером C2</span>
+        <span class="offline-dot"></span>
+        <span id="offlineMsg">Нет связи с сервером</span>
       </div>
-      <button type="button" class="btn btn-sm" id="btnRetryConn">Повторить</button>
+      <button type="button" class="btn btn-sm" id="btnRetryConn">Обновить</button>
     </div>
 
     <!-- VIEW 1: FEED -->
     <main class="view active" id="view-feed">
-      <!-- Compact 1-line Terminal Telemetry -->
-      <div class="telemetry-strip">
-        <div class="tel-item"><span class="tel-k">DEL</span><span class="tel-v err" id="hudDeleted">0</span></div>
-        <div class="tel-sep">·</div>
-        <div class="tel-item"><span class="tel-k">EDT</span><span class="tel-v warn" id="hudEdited">0</span></div>
-        <div class="tel-sep">·</div>
-        <div class="tel-item"><span class="tel-k">TTL</span><span class="tel-v warn" id="hudTtl">0</span></div>
-        <div class="tel-sep">·</div>
-        <div class="tel-item"><span class="tel-k">RX</span><span class="tel-v" id="hudReactions">0</span></div>
+      <div class="summary-bar">
+        <div class="sum-pill"><span class="sum-n err" id="hudDeleted">0</span><span class="sum-l">Удалено</span></div>
+        <div class="sum-pill"><span class="sum-n warn" id="hudEdited">0</span><span class="sum-l">Правок</span></div>
+        <div class="sum-pill"><span class="sum-n warn" id="hudTtl">0</span><span class="sum-l">TTL</span></div>
+        <div class="sum-pill"><span class="sum-n" id="hudReactions">0</span><span class="sum-l">Реакций</span></div>
       </div>
 
       <div class="toolbar feed-toolbar">
-        <input type="search" class="input" id="feedSearchInput" placeholder="Поиск по тексту, имени, чату..." style="flex:1;min-width:0;">
-        <button type="button" class="btn btn-sm" id="btnOpenSnatcher">Snatcher</button>
-        <button type="button" class="icon-btn" id="btnFeedRefresh" title="Обновить">↻</button>
+        <input type="search" class="input" id="feedSearchInput" placeholder="Поиск по сообщениям, именам, чатам..." style="flex:1;min-width:0;">
+        <button type="button" class="btn btn-primary btn-sm" id="btnOpenSnatcher">Закрытые</button>
+        <button type="button" class="icon-btn" id="btnFeedRefresh" title="Обновить ленту">↻</button>
       </div>
 
       <div class="chips" id="feedFilterChips">
         <button type="button" class="chip active" data-filter="all">Все <span id="cntAll">0</span></button>
-        <button type="button" class="chip" data-filter="deleted">Удаления <span id="cntDel">0</span></button>
+        <button type="button" class="chip" data-filter="deleted">Удалённые <span id="cntDel">0</span></button>
         <button type="button" class="chip" data-filter="edited">Правки <span id="cntEd">0</span></button>
-        <button type="button" class="chip" data-filter="ttl">TTL <span id="cntTtl">0</span></button>
+        <button type="button" class="chip" data-filter="ttl">Сгорающие <span id="cntTtl">0</span></button>
         <button type="button" class="chip" data-filter="reactions">Реакции <span id="cntReact">0</span></button>
-        <button type="button" class="chip" data-filter="media">Медиа</button>
+        <button type="button" class="chip" data-filter="media">С медиа</button>
       </div>
 
-      <div id="feedList"><div class="empty">Загрузка ленты перехватов...</div></div>
+      <div id="feedList"><div class="empty">Загрузка ленты событий...</div></div>
     </main>
 
-    <!-- VIEW 2: VAULT -->
+    <!-- VIEW 2: VAULT & SILENT READER -->
     <main class="view" id="view-vault">
       <div class="vault-top">
         <div class="card vault-banner">
           <div>
-            <div class="row-title" id="vaultForumTitle">AyuVault • Сейф</div>
-            <div class="row-sub" id="vaultForumMeta">Синхронизация супергруппы-сейфа...</div>
+            <div class="row-title" id="vaultForumTitle">Сейф сообщений</div>
+            <div class="row-sub" id="vaultForumMeta">Синхронизация супергруппы...</div>
           </div>
           <div style="display:flex;gap:8px;">
-            <a href="#" target="_blank" class="btn btn-sm hidden" id="vaultForumLink">В TG</a>
+            <a href="#" target="_blank" class="btn btn-sm hidden" id="vaultForumLink">В Telegram</a>
             <button type="button" class="btn btn-sm btn-primary" id="btnSyncVaultForum">Синхр.</button>
           </div>
         </div>
         <div class="toolbar">
-          <input type="search" class="input" id="vaultChatSearch" placeholder="Фильтр диалогов..." style="flex:1;min-width:0;">
+          <input type="search" class="input" id="vaultChatSearch" placeholder="Найти диалог..." style="flex:1;min-width:0;">
           <span class="tag" id="vaultChatsTotal">0 чатов</span>
         </div>
       </div>
@@ -92,12 +89,23 @@
 
       <div class="card vault-chat-col" id="vaultConvWrap" style="display:none;">
         <div class="vault-chat-head">
-          <button type="button" class="btn btn-sm" id="btnBackToChats">← Назад</button>
+          <button type="button" class="btn btn-sm" id="btnBackToChats">← Чаты</button>
           <span class="row-title" id="activeChatTitle" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Выберите диалог</span>
-          <div style="display:flex;gap:6px;">
-            <button type="button" class="btn btn-sm" id="btnVaultDump">Дамп</button>
-            <button type="button" class="btn btn-sm" id="btnVaultShadow">Shadow</button>
-          </div>
+        </div>
+        <div class="chat-tools-bar">
+          <button type="button" class="btn btn-sm" id="btnChatDossier">Досье</button>
+          <button type="button" class="btn btn-sm" id="btnSilentPeek">Читать тихо</button>
+          <button type="button" class="btn btn-sm" id="btnSilentToggle">Режим тишины</button>
+          <button type="button" class="btn btn-sm" id="btnVaultDump">Сохранить всё</button>
+          <button type="button" class="btn btn-sm" id="btnVaultShadow">Переслать ID</button>
+          <select id="selectActionFaker" class="input input-compact" style="width:auto;min-width:145px;" title="Имитация активности в чате">
+            <option value="">Статус: обычный</option>
+            <option value="typing">Печатает...</option>
+            <option value="record-audio">Записывает ГС</option>
+            <option value="record-round">Записывает кружок</option>
+            <option value="upload-document">Отправляет файл</option>
+            <option value="cancel">Остановить статус</option>
+          </select>
         </div>
         <div id="vaultMessagesStream"><div class="empty">Выберите диалог из списка</div></div>
       </div>
@@ -107,30 +115,32 @@
     <main class="view" id="view-stealth">
       <div class="sec-head"><span class="sec-title">Режимы скрытности</span></div>
       <div class="card card-flush">
-        <div class="row"><div><div class="row-title">Ghost Read</div><div class="row-sub">Чтение входящих без отметки</div></div><label class="switch"><input type="checkbox" class="trigger-sw" data-trigger="ghost_read"><span class="slider"></span></label></div>
-        <div class="row"><div><div class="row-title">Anti-Delete</div><div class="row-sub">Перехват удалённых сообщений и медиа</div></div><label class="switch"><input type="checkbox" class="trigger-sw" data-trigger="anti_delete" checked><span class="slider"></span></label></div>
-        <div class="row"><div><div class="row-title">Anti-Edit</div><div class="row-sub">Фиксация истории редактирования</div></div><label class="switch"><input type="checkbox" class="trigger-sw" data-trigger="anti_edit" checked><span class="slider"></span></label></div>
-        <div class="row"><div><div class="row-title">TTL Grabber</div><div class="row-sub">Автосохранение одноразовых фото и видео</div></div><label class="switch"><input type="checkbox" class="trigger-sw" data-trigger="auto_ttl" checked><span class="slider"></span></label></div>
-        <div class="row"><div><div class="row-title">Reaction Spy</div><div class="row-sub">Логирование поставленных и снятых реакций</div></div><label class="switch"><input type="checkbox" class="trigger-sw" data-trigger="reaction_spy" checked><span class="slider"></span></label></div>
-        <div class="row"><div><div class="row-title">Silent Ear (STT)</div><div class="row-sub">Авторасшифровка голосовых</div></div><label class="switch"><input type="checkbox" class="trigger-sw" data-trigger="silent_ear" checked><span class="slider"></span></label></div>
-        <div class="row"><div><div class="row-title">Always Offline</div><div class="row-sub">Принудительный оффлайн-статус</div></div><label class="switch"><input type="checkbox" class="trigger-sw" data-trigger="stealth_always_enabled"><span class="slider"></span></label></div>
-        <div class="row"><div><div class="row-title">Silent Typing</div><div class="row-sub">Скрывать «печатает» и «записывает»</div></div><label class="switch"><input type="checkbox" class="trigger-sw" data-trigger="stealth_typing"><span class="slider"></span></label></div>
-        <div class="row"><div><div class="row-title">Silent VoIP Guard</div><div class="row-sub">Защита и лог входящих звонков</div></div><label class="switch"><input type="checkbox" class="trigger-sw" data-trigger="voip_guard" checked><span class="slider"></span></label></div>
+        <div class="row"><div><div class="row-title">Читать без галочек (Ghost Read)</div><div class="row-sub">Собеседник не увидит, что вы прочитали сообщение</div></div><label class="switch"><input type="checkbox" class="trigger-sw" data-trigger="ghost_read"><span class="slider"></span></label></div>
+        <div class="row"><div><div class="row-title">Сохранять удалённые</div><div class="row-sub">Мгновенный перехват удалённых сообщений и медиа</div></div><label class="switch"><input type="checkbox" class="trigger-sw" data-trigger="anti_delete" checked><span class="slider"></span></label></div>
+        <div class="row"><div><div class="row-title">Сохранять изменения</div><div class="row-sub">Показывать исходный текст до редактирования</div></div><label class="switch"><input type="checkbox" class="trigger-sw" data-trigger="anti_edit" checked><span class="slider"></span></label></div>
+        <div class="row"><div><div class="row-title">Ловить сгорающие фото/видео (TTL)</div><div class="row-sub">Автосохранение одноразовых медиа в Сейф</div></div><label class="switch"><input type="checkbox" class="trigger-sw" data-trigger="auto_ttl" checked><span class="slider"></span></label></div>
+        <div class="row"><div><div class="row-title">Следить за реакциями</div><div class="row-sub">Фиксировать даже быстро снятые реакции</div></div><label class="switch"><input type="checkbox" class="trigger-sw" data-trigger="reaction_spy" checked><span class="slider"></span></label></div>
+        <div class="row"><div><div class="row-title">Расшифровка голосовых</div><div class="row-sub">Автоматический перевод аудио в текст</div></div><label class="switch"><input type="checkbox" class="trigger-sw" data-trigger="silent_ear" checked><span class="slider"></span></label></div>
+        <div class="row"><div><div class="row-title">Вечный оффлайн</div><div class="row-sub">Скрывать статус «в сети» при активности</div></div><label class="switch"><input type="checkbox" class="trigger-sw" data-trigger="stealth_always_enabled"><span class="slider"></span></label></div>
+        <div class="row"><div><div class="row-title">Скрывать «печатает...»</div><div class="row-sub">Блокировать отправку статуса набора текста</div></div><label class="switch"><input type="checkbox" class="trigger-sw" data-trigger="stealth_typing"><span class="slider"></span></label></div>
+        <div class="row"><div><div class="row-title">Защита от звонков</div><div class="row-sub">Блокировка и лог входящих вызовов</div></div><label class="switch"><input type="checkbox" class="trigger-sw" data-trigger="voip_guard" checked><span class="slider"></span></label></div>
       </div>
 
-      <div class="sec-head"><span class="sec-title">Online Tracker</span></div>
+      <div class="sec-head"><span class="sec-title">Слежка за онлайном</span></div>
       <div class="card">
+        <div class="row-sub" style="margin-bottom:8px;">Уведомления, когда нужный человек заходит или выходит из сети.</div>
         <div class="toolbar">
-          <input type="text" class="input" id="inputTrackerTarget" placeholder="ID или @username цели" style="flex:1;min-width:0;">
+          <input type="text" class="input" id="inputTrackerTarget" placeholder="ID или @username человека" style="flex:1;min-width:0;">
           <button type="button" class="btn btn-primary btn-sm" id="btnTrackerAdd">Добавить</button>
         </div>
-        <div id="onlineTrackerList"><div class="empty" style="padding:12px;">Нет отслеживаемых целей</div></div>
+        <div id="onlineTrackerList"><div class="empty" style="padding:12px;">Никого не отслеживаем</div></div>
       </div>
 
-      <div class="sec-head"><span class="sec-title">OSINT Разведка</span></div>
+      <div class="sec-head"><span class="sec-title">Разведка по профилю или каналу</span></div>
       <div class="card">
-        <input type="text" class="input" id="inputReconTarget" placeholder="ID или @username пользователя / канала" style="margin-bottom:10px;">
-        <div class="toolbar" style="margin-bottom:0;">
+        <input type="text" class="input" id="inputReconTarget" placeholder="ID или @username цели" style="margin-bottom:10px;">
+        <div class="toolbar" style="margin-bottom:0;flex-wrap:wrap;">
+          <button type="button" class="btn btn-sm" id="btnReconDossier" style="flex:1;">Досье</button>
           <button type="button" class="btn btn-sm" id="btnReconShared" style="flex:1;">Общие чаты</button>
           <button type="button" class="btn btn-sm" id="btnReconStories" style="flex:1;">Истории</button>
           <button type="button" class="btn btn-sm" id="btnReconMembers" style="flex:1;">Участники</button>
@@ -141,10 +151,10 @@
     <!-- VIEW 4: FARM & OPS -->
     <main class="view" id="view-farm">
       <div class="sec-head">
-        <span class="sec-title">Телеметрия воркеров</span>
+        <span class="sec-title">Работа аккаунтов</span>
         <div style="display:flex;gap:6px;">
-          <button type="button" class="btn btn-sm" id="btnFarmHealth">Пинг</button>
-          <button type="button" class="btn btn-sm btn-primary" id="btnFarmRecover">Recover</button>
+          <button type="button" class="btn btn-sm" id="btnFarmHealth">Проверить</button>
+          <button type="button" class="btn btn-sm btn-primary" id="btnFarmRecover">Починить</button>
         </div>
       </div>
       <div class="metrics-grid">
@@ -153,58 +163,58 @@
         <div class="metric-box"><div class="metric-val" id="mMedia">0</div><div class="metric-lbl">Медиа</div></div>
         <div class="metric-box"><div class="metric-val" id="mVault">0</div><div class="metric-lbl">В сейфе</div></div>
       </div>
-      <div id="farmHealthChips" class="chips" style="margin-bottom:12px;"></div>
+      <div id="farmHealthChips" class="chips" style="margin-bottom:12px;border-bottom:none;"></div>
 
       <div class="sec-head">
-        <span class="sec-title">Аккаунты</span>
+        <span class="sec-title">Подключённые аккаунты</span>
         <div style="display:flex;gap:6px;">
           <button type="button" class="btn btn-sm" id="btnFarmChannels">Каналы</button>
           <button type="button" class="btn btn-sm" id="btnFarmContacts">Контакты</button>
-          <button type="button" class="btn btn-sm btn-primary" id="btnAddSessionOpen">+ Сессия</button>
+          <button type="button" class="btn btn-sm btn-primary" id="btnAddSessionOpen">+ Аккаунт</button>
         </div>
       </div>
       <div id="farmAccountsList"><div class="empty">Загрузка аккаунтов...</div></div>
 
-      <div class="sec-head"><span class="sec-title">Keyword Traps</span></div>
+      <div class="sec-head"><span class="sec-title">Уведомления по словам</span></div>
       <div class="card">
         <div class="toolbar">
           <select id="selectTrapSession" class="input" style="max-width:140px;"></select>
-          <input type="text" id="inputTrapKeyword" class="input" placeholder="Ключевое слово..." style="flex:1;min-width:0;">
+          <input type="text" id="inputTrapKeyword" class="input" placeholder="Слово-триггер..." style="flex:1;min-width:0;">
           <button type="button" class="btn btn-sm btn-primary" id="btnTrapAdd">+</button>
         </div>
         <div id="keywordTrapList" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
       </div>
 
-      <div class="sec-head"><span class="sec-title">Рассылка и планировщик</span></div>
+      <div class="sec-head"><span class="sec-title">Рассылка и расписание</span></div>
       <div class="card">
         <input type="text" id="inputBcastTargets" class="input" placeholder="Получатели через запятую (ID или @username)" style="margin-bottom:8px;">
         <div class="toolbar">
           <input type="text" id="inputBcastText" class="input" placeholder="Текст сообщения..." style="flex:1;min-width:0;">
-          <button type="button" class="btn btn-sm btn-primary" id="btnBcastSend">Старт</button>
+          <button type="button" class="btn btn-sm btn-primary" id="btnBcastSend">Отправить</button>
         </div>
         <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:8px;">
           <div class="toolbar" style="margin-bottom:8px;">
             <select id="selectSchedType" class="input" style="flex:1;min-width:120px;">
-              <option value="contact_dump">Дамп контактов</option>
-              <option value="broadcast">Рассылка</option>
+              <option value="contact_dump">Авто-дамп контактов</option>
+              <option value="broadcast">Авто-рассылка</option>
             </select>
             <input type="number" id="inputSchedHour" class="input" value="9" min="0" max="23" style="width:62px;" title="Час">
             <input type="number" id="inputSchedMin" class="input" value="0" min="0" max="59" style="width:62px;" title="Минута">
-            <button type="button" class="btn btn-sm" id="btnSchedAdd">Создать</button>
+            <button type="button" class="btn btn-sm" id="btnSchedAdd">Задать</button>
           </div>
           <div id="schedulerTasksList"></div>
         </div>
       </div>
 
-      <div class="sec-head"><span class="sec-title">Sticky Proxy Pool</span></div>
+      <div class="sec-head"><span class="sec-title">Прокси-пул</span></div>
       <div class="card">
         <div class="toolbar" style="margin-bottom:8px;">
           <select id="selectProxyType" class="input" style="width:94px;">
             <option value="socks5">SOCKS5</option>
             <option value="http">HTTP</option>
           </select>
-          <input type="text" id="inputProxyHost" class="input" placeholder="Host / IP" style="flex:1;min-width:100px;">
-          <input type="number" id="inputProxyPort" class="input" placeholder="Port" style="width:76px;">
+          <input type="text" id="inputProxyHost" class="input" placeholder="IP / Хост" style="flex:1;min-width:100px;">
+          <input type="number" id="inputProxyPort" class="input" placeholder="Порт" style="width:76px;">
           <button type="button" class="btn btn-sm" id="btnProxyAdd">+</button>
         </div>
         <div id="proxyPoolList"></div>
@@ -215,45 +225,49 @@
     <main class="view" id="view-system">
       <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
         <div style="display:flex;align-items:center;gap:12px;">
-          <div class="avatar-circle" id="opAvatarWrap" style="width:42px;height:42px;overflow:hidden;">
+          <div class="avatar-circle" id="opAvatarWrap" style="width:44px;height:44px;overflow:hidden;">
             <img id="opAvatarImg" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover;">
             <span id="opAvatarInitial">U</span>
           </div>
           <div>
             <div class="row-title" id="opName">Аккаунт</div>
-            <div class="row-sub" id="opUsername">Профиль не подключён</div>
+            <div class="row-sub" id="opUsername">Загрузка профиля...</div>
           </div>
         </div>
         <span class="tag acc" id="opTierBadge">PRO</span>
       </div>
 
       <div class="card card-flush">
-        <div class="row"><span class="row-sub">Статус воркера</span><span class="tag" id="opWorkerStatus">Ожидание</span></div>
+        <div class="row"><span class="row-sub">Статус сессии</span><span class="tag" id="opWorkerStatus">Ожидание</span></div>
         <div class="row"><span class="row-sub">Канал Сейфа</span><span class="tag" id="opSafeChannel">—</span></div>
         <div class="row">
-          <span class="row-sub">Тема терминала</span>
-          <button type="button" class="btn btn-sm" id="btnThemeCycle">Переключить</button>
+          <span class="row-sub">Оформление</span>
+          <button type="button" class="btn btn-sm" id="btnThemeCycle">Сменить тему</button>
         </div>
       </div>
 
-      <div class="sec-head"><span class="sec-title">Подписка и промокод</span></div>
+      <div class="sec-head"><span class="sec-title">Подписка и рефералы</span></div>
       <div class="card">
         <div class="toolbar">
-          <input type="text" id="inputPromoCode" class="input" placeholder="Введите промокод..." style="flex:1;min-width:0;">
-          <button type="button" class="btn btn-sm btn-primary" id="btnRedeemPromo">Применить</button>
+          <input type="text" id="inputPromoCode" class="input" placeholder="Промокод..." style="flex:1;min-width:0;">
+          <button type="button" class="btn btn-sm btn-primary" id="btnRedeemPromo">Активировать</button>
         </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
           <button type="button" class="btn btn-sm" id="btnOpenStore" style="flex:1;">Тарифы (Stars)</button>
-          <button type="button" class="btn btn-sm" id="btnClaimTrial" style="flex:1;">Триал</button>
+          <button type="button" class="btn btn-sm" id="btnClaimTrial" style="flex:1;">Бесплатный триал</button>
+        </div>
+        <div id="referralBox" class="row-sub" style="border-top:1px solid var(--border);padding-top:10px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span id="refStatsText">Загрузка рефералки...</span>
+          <button type="button" class="btn btn-sm" id="btnCopyRef">Скопировать ссылку</button>
         </div>
       </div>
 
       <div class="sec-head"><span class="sec-title">Инструменты</span></div>
       <div class="card" style="display:flex;flex-direction:column;gap:8px;">
-        <button type="button" class="btn btn-block" id="btnOpenFakeshot">Fakeshot Studio (iOS 18)</button>
-        <button type="button" class="btn btn-block" id="btnSaveLast">Сохранить последнее из активного чата</button>
-        <button type="button" class="btn btn-block" id="btnClearCache">Очистить временный кэш (&gt; 7 дн.)</button>
-        <button type="button" class="btn btn-danger btn-block" id="btnPanicFreeze">Panic Freeze (остановить все воркеры)</button>
+        <button type="button" class="btn btn-block" id="btnOpenFakeshot">Конструктор фейк-скринов (iOS 18)</button>
+        <button type="button" class="btn btn-block" id="btnSaveLast">Сохранить последнее медиа из чата</button>
+        <button type="button" class="btn btn-block" id="btnClearCache">Очистить старый кэш (&gt; 7 дн.)</button>
+        <button type="button" class="btn btn-danger btn-block" id="btnPanicFreeze">Экстренно остановить все сессии</button>
       </div>
     </main>
 
@@ -270,15 +284,15 @@
       </button>
       <button type="button" class="nav-item" data-tab="stealth">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        <span>Стелс</span>
+        <span>Защита</span>
       </button>
       <button type="button" class="nav-item" data-tab="farm">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
         <span>Ферма</span>
       </button>
       <button type="button" class="nav-item" data-tab="system">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-        <span>Система</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6"/></svg>
+        <span>Профиль</span>
       </button>
     </nav>
   </div>
@@ -286,9 +300,9 @@
   <!-- Command Palette Modal -->
   <div class="modal" id="modalCmd">
     <div class="modal-panel">
-      <div class="modal-head"><span>Команды</span><button type="button" class="icon-btn" data-close-modal="modalCmd">✕</button></div>
+      <div class="modal-head"><span>Быстрый переход</span><button type="button" class="icon-btn" data-close-modal="modalCmd">✕</button></div>
       <div class="modal-body">
-        <input type="text" class="input" id="cmdSearchInput" placeholder="Перейти к разделу или действию..." style="margin-bottom:8px;">
+        <input type="text" class="input" id="cmdSearchInput" placeholder="Найти раздел или действие..." style="margin-bottom:8px;">
         <div id="cmdList"></div>
       </div>
     </div>
@@ -297,23 +311,30 @@
   <!-- Add Session Modal -->
   <div class="modal" id="modalAddSession">
     <div class="modal-panel">
-      <div class="modal-head"><span>Добавить сессию</span><button type="button" class="icon-btn" data-close-modal="modalAddSession">✕</button></div>
+      <div class="modal-head"><span>Подключить аккаунт</span><button type="button" class="icon-btn" data-close-modal="modalAddSession">✕</button></div>
       <div class="modal-body" style="display:flex;flex-direction:column;gap:10px;">
-        <textarea class="input" id="inputSessionString" rows="4" placeholder="Telethon StringSession..." style="font-family:var(--mono);font-size:12px;"></textarea>
-        <input type="text" class="input" id="inputSessionPhone" placeholder="Телефон (опционально)">
-        <button type="button" class="btn btn-primary btn-block" id="btnSubmitAddSession">Подключить воркер</button>
+        <div class="row-sub">Вставьте строку сессии Telethon StringSession или подключите через /add_account в боте.</div>
+        <textarea class="input" id="inputSessionString" rows="4" placeholder="1BVtsOH..." style="font-family:var(--mono);font-size:12px;"></textarea>
+        <input type="text" class="input" id="inputSessionPhone" placeholder="Телефон (необязательно)">
+        <button type="button" class="btn btn-primary btn-block" id="btnSubmitAddSession">Подключить</button>
       </div>
     </div>
   </div>
 
-  <!-- Media Snatcher Modal -->
+  <!-- Media Snatcher Modal (with 1-click channel list!) -->
   <div class="modal" id="modalSnatcher">
     <div class="modal-panel">
-      <div class="modal-head"><span>Media Snatcher (NoForwards)</span><button type="button" class="icon-btn" data-close-modal="modalSnatcher">✕</button></div>
+      <div class="modal-head"><span>Скачать из закрытых каналов</span><button type="button" class="icon-btn" data-close-modal="modalSnatcher">✕</button></div>
       <div class="modal-body" style="display:flex;flex-direction:column;gap:10px;">
-        <input type="text" class="input" id="snatcherInputLink" placeholder="https://t.me/channel/123 или @username">
-        <input type="number" class="input" id="snatcherCount" value="10" min="1" max="50" placeholder="Количество постов">
-        <button type="button" class="btn btn-primary btn-block" id="btnSnatchExecute">Выгрузить в Избранное</button>
+        <div class="row-sub">Выберите канал с запретом сохранения ниже или вставьте ссылку на пост вручную:</div>
+        <div id="snatcherChannelsList" style="max-height:190px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--r-md);background:var(--bg-elev);">
+          <div class="empty" style="padding:14px;">Загрузка списка каналов...</div>
+        </div>
+        <input type="text" class="input" id="snatcherInputLink" placeholder="Ссылка (t.me/...) или ID выбранного канала">
+        <div class="toolbar" style="margin-bottom:0;">
+          <input type="number" class="input" id="snatcherCount" value="10" min="1" max="50" style="width:90px;" title="Сколько последних постов">
+          <button type="button" class="btn btn-primary" id="btnSnatchExecute" style="flex:1;">Выгрузить в Избранное</button>
+        </div>
         <div id="snatcherStatusBox" class="row-sub"></div>
       </div>
     </div>
@@ -322,11 +343,11 @@
   <!-- Shadow Forward Modal -->
   <div class="modal" id="modalShadowFwd">
     <div class="modal-panel">
-      <div class="modal-head"><span>Shadow Forward</span><button type="button" class="icon-btn" data-close-modal="modalShadowFwd">✕</button></div>
+      <div class="modal-head"><span>Копировать без следа</span><button type="button" class="icon-btn" data-close-modal="modalShadowFwd">✕</button></div>
       <div class="modal-body" style="display:flex;flex-direction:column;gap:10px;">
         <input type="number" class="input" id="shadowMsgId" placeholder="ID сообщения в текущем чате">
-        <input type="text" class="input" id="shadowToChat" value="me" placeholder="Куда (me или ID/@username)">
-        <button type="button" class="btn btn-primary btn-block" id="btnShadowExecute">Скопировать без следа</button>
+        <input type="text" class="input" id="shadowToChat" value="me" placeholder="Куда (me = Избранное, или @username / ID)">
+        <button type="button" class="btn btn-primary btn-block" id="btnShadowExecute">Скопировать в Избранное</button>
       </div>
     </div>
   </div>
@@ -334,7 +355,7 @@
   <!-- Fakeshot Studio Modal -->
   <div class="modal" id="modalFakeshot">
     <div class="modal-panel">
-      <div class="modal-head"><span>Fakeshot Studio (iOS 18)</span><button type="button" class="icon-btn" data-close-modal="modalFakeshot">✕</button></div>
+      <div class="modal-head"><span>Конструктор переписок (iOS 18)</span><button type="button" class="icon-btn" data-close-modal="modalFakeshot">✕</button></div>
       <div class="modal-body" style="display:flex;flex-direction:column;gap:8px;">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
           <input type="text" class="input" id="fakeTitle" value="Павел Дуров" placeholder="Имя">
@@ -362,7 +383,7 @@
         </div>
         <button type="button" class="btn btn-primary btn-block" id="btnFakeRender">Сгенерировать</button>
         <div id="fakePreviewWrap" style="display:none;text-align:center;margin-top:8px;">
-          <img id="fakePreviewImg" src="" alt="Preview" style="max-width:100%;border-radius:6px;border:1px solid var(--border);">
+          <img id="fakePreviewImg" src="" alt="Preview" style="max-width:100%;border-radius:8px;border:1px solid var(--border);">
           <a id="fakeDownloadLink" href="#" download="fakeshot.png" class="btn btn-sm btn-block" style="margin-top:8px;text-decoration:none;">Скачать PNG</a>
         </div>
       </div>
@@ -394,6 +415,6 @@
   </div>
 
   <div class="toast" id="toast"></div>
-  <script src="app.js?v=13.0"></script>
+  <script src="app.js?v=14.0"></script>
 </body>
 </html>

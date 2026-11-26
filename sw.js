@@ -1,10 +1,9 @@
 /* AyuLite C2 - High Performance PWA Service Worker v2.0 */
-const CACHE_NAME = 'ayulite-pwa-v2.0';
+const CACHE_NAME = 'ayulite-pwa-v2.1';
 const STATIC_ASSETS = [
   './',
   './index.html',
-  './style.css',
-  './tunnel.json'
+  './style.css'
 ];
 
 self.addEventListener('install', (event) => {
@@ -53,19 +52,17 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Cache-First for static assets (css, fonts, images)
+  // Stale-While-Revalidate for static assets (css, fonts, images)
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-      return fetch(event.request).then((networkResponse) => {
-        if (networkResponse.status === 200) {
+      const fetchPromise = fetch(event.request).then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
           const respClone = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, respClone));
         }
         return networkResponse;
-      });
+      }).catch(() => cachedResponse);
+      return cachedResponse || fetchPromise;
     })
   );
 });

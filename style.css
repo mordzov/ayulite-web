@@ -2149,3 +2149,227 @@ input:checked + .slider:before {
 .btn-quantum-ghost:active {
   transform: scale(0.96);
 }
+
+/* ==========================================================================
+   v3.5 Theme Presets (OLED Neon / Telegram Native / Stealth Mono)
+   ========================================================================== */
+html[data-theme="tg"] {
+  --bg-primary: var(--tg-theme-bg-color, #17212b);
+  --bg-shell: var(--tg-theme-secondary-bg-color, #0e1621);
+  --bg-secondary: #17212b;
+  --bg-card: rgba(23, 33, 43, 0.9);
+  --bg-card-hover: rgba(32, 43, 54, 0.95);
+  --bg-input: rgba(14, 22, 33, 0.85);
+  --accent: var(--tg-theme-button-color, #5288c1);
+  --accent-gradient: linear-gradient(135deg, #5288c1 0%, #3a6fa8 100%);
+  --text-primary: var(--tg-theme-text-color, #f5f5f5);
+  --text-secondary: var(--tg-theme-hint-color, #7f91a4);
+}
+
+html[data-theme="mono"] {
+  --bg-primary: #000000;
+  --bg-shell: #050505;
+  --bg-secondary: #0a0a0a;
+  --bg-card: rgba(16, 16, 16, 0.92);
+  --bg-card-hover: rgba(28, 28, 28, 0.95);
+  --bg-input: #0c0c0c;
+  --accent: #e5e7eb;
+  --accent-gradient: linear-gradient(135deg, #f3f4f6 0%, #9ca3af 100%);
+  --border-subtle: rgba(255, 255, 255, 0.14);
+  --border-active: rgba(255, 255, 255, 0.55);
+}
+
+/* ==========================================================================
+   Adaptive Desktop Cockpit (>= 960px)
+   ========================================================================== */
+@media (min-width: 960px) {
+  .app-shell {
+    max-width: 1220px;
+    padding-left: 224px;
+    padding-bottom: 28px;
+  }
+
+  .app-header {
+    max-width: 1220px;
+  }
+
+  .bottom-dock {
+    position: fixed;
+    top: 58px;
+    bottom: 0;
+    left: max(0px, calc(50% - 610px));
+    transform: none !important;
+    width: 210px;
+    max-width: 210px;
+    height: auto;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+    gap: 6px;
+    padding: 16px 12px;
+    border-radius: 0;
+    border-top: none;
+    border-right: 1px solid var(--border-subtle);
+    background: rgba(8, 9, 14, 0.9);
+  }
+
+  .dock-btn {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 11px;
+    padding: 11px 14px;
+    border-radius: 12px;
+    font-size: 13px;
+    width: 100%;
+    text-align: left;
+  }
+
+  .dock-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .dock-btn.active {
+    background: var(--accent-soft);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+  }
+
+  /* Split-view Vault on Desktop */
+  #view-vault.active {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+
+  #view-vault .vault-forum-banner,
+  #view-vault .group-title {
+    grid-column: 1 / -1;
+  }
+
+  #view-vault #vaultChatsCard {
+    grid-column: 1;
+    max-height: calc(100vh - 210px);
+    overflow-y: auto;
+  }
+
+  #view-vault #vaultConversationWrap {
+    grid-column: 2;
+    max-height: calc(100vh - 210px);
+    overflow-y: auto;
+  }
+}
+
+/* ==========================================================================
+   Command Palette, Chips, Badges, Skeletons
+   ========================================================================== */
+.nav-badge {
+  position: absolute;
+  top: 4px;
+  right: 8px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--rose);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dock-btn {
+  position: relative;
+}
+
+.chip-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+
+.chip-pill.ok {
+  color: var(--emerald);
+  border-color: rgba(16, 185, 129, 0.3);
+  background: var(--emerald-soft);
+}
+
+.chip-pill.warn {
+  color: var(--amber);
+  border-color: rgba(245, 158, 11, 0.3);
+  background: var(--amber-soft);
+}
+
+.chip-pill.err {
+  color: var(--rose);
+  border-color: rgba(244, 63, 94, 0.3);
+  background: var(--rose-soft);
+}
+
+.c2-input-sm {
+  width: 100%;
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 8px 11px;
+  color: var(--text-primary);
+  font-size: 12.5px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.c2-input-sm:focus {
+  border-color: var(--border-active);
+}
+
+.c2-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.cmd-palette-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid transparent;
+  color: var(--text-primary);
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+  margin-bottom: 6px;
+}
+
+.cmd-palette-item:hover {
+  background: var(--accent-soft);
+  border-color: var(--border-active);
+}
+
+.skeleton-line {
+  height: 14px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.10) 50%, rgba(255,255,255,0.04) 75%);
+  background-size: 200% 100%;
+  animation: skelShimmer 1.3s infinite;
+  margin-bottom: 8px;
+}
+
+@keyframes skelShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

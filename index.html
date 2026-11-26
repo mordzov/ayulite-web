@@ -31,6 +31,8 @@
         </div>
       </div>
       <div class="header-status">
+        <button type="button" class="btn-sound-toggle" id="btnCmdPalette" title="Быстрые команды (Ctrl+K)" style="font-size:11px;font-family:var(--font-mono);padding:0 7px;">⌘K</button>
+        <button type="button" class="btn-sound-toggle" id="btnThemeCycle" title="Сменить тему">🎨</button>
         <button type="button" class="btn-sound-toggle" id="btnToggleSound" title="Звуки C2">
           <span id="soundIcon">🔊</span>
         </button>
@@ -221,9 +223,13 @@
       </div>
 
       <div id="vaultConversationWrap" style="display: none;">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
           <button class="btn-secondary" id="btnBackToChats" style="padding: 6px 12px; font-size: 12px;">← Все диалоги</button>
-          <span style="font-size: 13px; font-weight: 600;" id="activeChatTitle">Диалог</span>
+          <span style="font-size: 13px; font-weight: 600; flex: 1; text-align: center;" id="activeChatTitle">Диалог</span>
+          <div style="display: flex; gap: 6px;">
+            <button type="button" class="btn-secondary" id="btnVaultDialogDump" style="padding: 5px 10px; font-size: 11px;">📋 Дамп</button>
+            <button type="button" class="btn-secondary" id="btnVaultShadowFwd" style="padding: 5px 10px; font-size: 11px;">🕵️ Shadow</button>
+          </div>
         </div>
         <div class="inset-card" style="padding: 14px;" id="vaultMessagesStream"></div>
       </div>
@@ -412,19 +418,109 @@
         </div>
       </div>
 
+      <!-- Section 3: Online Tracker & OSINT Recon -->
+      <div class="group-title" style="margin-top: 18px;">👁 Online Tracker и Разведка</div>
+      <div class="inset-card" style="padding: 14px 16px;">
+        <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+          <input type="text" id="inputTrackerTarget" class="c2-input-sm" placeholder="ID или @username цели (напр. @durov)">
+          <button type="button" class="btn-primary" id="btnTrackerAdd" style="white-space: nowrap; padding: 0 14px;">+ Следить</button>
+        </div>
+        <div id="onlineTrackerList" style="font-size: 12px; color: var(--text-muted);">Загрузка трекера...</div>
+      </div>
+
+      <div class="inset-card" style="padding: 14px 16px; margin-top: 10px;">
+        <div style="font-size: 12.5px; font-weight: 600; margin-bottom: 8px;">🔎 Быстрый OSINT по цели / каналу</div>
+        <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+          <input type="text" id="inputReconTarget" class="c2-input-sm" placeholder="ID / @username цели или канала">
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button type="button" class="btn-secondary" id="btnReconSharedChats" style="flex: 1; font-size: 11.5px; padding: 7px;">💬 Общие чаты</button>
+          <button type="button" class="btn-secondary" id="btnReconStories" style="flex: 1; font-size: 11.5px; padding: 7px;">📸 Сторис</button>
+          <button type="button" class="btn-secondary" id="btnReconMembers" style="flex: 1; font-size: 11.5px; padding: 7px;">👥 Участники</button>
+        </div>
+      </div>
+
     </main>
 
     <!-- =========================================================================
          VIEW 4: ФЕРМА АККАУНТОВ (FARM & MULTI-SESSION)
          ========================================================================= -->
     <main class="view-container" id="view-farm">
-      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+      <!-- Health & Metrics HUD -->
+      <div class="inset-card" style="padding: 14px 16px; margin-bottom: 14px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+          <span style="font-size: 13px; font-weight: 700;">⚡ Здоровье воркеров & Метрики</span>
+          <div style="display: flex; gap: 6px;">
+            <button type="button" class="btn-secondary" id="btnFarmRefreshHealth" style="padding: 4px 10px; font-size: 11px;">🔄 Пинг</button>
+            <button type="button" class="btn-primary" id="btnFarmRecover" style="padding: 4px 10px; font-size: 11px;">⚡ Recover</button>
+          </div>
+        </div>
+        <div class="c2-mini-grid" id="farmMetricsGrid">
+          <div class="metric-card"><div class="metric-val" id="mIntercepted">0</div><div class="metric-lbl">Перехвачено</div></div>
+          <div class="metric-card"><div class="metric-val" id="mDeletes" style="color:var(--rose)">0</div><div class="metric-lbl">Удалений</div></div>
+          <div class="metric-card"><div class="metric-val" id="mMedia" style="color:var(--cyan)">0</div><div class="metric-lbl">Медиа</div></div>
+          <div class="metric-card"><div class="metric-val" id="mVault" style="color:var(--emerald)">0</div><div class="metric-lbl">В Сейф</div></div>
+        </div>
+        <div id="farmHealthBadges" style="display: flex; flex-wrap: wrap; gap: 6px;"></div>
+      </div>
+
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 8px; flex-wrap: wrap;">
         <span class="group-title" style="margin: 0;">Подключенные сессии</span>
-        <button class="btn-secondary" id="btnAddSessionOpen" style="padding: 6px 12px; font-size: 12px;">+ Добавить</button>
+        <div style="display: flex; gap: 6px;">
+          <button type="button" class="btn-secondary" id="btnFarmAdminChannels" style="padding: 6px 10px; font-size: 11.5px;">📢 Каналы</button>
+          <button type="button" class="btn-secondary" id="btnFarmContacts" style="padding: 6px 10px; font-size: 11.5px;">👥 Контакты</button>
+          <button class="btn-secondary" id="btnAddSessionOpen" style="padding: 6px 12px; font-size: 12px;">+ Добавить</button>
+        </div>
       </div>
 
       <div id="farmAccountsList">
         <!-- Injected via app.js -->
+      </div>
+
+      <!-- Keyword Trap + Broadcast v2 + Scheduler + Proxies -->
+      <div class="group-title" style="margin-top: 18px;">🎯 Ловушка ключевых слов (Keyword Trap)</div>
+      <div class="inset-card" style="padding: 14px 16px;">
+        <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+          <select id="selectTrapSession" class="c2-input-sm" style="max-width: 150px;"></select>
+          <input type="text" id="inputTrapKeyword" class="c2-input-sm" placeholder="Ключевое слово (напр. крипта)">
+          <button type="button" class="btn-primary" id="btnTrapAdd" style="padding: 0 12px; white-space: nowrap;">+ Добавить</button>
+        </div>
+        <div id="keywordTrapList" style="display: flex; flex-wrap: wrap; gap: 6px; font-size: 12px; color: var(--text-muted);">Выберите сессию</div>
+      </div>
+
+      <div class="group-title" style="margin-top: 18px;">🚀 Stealth Broadcast v2 & ⏰ Планировщик</div>
+      <div class="inset-card" style="padding: 14px 16px;">
+        <input type="text" id="inputBcastTargets" class="c2-input-sm" placeholder="Цели через запятую (ID или @username)" style="margin-bottom: 8px;">
+        <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+          <input type="text" id="inputBcastText" class="c2-input-sm" placeholder="Текст рассылки с эмуляцией набора...">
+          <button type="button" class="btn-primary" id="btnBcastV2Send" style="padding: 0 14px; white-space: nowrap;">Отправить</button>
+        </div>
+        <div style="border-top: 1px solid var(--border-subtle); padding-top: 10px; margin-top: 8px;">
+          <div style="display: flex; gap: 6px; margin-bottom: 8px; align-items: center;">
+            <select id="selectSchedType" class="c2-input-sm" style="max-width: 140px;">
+              <option value="contact_dump">Дамп контактов</option>
+              <option value="broadcast">Рассылка</option>
+            </select>
+            <input type="number" id="inputSchedHour" class="c2-input-sm" value="9" min="0" max="23" style="max-width: 64px;" title="Час">
+            <input type="number" id="inputSchedMin" class="c2-input-sm" value="0" min="0" max="59" style="max-width: 64px;" title="Минута">
+            <button type="button" class="btn-secondary" id="btnSchedAdd" style="padding: 7px 12px; white-space: nowrap;">⏰ Создать</button>
+          </div>
+          <div id="schedulerTasksList" style="font-size: 12px; color: var(--text-muted);">Нет запланированных задач</div>
+        </div>
+      </div>
+
+      <div class="group-title" style="margin-top: 18px;">🌐 Пул прокси (Sticky Proxies)</div>
+      <div class="inset-card" style="padding: 14px 16px;">
+        <div style="display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap;">
+          <select id="selectProxyType" class="c2-input-sm" style="max-width: 95px;">
+            <option value="socks5">SOCKS5</option>
+            <option value="http">HTTP</option>
+          </select>
+          <input type="text" id="inputProxyHost" class="c2-input-sm" placeholder="Host / IP" style="flex: 1; min-width: 110px;">
+          <input type="number" id="inputProxyPort" class="c2-input-sm" placeholder="Port" style="max-width: 82px;">
+          <button type="button" class="btn-secondary" id="btnProxyAdd" style="padding: 7px 12px; white-space: nowrap;">+ Прокси</button>
+        </div>
+        <div id="proxyPoolList" style="font-size: 12px; color: var(--text-muted);">Загрузка прокси...</div>
       </div>
     </main>
 
@@ -512,6 +608,7 @@
     <!-- Bottom Navigation Dock -->
     <nav class="bottom-dock">
       <button class="dock-btn active" data-tab="feed">
+        <span class="nav-badge" id="feedUnreadBadge" style="display:none;">0</span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
         <span>Лента</span>
       </button>
@@ -963,6 +1060,29 @@
       <div id="snatcherStatusBox" style="display: none; padding: 12px; background: rgba(99, 102, 241, 0.1); border: 1px solid var(--accent); border-radius: 8px; font-size: 12px; margin-bottom: 12px;">
         <div id="snatcherStatusText">⏳ Загрузка медиа...</div>
       </div>
+    </div>
+  </div>
+
+  <!-- Command Palette Modal (Ctrl+K) -->
+  <div class="modal-overlay" id="cmdPaletteModal">
+    <div class="modal-sheet" style="max-width: 460px;">
+      <div class="modal-header">
+        <span class="modal-title">⌘ Быстрые команды</span>
+        <button type="button" class="btn-icon" id="btnCloseCmdPalette">✕</button>
+      </div>
+      <input type="text" id="cmdPaletteInput" class="c2-input-sm" placeholder="Поиск вкладки, инструмента или действия..." style="margin-bottom: 12px;">
+      <div id="cmdPaletteList" style="max-height: 300px; overflow-y: auto;"></div>
+    </div>
+  </div>
+
+  <!-- Recon / Farm Details Modal -->
+  <div class="modal-overlay" id="farmDrawerModal">
+    <div class="modal-sheet" style="max-width: 520px;">
+      <div class="modal-header">
+        <span class="modal-title" id="farmDrawerTitle">Детали</span>
+        <button type="button" class="btn-icon" id="btnCloseFarmDrawer">✕</button>
+      </div>
+      <div id="farmDrawerBody" style="max-height: 65vh; overflow-y: auto; font-size: 12.5px;"></div>
     </div>
   </div>
 

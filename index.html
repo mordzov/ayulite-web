@@ -94,8 +94,6 @@
         </div>
         <div class="chat-tools-bar">
           <button type="button" class="btn btn-sm" id="btnChatDossier">Досье</button>
-          <button type="button" class="btn btn-sm" id="btnSilentPeek">Читать тихо</button>
-          <button type="button" class="btn btn-sm" id="btnSilentToggle">Режим тишины</button>
           <button type="button" class="btn btn-sm" id="btnVaultDump">Сохранить всё</button>
           <button type="button" class="btn btn-sm" id="btnVaultShadow">Переслать ID</button>
           <select id="selectActionFaker" class="input input-compact" style="width:auto;min-width:145px;" title="Имитация активности в чате">
@@ -115,13 +113,11 @@
     <main class="view" id="view-stealth">
       <div class="sec-head"><span class="sec-title">Режимы скрытности</span></div>
       <div class="card card-flush">
-        <div class="row"><div><div class="row-title">Читать без галочек (Ghost Read)</div><div class="row-sub">Собеседник не увидит, что вы прочитали сообщение</div></div><label class="switch"><input type="checkbox" class="trigger-sw" data-trigger="ghost_read"><span class="slider"></span></label></div>
         <div class="row"><div><div class="row-title">Сохранять удалённые</div><div class="row-sub">Мгновенный перехват удалённых сообщений и медиа</div></div><label class="switch"><input type="checkbox" class="trigger-sw" data-trigger="anti_delete" checked><span class="slider"></span></label></div>
         <div class="row"><div><div class="row-title">Сохранять изменения</div><div class="row-sub">Показывать исходный текст до редактирования</div></div><label class="switch"><input type="checkbox" class="trigger-sw" data-trigger="anti_edit" checked><span class="slider"></span></label></div>
         <div class="row"><div><div class="row-title">Ловить сгорающие фото/видео (TTL)</div><div class="row-sub">Автосохранение одноразовых медиа в Сейф</div></div><label class="switch"><input type="checkbox" class="trigger-sw" data-trigger="auto_ttl" checked><span class="slider"></span></label></div>
         <div class="row"><div><div class="row-title">Следить за реакциями</div><div class="row-sub">Фиксировать даже быстро снятые реакции</div></div><label class="switch"><input type="checkbox" class="trigger-sw" data-trigger="reaction_spy" checked><span class="slider"></span></label></div>
         <div class="row"><div><div class="row-title">Расшифровка голосовых</div><div class="row-sub">Автоматический перевод аудио в текст</div></div><label class="switch"><input type="checkbox" class="trigger-sw" data-trigger="silent_ear" checked><span class="slider"></span></label></div>
-        <div class="row"><div><div class="row-title">Вечный оффлайн</div><div class="row-sub">Скрывать статус «в сети» при активности</div></div><label class="switch"><input type="checkbox" class="trigger-sw" data-trigger="stealth_always_enabled"><span class="slider"></span></label></div>
         <div class="row"><div><div class="row-title">Скрывать «печатает...»</div><div class="row-sub">Блокировать отправку статуса набора текста</div></div><label class="switch"><input type="checkbox" class="trigger-sw" data-trigger="stealth_typing"><span class="slider"></span></label></div>
         <div class="row"><div><div class="row-title">Защита от звонков</div><div class="row-sub">Блокировка и лог входящих вызовов</div></div><label class="switch"><input type="checkbox" class="trigger-sw" data-trigger="voip_guard" checked><span class="slider"></span></label></div>
       </div>

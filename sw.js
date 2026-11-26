@@ -1,5 +1,5 @@
-/* AyuLite C2 - High Performance PWA Service Worker v2.0 */
-const CACHE_NAME = 'ayulite-pwa-v2.1';
+/* AyuLite C2 - High Performance PWA Service Worker v14.0 */
+const CACHE_NAME = 'ayulite-pwa-v14.0';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -36,8 +36,8 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Network-First with Cache-Fallback for app.js, index.html, tunnel.json
-  if (url.pathname.endsWith('app.js') || url.pathname.endsWith('index.html') || url.pathname.endsWith('tunnel.json')) {
+  // Network-First with Cache-Fallback for app.js, style.css, index.html, tunnel.json
+  if (url.pathname.endsWith('app.js') || url.pathname.endsWith('style.css') || url.pathname.endsWith('index.html') || url.pathname.endsWith('tunnel.json')) {
     event.respondWith(
       fetch(event.request)
         .then((response) => {

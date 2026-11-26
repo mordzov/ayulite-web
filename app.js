@@ -16,6 +16,7 @@
     feedEvents: [],
     vaultChats: [],
     vaultFilter: '',
+    referralLink: '',
     activeChatId: null,
     activeChatTitle: '',
     farmAccounts: [],
@@ -402,24 +403,29 @@
     const list = $('vaultChatsList');
     if (!list) return;
     const q = state.vaultFilter.toLowerCase();
-    const chats = state.vaultChats.filter(c => !q || (c.chat_title || '').toLowerCase().includes(q));
+    const chats = (Array.isArray(state.vaultChats) ? state.vaultChats : []).filter(c => {
+      const t = (c.chat_title || c.title || '').toLowerCase();
+      return !q || t.includes(q);
+    });
     if ($('vaultChatsTotal')) $('vaultChatsTotal').textContent = `${chats.length} чатов`;
     if (!chats.length) {
       list.innerHTML = '<div class="empty">Диалогов пока нет</div>';
       return;
     }
     list.innerHTML = chats.map(c => {
-      const title = c.chat_title || `Чат ${c.chat_id}`;
+      const title = c.chat_title || c.title || `Чат ${c.chat_id}`;
+      const preview = c.last_text || c.preview || 'Медиа / перехват';
+      const cnt = c.total_count ?? c.deleted_count ?? 0;
       const active = String(state.activeChatId) === String(c.chat_id) ? 'active' : '';
       return `<div class="chat-row ${active}" data-vault-chat="${esc(c.chat_id)}" data-vault-title="${esc(title)}">
-        <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+        <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1;">
           <span class="avatar-circle">${esc(title.slice(0, 1).toUpperCase())}</span>
-          <div style="min-width:0;">
+          <div style="min-width:0;flex:1;">
             <div class="row-title" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(title)}</div>
-            <div class="row-sub" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(c.last_text || 'Медиа / перехват')}</div>
+            <div class="row-sub" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(preview)}</div>
           </div>
         </div>
-        <span class="tag">${c.total_count ?? c.deleted_count ?? ''}</span>
+        <span class="tag">${cnt}</span>
       </div>`;
     }).join('');
   }
@@ -428,11 +434,14 @@
     if (!state.userId) return;
     try {
       const res = await api(`/api/vault/overview/${state.userId}`);
-      state.vaultChats = res.chats || [];
+      const rawChats = res.chats;
+      state.vaultChats = Array.isArray(rawChats)
+        ? rawChats
+        : [...(rawChats?.dm || []), ...(rawChats?.groups || []), ...(rawChats?.channels || [])];
       renderVaultChats();
       if (window.innerWidth >= 960 && state.vaultChats.length && !state.activeChatId) {
         const first = state.vaultChats[0];
-        openVaultChat(first.chat_id, first.chat_title || `Чат ${first.chat_id}`);
+        openVaultChat(first.chat_id, first.chat_title || first.title || `Чат ${first.chat_id}`);
       }
     } catch (_) {}
   }
@@ -457,7 +466,8 @@
       }
       stream.innerHTML = msgs.map(m => {
         const cls = m.is_deleted ? 'deleted' : (m.is_edited ? 'edited' : '');
-        const mUrl = m.media_url ? mediaUrl(m.media_url) : '';
+        const rawUrl = m.media_url || (m.has_media && m.session_id && m.msg_id ? `/api/vault/media/${m.session_id}/${m.msg_id}` : '');
+        const mUrl = rawUrl ? mediaUrl(rawUrl) : '';
         let media = '';
         if (mUrl) {
           if (m.media_type === 'voice' || m.media_type === 'audio') {
@@ -478,7 +488,6 @@
           ${media}
           <div class="event-actions" style="margin-top:6px;">
             <button type="button" class="btn btn-sm" data-shadow-msg="${esc(m.msg_id)}" data-shadow-chat="${esc(chatId)}">В Избранное</button>
-            <button type="button" class="btn btn-sm" data-read-until="${esc(m.msg_id)}">Прочитать до</button>
             <button type="button" class="btn btn-sm btn-danger" data-burn-msg="${esc(m.msg_id)}" data-burn-chat="${esc(chatId)}">Сжечь</button>
           </div>
         </div>`;
@@ -764,8 +773,13 @@
     try {
       const r = await api(`/api/referrals/${state.userId}`);
       state.referralLink = r.referral_link || '';
-      const cnt = r.stats?.total_referrals ?? r.stats?.invited_count ?? 0;
-      if ($('refStatsText')) $('refStatsText').textContent = `Приглашено друзей: ${cnt}`;
+      const total = r.stats?.total_invited ?? 0;
+      const days = r.stats?.days_earned ?? 0;
+      if ($('refStatsText')) {
+        $('refStatsText').textContent = days > 0
+          ? `Приглашено: ${total} (бонус: +${days} дн.)`
+          : `Приглашено друзей: ${total}`;
+      }
     } catch (_) {}
   }
 
@@ -952,43 +966,6 @@
       if (!state.activeChatId) return toast('Выберите диалог', 'err');
       showChatDossier(state.activeChatId);
     });
-    $('btnSilentPeek')?.addEventListener('click', async () => {
-      if (!state.activeChatId) return toast('Выберите диалог', 'err');
-      const stream = $('vaultMessagesStream');
-      if (stream) stream.innerHTML = '<div class="skeleton"></div><div class="skeleton"></div>';
-      try {
-        const r = await api('/api/silent_reader/peek', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ chat_id: Number(state.activeChatId), limit: 25 })
-        });
-        const msgs = r.messages || [];
-        if (!stream) return;
-        stream.innerHTML = msgs.map(m => `<div class="msg-bubble">
-          <div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:4px;">
-            <span style="font-weight:600;font-size:12px;">${esc(m.sender_name || 'Собеседник')}</span>
-            <span class="event-meta">#${esc(m.id)} • ${esc(m.date || '')}</span>
-          </div>
-          <div class="event-body">${esc(m.text || (m.has_media ? '[Медиа]' : ''))}</div>
-          <div class="event-actions" style="margin-top:6px;">
-            <button type="button" class="btn btn-sm" data-shadow-msg="${esc(m.id)}" data-shadow-chat="${esc(state.activeChatId)}">В Избранное</button>
-            <button type="button" class="btn btn-sm" data-read-until="${esc(m.id)}">Прочитать до</button>
-          </div>
-        </div>`).join('') || '<div class="empty">Сообщений нет</div>';
-        toast('Прочитано без отметки', 'ok');
-      } catch (err) { toast(err.message, 'err'); }
-    });
-    $('btnSilentToggle')?.addEventListener('click', async () => {
-      if (!state.activeChatId) return toast('Выберите диалог', 'err');
-      try {
-        const r = await api('/api/silent_reader/toggle', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ chat_id: Number(state.activeChatId), title: state.activeChatTitle || 'Диалог', enable: true })
-        });
-        toast(r.is_silent ? 'Режим тишины включён для этого чата' : 'Режим тишины выключен', 'ok');
-      } catch (err) { toast(err.message, 'err'); }
-    });
     $('selectActionFaker')?.addEventListener('change', async (e) => {
       const action = e.target.value;
       if (!action || !state.activeChatId) return;
@@ -1006,17 +983,6 @@
       if (shBtn) return shadowCopyMsg(shBtn.dataset.shadowChat, shBtn.dataset.shadowMsg);
       const burnBtn = e.target.closest('[data-burn-msg]');
       if (burnBtn) return burnMessage(burnBtn.dataset.burnChat, burnBtn.dataset.burnMsg, burnBtn);
-      const readBtn = e.target.closest('[data-read-until]');
-      if (readBtn && state.activeChatId) {
-        try {
-          const r = await api('/api/chat/read_until', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ chat_id: Number(state.activeChatId), msg_id: Number(readBtn.dataset.readUntil) })
-          });
-          toast(r.message || 'Отмечено прочитанным до этого места', 'ok');
-        } catch (err) { toast(err.message, 'err'); }
-      }
     });
     $('btnShadowExecute')?.addEventListener('click', async () => {
       const msgId = Number($('shadowMsgId')?.value || 0);
@@ -1139,7 +1105,7 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ user_id: state.userId, link, count })
         });
-        toast(r.message || 'Выгружено', 'ok');
+        toast(r.message || `Выгружено постов: ${r.fetched ?? 0} (медиа: ${r.media_count ?? 0})`, 'ok');
         closeModal('modalSnatcher');
       } catch (err) {
         if ($('snatcherStatusBox')) $('snatcherStatusBox').textContent = err.message;
@@ -1351,7 +1317,8 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ user_id: state.userId })
         });
-        toast(r.message || 'Триал активирован', r.ok === false ? 'err' : 'ok');
+        const isErr = r.success === false || r.ok === false || r.status === 'error';
+        toast(r.message || r.error || (isErr ? 'Триал недоступен' : 'Триал активирован'), isErr ? 'err' : 'ok');
         loadState();
       } catch (err) { toast(err.message, 'err'); }
     });
@@ -1361,15 +1328,23 @@
       try {
         const r = await api('/api/billing/plans');
         const plans = r.plans || [];
-        $('storePlansList').innerHTML = plans.map(p => `
-          <div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
-            <div>
-              <div class="row-title">${esc(p.name)} • ${p.days} дн.</div>
+        $('storePlansList').innerHTML = plans.map(p => {
+          const tierId = p.id || p.key || 'pro';
+          const stars30 = p.stars_30 ?? p.stars ?? 0;
+          const foreverBtn = p.stars_forever
+            ? `<button type="button" class="btn btn-sm" data-buy-plan="${esc(tierId)}" data-buy-days="9999">${p.stars_forever} ⭐ ∞</button>`
+            : '';
+          return `<div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+            <div style="min-width:0;flex:1;">
+              <div class="row-title">${esc(p.name)} • ${p.workers || 1} акк.</div>
               <div class="row-sub">${esc((p.features || []).slice(0, 2).join(', '))}</div>
             </div>
-            <button type="button" class="btn btn-sm btn-primary" data-buy-plan="${esc(p.key)}">${p.stars} ⭐</button>
-          </div>
-        `).join('');
+            <div style="display:flex;gap:6px;flex-shrink:0;">
+              <button type="button" class="btn btn-sm btn-primary" data-buy-plan="${esc(tierId)}" data-buy-days="30">${stars30} ⭐ / 30д</button>
+              ${foreverBtn}
+            </div>
+          </div>`;
+        }).join('');
       } catch (err) {
         $('storePlansList').innerHTML = `<div class="empty">${esc(err.message)}</div>`;
       }
@@ -1380,10 +1355,12 @@
       const b = e.target.closest('[data-buy-plan]');
       if (!b) return;
       try {
+        const tier = b.dataset.buyPlan;
+        const duration_days = Number(b.dataset.buyDays || 30);
         const r = await api('/api/billing/create_invoice', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ plan: b.dataset.buyPlan, user_id: state.userId })
+          body: JSON.stringify({ tier, plan: tier, duration_days, user_id: state.userId })
         });
         if (r.invoice_url) {
           if (tg?.openInvoice) tg.openInvoice(r.invoice_url);
@@ -1417,13 +1394,17 @@
     $('btnPanicFreeze')?.addEventListener('click', async () => {
       const btn = $('btnPanicFreeze');
       if (!btn.dataset.armed) {
+        btn.dataset.origText = btn.textContent;
         btn.dataset.armed = '1';
-        btn.textContent = 'Нажмите ещё раз для подтверждения заморозки';
-        setTimeout(() => { delete btn.dataset.armed; btn.textContent = 'Panic Freeze (остановить все воркеры)'; }, 3500);
+        btn.textContent = 'Нажмите ещё раз для подтверждения';
+        setTimeout(() => {
+          delete btn.dataset.armed;
+          btn.textContent = btn.dataset.origText || 'Экстренно остановить все сессии';
+        }, 3500);
         return;
       }
       delete btn.dataset.armed;
-      btn.textContent = 'Panic Freeze (остановить все воркеры)';
+      btn.textContent = btn.dataset.origText || 'Экстренно остановить все сессии';
       try {
         const r = await api('/api/action', {
           method: 'POST',

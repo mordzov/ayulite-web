@@ -1503,6 +1503,15 @@
     // 1. Bind ALL UI controls synchronously so clicks work immediately at 0ms
     bindAllUI();
 
+    // Farm sub-tabs switcher
+    $('farmSubTabs')?.addEventListener('click', (e) => {
+      const btn = e.target.closest('.farm-tab');
+      if (!btn) return;
+      const target = btn.dataset.farmTab;
+      document.querySelectorAll('.farm-tab').forEach((t) => t.classList.toggle('active', t.dataset.farmTab === target));
+      document.querySelectorAll('.farm-pane').forEach((p) => p.classList.toggle('active', p.dataset.farmPane === target));
+    });
+
     // 2. Auto-discover backend, fetch data, start WS & background sync
     await resolveApiUrl();
     await Promise.allSettled([loadFeed(), loadState(), loadVaultOverview(), loadFarmAll(), loadReferrals()]);

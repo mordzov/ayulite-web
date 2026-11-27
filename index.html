@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0b0c10">
   <title>AyuLite C2</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link rel="stylesheet" href="style.css?v=14.0">
+  <link rel="stylesheet" href="style.css?v=14.1">
 </head>
 <body>
   <div class="shell">
@@ -90,20 +90,20 @@
       <div class="card vault-chat-col" id="vaultConvWrap" style="display:none;">
         <div class="vault-chat-head">
           <button type="button" class="btn btn-sm" id="btnBackToChats">← Чаты</button>
-          <span class="row-title" id="activeChatTitle" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Выберите диалог</span>
-        </div>
-        <div class="chat-tools-bar">
-          <button type="button" class="btn btn-sm" id="btnChatDossier">Досье</button>
-          <button type="button" class="btn btn-sm" id="btnVaultDump">Сохранить всё</button>
-          <button type="button" class="btn btn-sm" id="btnVaultShadow">Переслать ID</button>
-          <select id="selectActionFaker" class="input input-compact" style="width:auto;min-width:145px;" title="Имитация активности в чате">
-            <option value="">Статус: обычный</option>
-            <option value="typing">Печатает...</option>
-            <option value="record-audio">Записывает ГС</option>
-            <option value="record-round">Записывает кружок</option>
-            <option value="upload-document">Отправляет файл</option>
-            <option value="cancel">Остановить статус</option>
-          </select>
+          <span class="row-title flex1" id="activeChatTitle" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Выберите диалог</span>
+          <div class="chat-tools-bar">
+            <button type="button" class="btn btn-sm" id="btnChatDossier">Досье</button>
+            <button type="button" class="btn btn-sm" id="btnVaultDump">Дамп</button>
+            <button type="button" class="btn btn-sm" id="btnVaultShadow">Переслать ID</button>
+            <select id="selectActionFaker" class="input input-compact" style="width:auto;min-width:136px;" title="Имитация активности в чате">
+              <option value="">Статус: обычный</option>
+              <option value="typing">Печатает...</option>
+              <option value="record-audio">Записывает ГС</option>
+              <option value="record-round">Записывает кружок</option>
+              <option value="upload-document">Отправляет файл</option>
+              <option value="cancel">Остановить статус</option>
+            </select>
+          </div>
         </div>
         <div id="vaultMessagesStream"><div class="empty">Выберите диалог из списка</div></div>
       </div>
@@ -146,74 +146,86 @@
 
     <!-- VIEW 4: FARM & OPS -->
     <main class="view" id="view-farm">
-      <div class="sec-head">
-        <span class="sec-title">Работа аккаунтов</span>
-        <div style="display:flex;gap:6px;">
-          <button type="button" class="btn btn-sm" id="btnFarmHealth">Проверить</button>
-          <button type="button" class="btn btn-sm btn-primary" id="btnFarmRecover">Починить</button>
-        </div>
-      </div>
-      <div class="metrics-grid">
-        <div class="metric-box"><div class="metric-val" id="mIntercepted">0</div><div class="metric-lbl">Сообщений</div></div>
-        <div class="metric-box"><div class="metric-val" id="mDeletes">0</div><div class="metric-lbl">Удалений</div></div>
-        <div class="metric-box"><div class="metric-val" id="mMedia">0</div><div class="metric-lbl">Медиа</div></div>
-        <div class="metric-box"><div class="metric-val" id="mVault">0</div><div class="metric-lbl">В сейфе</div></div>
-      </div>
-      <div id="farmHealthChips" class="chips" style="margin-bottom:12px;border-bottom:none;"></div>
-
-      <div class="sec-head">
-        <span class="sec-title">Подключённые аккаунты</span>
-        <div style="display:flex;gap:6px;">
-          <button type="button" class="btn btn-sm" id="btnFarmChannels">Каналы</button>
-          <button type="button" class="btn btn-sm" id="btnFarmContacts">Контакты</button>
-          <button type="button" class="btn btn-sm btn-primary" id="btnAddSessionOpen">+ Аккаунт</button>
-        </div>
-      </div>
-      <div id="farmAccountsList"><div class="empty">Загрузка аккаунтов...</div></div>
-
-      <div class="sec-head"><span class="sec-title">Уведомления по словам</span></div>
-      <div class="card">
-        <div class="toolbar">
-          <select id="selectTrapSession" class="input" style="max-width:140px;"></select>
-          <input type="text" id="inputTrapKeyword" class="input" placeholder="Слово-триггер..." style="flex:1;min-width:0;">
-          <button type="button" class="btn btn-sm btn-primary" id="btnTrapAdd">+</button>
-        </div>
-        <div id="keywordTrapList" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+      <div class="farm-tabs" id="farmSubTabs">
+        <button type="button" class="farm-tab active" data-farm-tab="accounts">Аккаунты</button>
+        <button type="button" class="farm-tab" data-farm-tab="auto">Автоматизация</button>
+        <button type="button" class="farm-tab" data-farm-tab="proxies">Прокси</button>
       </div>
 
-      <div class="sec-head"><span class="sec-title">Рассылка и расписание</span></div>
-      <div class="card">
-        <input type="text" id="inputBcastTargets" class="input" placeholder="Получатели через запятую (ID или @username)" style="margin-bottom:8px;">
-        <div class="toolbar">
-          <input type="text" id="inputBcastText" class="input" placeholder="Текст сообщения..." style="flex:1;min-width:0;">
-          <button type="button" class="btn btn-sm btn-primary" id="btnBcastSend">Отправить</button>
-        </div>
-        <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:8px;">
-          <div class="toolbar" style="margin-bottom:8px;">
-            <select id="selectSchedType" class="input" style="flex:1;min-width:120px;">
-              <option value="contact_dump">Авто-дамп контактов</option>
-              <option value="broadcast">Авто-рассылка</option>
-            </select>
-            <input type="number" id="inputSchedHour" class="input" value="9" min="0" max="23" style="width:62px;" title="Час">
-            <input type="number" id="inputSchedMin" class="input" value="0" min="0" max="59" style="width:62px;" title="Минута">
-            <button type="button" class="btn btn-sm" id="btnSchedAdd">Задать</button>
+      <div class="farm-pane active" data-farm-pane="accounts">
+        <div class="sec-head">
+          <span class="sec-title">Работа аккаунтов</span>
+          <div style="display:flex;gap:6px;">
+            <button type="button" class="btn btn-sm" id="btnFarmHealth">Проверить</button>
+            <button type="button" class="btn btn-sm btn-primary" id="btnFarmRecover">Починить</button>
           </div>
-          <div id="schedulerTasksList"></div>
+        </div>
+        <div class="metrics-grid">
+          <div class="metric-box"><div class="metric-val" id="mIntercepted">0</div><div class="metric-lbl">Сообщений</div></div>
+          <div class="metric-box"><div class="metric-val" id="mDeletes">0</div><div class="metric-lbl">Удалений</div></div>
+          <div class="metric-box"><div class="metric-val" id="mMedia">0</div><div class="metric-lbl">Медиа</div></div>
+          <div class="metric-box"><div class="metric-val" id="mVault">0</div><div class="metric-lbl">В сейфе</div></div>
+        </div>
+        <div id="farmHealthChips" class="chips" style="margin-bottom:12px;border-bottom:none;"></div>
+
+        <div class="sec-head">
+          <span class="sec-title">Подключённые аккаунты</span>
+          <div style="display:flex;gap:6px;">
+            <button type="button" class="btn btn-sm" id="btnFarmChannels">Каналы</button>
+            <button type="button" class="btn btn-sm" id="btnFarmContacts">Контакты</button>
+            <button type="button" class="btn btn-sm btn-primary" id="btnAddSessionOpen">+ Аккаунт</button>
+          </div>
+        </div>
+        <div id="farmAccountsList"><div class="empty">Загрузка аккаунтов...</div></div>
+      </div>
+
+      <div class="farm-pane" data-farm-pane="auto">
+        <div class="sec-head"><span class="sec-title">Уведомления по словам</span></div>
+        <div class="card">
+          <div class="toolbar">
+            <select id="selectTrapSession" class="input" style="max-width:140px;"></select>
+            <input type="text" id="inputTrapKeyword" class="input flex1" placeholder="Слово-триггер...">
+            <button type="button" class="btn btn-sm btn-primary" id="btnTrapAdd">+</button>
+          </div>
+          <div id="keywordTrapList" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+        </div>
+
+        <div class="sec-head"><span class="sec-title">Рассылка и расписание</span></div>
+        <div class="card">
+          <input type="text" id="inputBcastTargets" class="input" placeholder="Получатели через запятую (ID или @username)" style="margin-bottom:8px;">
+          <div class="toolbar">
+            <input type="text" id="inputBcastText" class="input flex1" placeholder="Текст сообщения...">
+            <button type="button" class="btn btn-sm btn-primary" id="btnBcastSend">Отправить</button>
+          </div>
+          <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:8px;">
+            <div class="toolbar" style="margin-bottom:8px;">
+              <select id="selectSchedType" class="input flex1">
+                <option value="contact_dump">Авто-дамп контактов</option>
+                <option value="broadcast">Авто-рассылка</option>
+              </select>
+              <input type="number" id="inputSchedHour" class="input" value="9" min="0" max="23" style="width:62px;" title="Час">
+              <input type="number" id="inputSchedMin" class="input" value="0" min="0" max="59" style="width:62px;" title="Минута">
+              <button type="button" class="btn btn-sm" id="btnSchedAdd">Задать</button>
+            </div>
+            <div id="schedulerTasksList"></div>
+          </div>
         </div>
       </div>
 
-      <div class="sec-head"><span class="sec-title">Прокси-пул</span></div>
-      <div class="card">
-        <div class="toolbar" style="margin-bottom:8px;">
-          <select id="selectProxyType" class="input" style="width:94px;">
-            <option value="socks5">SOCKS5</option>
-            <option value="http">HTTP</option>
-          </select>
-          <input type="text" id="inputProxyHost" class="input" placeholder="IP / Хост" style="flex:1;min-width:100px;">
-          <input type="number" id="inputProxyPort" class="input" placeholder="Порт" style="width:76px;">
-          <button type="button" class="btn btn-sm" id="btnProxyAdd">+</button>
+      <div class="farm-pane" data-farm-pane="proxies">
+        <div class="sec-head"><span class="sec-title">Прокси-пул</span></div>
+        <div class="card">
+          <div class="toolbar" style="margin-bottom:8px;">
+            <select id="selectProxyType" class="input" style="width:94px;">
+              <option value="socks5">SOCKS5</option>
+              <option value="http">HTTP</option>
+            </select>
+            <input type="text" id="inputProxyHost" class="input flex1" placeholder="IP / Хост">
+            <input type="number" id="inputProxyPort" class="input" placeholder="Порт" style="width:76px;">
+            <button type="button" class="btn btn-sm" id="btnProxyAdd">+</button>
+          </div>
+          <div id="proxyPoolList"></div>
         </div>
-        <div id="proxyPoolList"></div>
       </div>
     </main>
 
@@ -411,6 +423,6 @@
   </div>
 
   <div class="toast" id="toast"></div>
-  <script src="app.js?v=14.0"></script>
+  <script src="app.js?v=14.1"></script>
 </body>
 </html>

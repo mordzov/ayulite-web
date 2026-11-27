@@ -555,11 +555,33 @@ select.input { border-radius: var(--r-sm); }
 .event-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
+  border-left: 3px solid var(--border-strong);
   box-shadow: var(--glass-hi), 0 8px 28px rgba(0, 0, 0, 0.32);
   border-radius: var(--r-lg);
   padding: 14px 15px;
   margin-bottom: 12px;
   animation: cardIn 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition: border-color 0.16s ease, background-color 0.16s ease;
+}
+.event-card.event-deleted {
+  border-left-color: var(--err);
+  background: linear-gradient(90deg, rgba(244, 63, 94, 0.06), var(--bg-card) 28%);
+}
+.event-card.event-edited {
+  border-left-color: var(--warn);
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.055), var(--bg-card) 28%);
+}
+.event-card.event-ttl {
+  border-left-color: var(--accent);
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.07), var(--bg-card) 28%);
+}
+.event-card.event-reaction,
+.event-card.event-reactions {
+  border-left-color: var(--ok);
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.055), var(--bg-card) 28%);
+}
+.event-card.event-keyword {
+  border-left-color: var(--warn);
 }
 @keyframes cardIn {
   from { opacity: 0; transform: translateY(8px); }
@@ -769,9 +791,20 @@ select.input { border-radius: var(--r-sm); }
   height: 64px;
   background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-hover) 50%, var(--bg-card) 75%);
   background-size: 200% 100%;
-  animation: skel 1.2s infinite;
+  animation: skel 1.25s ease-in-out infinite;
+  border: 1px solid var(--border);
   border-radius: var(--r-sm);
   margin-bottom: 8px;
+}
+.skeleton-card {
+  height: 112px;
+  border-radius: var(--r-lg);
+  margin-bottom: 12px;
+}
+.skeleton-row {
+  height: 54px;
+  border-radius: var(--r-sm);
+  margin: 8px 12px;
 }
 
 @keyframes skel {
@@ -852,26 +885,38 @@ select.input { border-radius: var(--r-sm); }
 }
 
 /* Modals */
+body.modal-open { overflow: hidden; }
 .modal {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.78);
+  background: rgba(5, 6, 12, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   display: none;
   align-items: flex-end;
   justify-content: center;
   padding: 12px;
   z-index: 60;
 }
-.modal.open { display: flex; }
-.modal.open .modal-panel { animation: modalUp 0.18s ease-out; }
+.modal.open {
+  display: flex;
+  animation: modalFade 0.16s ease-out;
+}
+.modal.open .modal-panel {
+  animation: modalUp 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes modalFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
 @keyframes modalUp {
-  from { opacity: 0; transform: translateY(14px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 @media (min-width: 560px) {
   .modal { align-items: center; }
   @keyframes modalUp {
-    from { opacity: 0; transform: scale(0.97); }
+    from { opacity: 0; transform: scale(0.96); }
     to { opacity: 1; transform: scale(1); }
   }
 }
@@ -909,7 +954,29 @@ select.input { border-radius: var(--r-sm); }
   font-weight: 700;
 }
 
-.modal-body { padding: 14px; overflow-y: auto; }
+.modal-body {
+  padding: 14px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+.modal-body::-webkit-scrollbar,
+#snatcherChannelsList::-webkit-scrollbar {
+  width: 5px;
+}
+.modal-body::-webkit-scrollbar-thumb,
+#snatcherChannelsList::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 999px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
 
 .cmd-item {
   width: 100%;

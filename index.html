@@ -61,7 +61,11 @@
         <button type="button" class="chip" data-filter="media">С медиа</button>
       </div>
 
-      <div id="feedList"><div class="empty">Загрузка ленты событий...</div></div>
+      <div id="feedList">
+        <div class="skeleton skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
+      </div>
     </main>
 
     <!-- VIEW 2: VAULT & SILENT READER -->
@@ -84,7 +88,11 @@
       </div>
 
       <div class="card card-flush vault-list-col" id="vaultChatsCard">
-        <div id="vaultChatsList"><div class="empty">Загрузка диалогов...</div></div>
+        <div id="vaultChatsList">
+          <div class="skeleton skeleton-row"></div>
+          <div class="skeleton skeleton-row"></div>
+          <div class="skeleton skeleton-row"></div>
+        </div>
       </div>
 
       <div class="card vault-chat-col" id="vaultConvWrap" style="display:none;">
@@ -335,8 +343,9 @@
       <div class="modal-head"><span>Скачать из закрытых каналов</span><button type="button" class="icon-btn" data-close-modal="modalSnatcher">✕</button></div>
       <div class="modal-body" style="display:flex;flex-direction:column;gap:10px;">
         <div class="row-sub">Выберите канал с запретом сохранения ниже или вставьте ссылку на пост вручную:</div>
-        <div id="snatcherChannelsList" style="max-height:190px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--r-md);background:var(--bg-elev);">
-          <div class="empty" style="padding:14px;">Загрузка списка каналов...</div>
+        <div id="snatcherChannelsList" style="max-height:190px;overflow-y:auto;overscroll-behavior:contain;border:1px solid var(--border);border-radius:var(--r-md);background:var(--bg-elev);">
+          <div class="skeleton skeleton-row"></div>
+          <div class="skeleton skeleton-row"></div>
         </div>
         <input type="text" class="input" id="snatcherInputLink" placeholder="Ссылка (t.me/...) или ID выбранного канала">
         <div class="toolbar" style="margin-bottom:0;">

@@ -74,12 +74,21 @@
 
   function openModal(id) {
     const m = $(id);
-    if (m) m.classList.add('open');
+    if (m) {
+      m.classList.add('open');
+      document.body.classList.add('modal-open');
+      haptic('light');
+    }
   }
 
   function closeModal(id) {
     const m = $(id);
-    if (m) m.classList.remove('open');
+    if (m) {
+      m.classList.remove('open');
+      if (!document.querySelector('.modal.open')) {
+        document.body.classList.remove('modal-open');
+      }
+    }
   }
 
   function openDrawer(title, html) {
@@ -295,8 +304,11 @@
       keyword: ['Триггер', 'warn'],
     };
 
-    list.innerHTML = items.slice(0, 120).map(e => {
-      const [lbl, cls] = typeMap[(e.type || '').toLowerCase()] || [e.type || 'Событие', ''];
+    list.innerHTML = items.slice(0, 120).map((e, idx) => {
+      const evType = (e.type || '').toLowerCase();
+      const [lbl, cls] = typeMap[evType] || [e.type || 'Событие', ''];
+      const typeClass = ['deleted', 'edited', 'ttl', 'reaction', 'reactions', 'keyword'].includes(evType) ? `event-${evType}` : '';
+      const delayStyle = idx < 8 ? ` style="animation-delay:${idx * 24}ms;"` : '';
       const mUrl = e.media_url ? mediaUrl(e.media_url) : '';
       let bodyHtml = '';
       if (e.type === 'edited' && (e.old_text || e.new_text)) {
@@ -317,7 +329,7 @@
           mediaHtml = `<div class="event-media"><img loading="lazy" src="${esc(mUrl)}" alt="" data-lightbox="${esc(mUrl)}"></div>`;
         }
       }
-      return `<div class="event-card">
+      return `<div class="event-card ${typeClass}"${delayStyle}>
         <div class="event-top">
           <div>
             <span class="event-sender">${esc(e.sender_name || 'Собеседник')}</span>
@@ -748,7 +760,7 @@
   async function loadSnatcherChannels() {
     const box = $('snatcherChannelsList');
     if (!box || !state.userId) return;
-    box.innerHTML = '<div class="empty" style="padding:14px;">Загрузка каналов...</div>';
+    box.innerHTML = '<div class="skeleton skeleton-row"></div><div class="skeleton skeleton-row"></div>';
     try {
       const r = await api(`/api/snatcher/channels/${state.userId}`);
       const list = r.channels || [];
@@ -864,6 +876,7 @@
         $('btnCmdOpen')?.click();
       } else if (e.key === 'Escape') {
         document.querySelectorAll('.modal.open').forEach(m => m.classList.remove('open'));
+        document.body.classList.remove('modal-open');
       }
     });
 

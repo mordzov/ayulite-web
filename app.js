@@ -1458,12 +1458,12 @@
       const txt = ($('fakeMsgText')?.value || '').trim();
       if (!txt) return;
       const isOut = ($('fakeMsgSide')?.value || 'in') === 'out';
-      state.fakeMessages.push({
-        sender: isOut ? 'me' : ($('fakeTitle')?.value || 'Собеседник'),
-        text: txt,
-        is_out: isOut,
-        time: $('fakeTime')?.value || '11:08'
-      });
+        state.fakeMessages.push({
+          sender: isOut ? 'me' : ($('fakeTitle')?.value || 'Собеседник'),
+          text: txt,
+          is_out: isOut,
+          time: ($('fakeMsgTime')?.value || $('fakeTime')?.value || '13:22').trim()
+        });
       $('fakeMsgText').value = '';
       renderFakeMsgs();
     });
@@ -1484,6 +1484,7 @@
           body: JSON.stringify({
             user_id: state.userId,
             target_user: ($('fakeTargetUser')?.value || '').trim(),
+            avatar_base64: ($('fakeResolvedAv')?.src || '').startsWith('data:image') ? $('fakeResolvedAv').src : '',
             title: ($('fakeTitle')?.value || '').trim(),
             subtitle: ($('fakeSubtitle')?.value || '').trim(),
             time_header: $('fakeTime')?.value || '13:22',

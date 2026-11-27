@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0b0c10">
   <title>AyuLite C2</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link rel="stylesheet" href="style.css?v=14.5">
+  <link rel="stylesheet" href="style.css?v=14.6">
 </head>
 <body>
   <div class="shell">
@@ -397,7 +397,8 @@
         <div style="border-top:1px solid var(--border);padding-top:8px;">
           <div class="toolbar">
             <input type="text" class="input flex1" id="fakeMsgText" placeholder="Текст сообщения...">
-            <select class="input" id="fakeMsgSide" style="max-width:115px;">
+            <input type="text" class="input" id="fakeMsgTime" value="13:22" style="width:68px;" placeholder="Время" title="Время сообщения">
+            <select class="input" id="fakeMsgSide" style="max-width:110px;">
               <option value="in">Собеседник</option>
               <option value="out">Я</option>
             </select>
@@ -439,6 +440,6 @@
   </div>
 
   <div class="toast" id="toast"></div>
-  <script src="app.js?v=14.5"></script>
+  <script src="app.js?v=14.6"></script>
 </body>
 </html>

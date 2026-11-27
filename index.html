@@ -39,11 +39,11 @@
 
     <!-- VIEW 1: FEED -->
     <main class="view active" id="view-feed">
-      <div class="summary-bar">
-        <div class="sum-pill"><span class="sum-n err" id="hudDeleted">0</span><span class="sum-l">Удалено</span></div>
-        <div class="sum-pill"><span class="sum-n warn" id="hudEdited">0</span><span class="sum-l">Правок</span></div>
-        <div class="sum-pill"><span class="sum-n warn" id="hudTtl">0</span><span class="sum-l">TTL</span></div>
-        <div class="sum-pill"><span class="sum-n" id="hudReactions">0</span><span class="sum-l">Реакций</span></div>
+      <div class="summary-bar" id="feedSummaryBar">
+        <button type="button" class="sum-pill" data-filter="deleted"><span class="sum-n err" id="hudDeleted">0</span><span class="sum-l">Удалено</span></button>
+        <button type="button" class="sum-pill" data-filter="edited"><span class="sum-n warn" id="hudEdited">0</span><span class="sum-l">Правок</span></button>
+        <button type="button" class="sum-pill" data-filter="ttl"><span class="sum-n warn" id="hudTtl">0</span><span class="sum-l">TTL</span></button>
+        <button type="button" class="sum-pill" data-filter="reactions"><span class="sum-n" id="hudReactions">0</span><span class="sum-l">Реакций</span></button>
       </div>
 
       <div class="toolbar feed-toolbar">
@@ -184,7 +184,10 @@
             <button type="button" class="btn btn-sm btn-primary" id="btnAddSessionOpen">+ Аккаунт</button>
           </div>
         </div>
-        <div id="farmAccountsList"><div class="empty">Загрузка аккаунтов...</div></div>
+        <div id="farmAccountsList">
+          <div class="skeleton skeleton-row"></div>
+          <div class="skeleton skeleton-row"></div>
+        </div>
       </div>
 
       <div class="farm-pane" data-farm-pane="auto">

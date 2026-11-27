@@ -288,7 +288,17 @@ button, a, label, [role="button"] { cursor: pointer; }
   border-radius: var(--r-md);
   padding: 11px 6px;
   text-align: center;
-  transition: transform 0.16s cubic-bezier(0.22, 1, 0.36, 1);
+  color: inherit;
+  font-family: inherit;
+  cursor: pointer;
+  transition: transform 0.14s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.16s ease, box-shadow 0.16s ease;
+}
+.sum-pill:active {
+  transform: scale(0.96);
+}
+.sum-pill.active {
+  border-color: var(--accent);
+  box-shadow: var(--glass-hi), 0 0 0 1px var(--accent-soft), 0 6px 20px rgba(0, 0, 0, 0.28);
 }
 .sum-pill:nth-child(1) {
   background: linear-gradient(180deg, rgba(244, 63, 94, 0.13), rgba(244, 63, 94, 0.04));

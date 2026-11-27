@@ -910,14 +910,28 @@
       state.searchQuery = e.target.value.trim().toLowerCase();
       renderFeed();
     });
+    const setFeedFilter = (filter) => {
+      state.activeFilter = filter || 'all';
+      document.querySelectorAll('#feedFilterChips .chip').forEach(x => {
+        x.classList.toggle('active', x.dataset.filter === state.activeFilter);
+      });
+      document.querySelectorAll('#feedSummaryBar .sum-pill').forEach(p => {
+        p.classList.toggle('active', p.dataset.filter === state.activeFilter);
+      });
+      renderFeed();
+    };
+    $('feedSummaryBar')?.addEventListener('click', (e) => {
+      const pill = e.target.closest('.sum-pill[data-filter]');
+      if (!pill) return;
+      haptic('selection');
+      const next = state.activeFilter === pill.dataset.filter ? 'all' : pill.dataset.filter;
+      setFeedFilter(next);
+    });
     $('feedFilterChips')?.addEventListener('click', (e) => {
       const chip = e.target.closest('.chip');
       if (!chip) return;
       haptic('selection');
-      document.querySelectorAll('#feedFilterChips .chip').forEach(x => x.classList.remove('active'));
-      chip.classList.add('active');
-      state.activeFilter = chip.dataset.filter;
-      renderFeed();
+      setFeedFilter(chip.dataset.filter);
     });
     $('feedList')?.addEventListener('click', (e) => {
       const openBtn = e.target.closest('[data-open-chat]');

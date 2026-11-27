@@ -1,5 +1,5 @@
-/* AyuLite C2 - High Performance PWA Service Worker v14.1 */
-const CACHE_NAME = 'ayulite-pwa-v14.1';
+/* AyuLite C2 - High Performance PWA Service Worker v14.2 */
+const CACHE_NAME = 'ayulite-pwa-v14.2';
 const STATIC_ASSETS = [
   './',
   './index.html',

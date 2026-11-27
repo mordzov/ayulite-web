@@ -1428,6 +1428,32 @@
       `).join('');
     }
     $('btnOpenFakeshot')?.addEventListener('click', () => { renderFakeMsgs(); openModal('modalFakeshot'); });
+    $('btnFakeLookup')?.addEventListener('click', async () => {
+      const target = ($('fakeTargetUser')?.value || '').trim();
+      if (!target) { toast('Введите ID или @username', 'err'); return; }
+      const btn = $('btnFakeLookup');
+      btn.disabled = true;
+      btn.textContent = '...';
+      try {
+        const res = await api(`/api/chat/resolve_user/${state.userId}/${encodeURIComponent(target)}`);
+        if ($('fakeTitle')) $('fakeTitle').value = res.title || '';
+        if ($('fakeSubtitle')) $('fakeSubtitle').value = res.subtitle || '';
+        if ($('fakeVerified')) $('fakeVerified').checked = Boolean(res.verified);
+        if ($('fakeResolvedProfile')) {
+          $('fakeResolvedProfile').classList.remove('hidden');
+          $('fakeResolvedName').textContent = res.title || target;
+          $('fakeResolvedSub').textContent = res.subtitle || '';
+          if ($('fakeResolvedAv')) {
+            $('fakeResolvedAv').src = res.avatar_data || '';
+            $('fakeResolvedAv').style.display = res.avatar_data ? 'block' : 'none';
+          }
+        }
+        toast('Профиль подгружен', 'ok');
+      } catch (err) { toast(err.message, 'err'); } finally {
+        btn.disabled = false;
+        btn.textContent = 'Найти';
+      }
+    });
     $('btnFakeAddMsg')?.addEventListener('click', () => {
       const txt = ($('fakeMsgText')?.value || '').trim();
       if (!txt) return;

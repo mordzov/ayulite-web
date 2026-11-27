@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0b0c10">
   <title>AyuLite C2</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link rel="stylesheet" href="style.css?v=14.2">
+  <link rel="stylesheet" href="style.css?v=14.3">
 </head>
 <body>
   <div class="shell">
@@ -363,19 +363,26 @@
   <!-- Fakeshot Studio Modal -->
   <div class="modal" id="modalFakeshot">
     <div class="modal-panel">
-      <div class="modal-head"><span>Конструктор переписок (iOS 18)</span><button type="button" class="icon-btn" data-close-modal="modalFakeshot">✕</button></div>
+      <div class="modal-head"><span>Конструктор переписок</span><button type="button" class="icon-btn" data-close-modal="modalFakeshot">✕</button></div>
       <div class="modal-body" style="display:flex;flex-direction:column;gap:8px;">
+        <input type="text" class="input" id="fakeTargetUser" placeholder="ID или @username (авто-ава и ник)">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-          <input type="text" class="input" id="fakeTitle" value="Павел Дуров" placeholder="Имя">
-          <input type="text" class="input" id="fakeSubtitle" value="был(а) недавно" placeholder="Статус">
-          <input type="text" class="input" id="fakeTime" value="11:08" placeholder="Время">
+          <input type="text" class="input" id="fakeTitle" value="" placeholder="Имя (если без @username)">
+          <input type="text" class="input" id="fakeSubtitle" value="" placeholder="Статус (авто)">
+          <input type="text" class="input" id="fakeTime" value="13:22" placeholder="Время">
           <input type="number" class="input" id="fakeBattery" value="86" min="1" max="100" placeholder="Заряд %">
         </div>
-        <select class="input" id="fakeTheme">
-          <option value="dark_blue">Тёмная (Telegram)</option>
-          <option value="midnight">OLED Чёрная</option>
-          <option value="light">Светлая</option>
-        </select>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <select class="input" id="fakePlatform">
+            <option value="ios">iPhone (Liquid Glass)</option>
+            <option value="android">Android</option>
+          </select>
+          <select class="input" id="fakeTheme">
+            <option value="dark_blue">Тёмная (Telegram)</option>
+            <option value="oled">OLED Чёрная</option>
+            <option value="purple">Фиолетовая</option>
+          </select>
+        </div>
         <label style="display:flex;align-items:center;gap:8px;font-size:13px;"><input type="checkbox" id="fakeVerified" checked> Галочка верификации</label>
         <label style="display:flex;align-items:center;gap:8px;font-size:13px;"><input type="checkbox" id="fakeSendToSaved"> Отправить сразу в Избранное</label>
         <div style="border-top:1px solid var(--border);padding-top:8px;">
@@ -423,6 +430,6 @@
   </div>
 
   <div class="toast" id="toast"></div>
-  <script src="app.js?v=14.2"></script>
+  <script src="app.js?v=14.3"></script>
 </body>
 </html>
